@@ -4,13 +4,13 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import * as authApi from "@/lib/api/auth";
+import { removeCookie } from "@/lib/cookies";
 
 export type User = {
-  id?: string;
+  _id: string;
   name?: string;
   email?: string;
-  roles?: string[];
-  [k: string]: any;
+  role?: string;
 };
 
 type AuthContextValue = {
@@ -70,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authApi.logout();
       setUser(null);
+      removeCookie("authToken");
       router.push("/");
     } catch (err: any) {
       setError(err?.message ?? "Logout failed");

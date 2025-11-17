@@ -1,7 +1,33 @@
 import { request } from "./client";
 
-export function getProjects() {
-  return request("/api/projects");
+export interface ProjectsResponse {
+  projects: any[];
+  counts: {
+    total: number;
+    planned: number;
+    active: number;
+    completed: number;
+  };
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export function getProjects(
+  page: number = 1,
+  limit: number = 9,
+  search: string = ""
+): Promise<ProjectsResponse> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+
+  if (search) {
+    params.append("search", search);
+  }
+
+  return request(`/api/projects?${params.toString()}`);
 }
 
 export function getProjectData(id: string) {

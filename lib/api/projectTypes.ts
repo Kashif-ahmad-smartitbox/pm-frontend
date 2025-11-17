@@ -16,7 +16,7 @@ export function createProjectType(data: any) {
 // UPDATE project type
 export function updateProjectType(id: string, data: any) {
   return request(`/api/project-types/${id}`, {
-    method: "PUT",
+    method: "PATCH",
     body: data,
   });
 }

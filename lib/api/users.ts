@@ -29,3 +29,10 @@ export function createTeam(data: any) {
 export function deleteUser(userId: string) {
   return request(`/api/users/${userId}`, { method: "DELETE" });
 }
+
+export function updateUser(id: string, data: any) {
+  return request(`/api/users/${id}`, {
+    method: "PATCH",
+    body: data,
+  });
+}

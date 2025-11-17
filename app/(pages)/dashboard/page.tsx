@@ -5,6 +5,7 @@ import AdminDashboard from "@/components/dashboard/AdminDashboard";
 import TeamMemberDashboard from "@/components/dashboard/TeamMemberDashboard";
 import ProjectManagerDashboard from "@/components/dashboard/ProjectManagerDashboard";
 import { Loader2, ShieldAlert, UserX } from "lucide-react";
+import { removeCookie } from "@/lib/cookies";
 
 type UserRole = "admin" | "project_manager" | "team_member";
 
@@ -56,10 +57,13 @@ const DashboardError = ({ message }: { message: string }) => (
       </div>
       <div className="space-y-3 pt-4">
         <button
-          onClick={() => window.location.reload()}
+          onClick={() => {
+            removeCookie("authToken");
+            window.location.reload();
+          }}
           className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors duration-200"
         >
-          Try Again
+          Logout and Try Again
         </button>
         <a
           href="/support"
@@ -151,7 +155,7 @@ function Dashboard() {
           </div>
           <div className="space-y-3 pt-4">
             <a
-              href="/login"
+              href="/"
               className="inline-block w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors duration-200"
             >
               Go to Login

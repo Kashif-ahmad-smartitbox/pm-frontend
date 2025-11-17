@@ -1,17 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  getUsers,
-  createManagers,
-  createTeam,
-  deleteUser,
-  updateUser,
-} from "@/lib/api/users";
+import { getUsers, createTeam, deleteUser, updateUser } from "@/lib/api/users";
 import {
   X,
   UserPlus,
-  Building,
   Users,
   Mail,
   Lock,
@@ -33,21 +26,18 @@ interface User {
   role: string;
 }
 
-interface UserManagementModalProps {
+interface TeamManagementModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUserCreated: () => void;
 }
 
-const UserManagementModal: React.FC<UserManagementModalProps> = ({
+const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
   isOpen,
   onClose,
   onUserCreated,
 }) => {
   const [activeTab, setActiveTab] = useState<"existing" | "new">("existing");
-  const [userType, setUserType] = useState<"team_member" | "project_manager">(
-    "team_member"
-  );
   const [users, setUsers] = useState<User[]>([]);
   const [formData, setFormData] = useState({
     name: "",
@@ -88,10 +78,11 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     setError(null);
     try {
       const data = await getUsers();
-      setUsers(data.users);
-      // Initialize edit form data for each user
+      const teamMembers = data.users;
+      setUsers(teamMembers);
+
       const editData: typeof editFormData = {};
-      data.users.forEach((user: User) => {
+      teamMembers.forEach((user: User) => {
         editData[user._id] = {
           name: user.name,
           email: user.email,
@@ -101,8 +92,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       });
       setEditFormData(editData);
     } catch (err) {
-      setError("Failed to load users");
-      console.error("Error loading users:", err);
+      setError("Failed to load team members");
+      console.error("Error loading team members:", err);
     } finally {
       setLoading(false);
     }
@@ -164,17 +155,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         password: formData.password,
       };
 
-      if (userType === "project_manager") {
-        await createManagers(payload);
-      } else {
-        await createTeam(payload);
-      }
+      await createTeam(payload);
 
-      setSuccess(
-        `${
-          userType === "project_manager" ? "Project Manager" : "Team Member"
-        } created successfully!`
-      );
+      setSuccess("Team Member created successfully!");
       setFormData({
         name: "",
         email: "",
@@ -188,7 +171,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         fetchUsers();
       }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create user");
+      setError(
+        err instanceof Error ? err.message : "Failed to create team member"
+      );
     } finally {
       setSubmitting(false);
     }
@@ -228,7 +213,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       }
 
       await updateUser(userId, payload);
-      setSuccess("User updated successfully!");
+      setSuccess("Team member updated successfully!");
       setEditingUser(null);
       fetchUsers();
 
@@ -236,7 +221,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         setSuccess(null);
       }, 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update user");
+      setError(
+        err instanceof Error ? err.message : "Failed to update team member"
+      );
     } finally {
       setSubmitting(false);
     }
@@ -254,13 +241,15 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     try {
       await deleteUser(deleteConfirm.userId);
       setUsers(users.filter((user) => user._id !== deleteConfirm.userId));
-      setSuccess("User deleted successfully!");
+      setSuccess("Team member deleted successfully!");
 
       setTimeout(() => {
         setSuccess(null);
       }, 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete user");
+      setError(
+        err instanceof Error ? err.message : "Failed to delete team member"
+      );
     } finally {
       setDeleteConfirm({ isOpen: false, userId: null, userName: "" });
     }
@@ -311,11 +300,6 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
   const getRoleBadge = (role: string) => {
     const roleConfig = {
-      project_manager: {
-        label: "Project Manager",
-        color: "bg-purple-50 text-purple-700",
-        icon: Building,
-      },
       team_member: {
         label: "Team Member",
         color: "bg-blue-50 text-blue-700",
@@ -360,9 +344,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   <Users className="w-6 h-6 text-slate-900" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold">User Management</h2>
+                  <h2 className="text-xl font-bold">Team Management</h2>
                   <p className="text-slate-300 text-sm mt-1">
-                    Manage team members and project managers
+                    Manage team members and their access
                   </p>
                 </div>
               </div>
@@ -389,7 +373,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
               >
                 <div className="flex items-center gap-2 justify-center">
                   <User className="w-4 h-4" />
-                  Existing Users ({users.length})
+                  Team Members ({users.length})
                 </div>
               </button>
               <button
@@ -402,7 +386,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
               >
                 <div className="flex items-center gap-2 justify-center">
                   <UserPlus className="w-4 h-4" />
-                  Add New User
+                  Add Team Member
                 </div>
               </button>
             </div>
@@ -412,7 +396,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           <div className="flex-1 overflow-y-auto min-h-0">
             <div className="p-6">
               {activeTab === "existing" ? (
-                // Existing Users Tab
+                // Existing Team Members Tab
                 <div>
                   {error && (
                     <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 mb-6">
@@ -441,7 +425,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                       <div className="w-12 h-12 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
                       <div className="space-y-2">
                         <p className="text-slate-700 font-medium">
-                          Loading users
+                          Loading team members
                         </p>
                         <p className="text-slate-500 text-sm">
                           Getting team information...
@@ -455,10 +439,10 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                       </div>
                       <div className="space-y-2">
                         <h3 className="text-lg font-semibold text-slate-800">
-                          No users found
+                          No team members found
                         </h3>
                         <p className="text-slate-600">
-                          Get started by adding team members or project managers
+                          Get started by adding team members to your projects
                         </p>
                       </div>
                       <button
@@ -466,7 +450,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                         className="px-6 py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors flex items-center gap-2 mx-auto"
                       >
                         <UserPlus className="w-4 h-4" />
-                        Add First User
+                        Add First Team Member
                       </button>
                     </div>
                   ) : (
@@ -481,7 +465,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                             <div className="space-y-4">
                               <div className="flex items-center justify-between">
                                 <h4 className="font-semibold text-slate-800">
-                                  Edit User
+                                  Edit Team Member
                                 </h4>
                                 <div className="flex items-center gap-2">
                                   {getRoleBadge(user.role)}
@@ -612,7 +596,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                                         className="w-full px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
                                       >
                                         <Edit className="w-4 h-4" />
-                                        Edit User
+                                        Edit
                                       </button>
                                       <button
                                         onClick={() =>
@@ -635,7 +619,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   )}
                 </div>
               ) : (
-                // Add New User Tab
+                // Add New Team Member Tab
                 <div>
                   {error && (
                     <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 mb-6">
@@ -660,70 +644,20 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   )}
 
                   <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* User Type Selection */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-slate-700">
-                        User Type *
-                      </label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <button
-                          type="button"
-                          onClick={() => setUserType("team_member")}
-                          className={`p-4 border-2 rounded-xl text-left transition-all duration-200 ${
-                            userType === "team_member"
-                              ? "border-slate-900 bg-slate-50"
-                              : "border-slate-200 hover:border-slate-300"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`p-2 rounded-lg ${
-                                userType === "team_member"
-                                  ? "bg-slate-900 text-white"
-                                  : "bg-slate-100 text-slate-600"
-                              }`}
-                            >
-                              <Users className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <div className="font-semibold text-slate-800">
-                                Team Member
-                              </div>
-                              <div className="text-sm text-slate-600">
-                                Can be assigned to tasks
-                              </div>
-                            </div>
+                    {/* User Type Information */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <Users className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-blue-800">
+                            Team Member
                           </div>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setUserType("project_manager")}
-                          className={`p-4 border-2 rounded-xl text-left transition-all duration-200 ${
-                            userType === "project_manager"
-                              ? "border-slate-900 bg-slate-50"
-                              : "border-slate-200 hover:border-slate-300"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`p-2 rounded-lg ${
-                                userType === "project_manager"
-                                  ? "bg-slate-900 text-white"
-                                  : "bg-slate-100 text-slate-600"
-                              }`}
-                            >
-                              <Building className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <div className="font-semibold text-slate-800">
-                                Project Manager
-                              </div>
-                              <div className="text-sm text-slate-600">
-                                Can manage projects
-                              </div>
-                            </div>
+                          <div className="text-sm text-blue-600">
+                            Can be assigned to tasks and projects
                           </div>
-                        </button>
+                        </div>
                       </div>
                     </div>
 
@@ -864,7 +798,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   ) : (
                     <>
                       <UserPlus className="w-4 h-4" />
-                      <span>Create User</span>
+                      <span>Create Team Member</span>
                     </>
                   )}
                 </button>
@@ -881,13 +815,13 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           setDeleteConfirm({ isOpen: false, userId: null, userName: "" })
         }
         onConfirm={confirmDeleteUser}
-        title="Delete User"
+        title="Delete Team Member"
         message={`Are you sure you want to delete "${deleteConfirm.userName}"? This action cannot be undone.`}
-        confirmText="Delete User"
+        confirmText="Delete Team Member"
         variant="danger"
       />
     </>
   );
 };
 
-export default UserManagementModal;
+export default TeamManagementModal;

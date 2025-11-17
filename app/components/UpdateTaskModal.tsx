@@ -1,24 +1,25 @@
 "use client";
 
-import { updateProject } from "@/lib/api/projects";
-import { getProjectTypes } from "@/lib/api/projectTypes";
-import { getProjectManagers } from "@/lib/api/users";
+import { updateTask } from "@/lib/api/tasks";
+import { getTeam } from "@/lib/api/users";
 import React, { useState, useEffect } from "react";
 import {
   X,
   Calendar,
-  MapPin,
-  User,
-  FolderOpen,
+  User as UserIcon,
+  FileText,
   Target,
-  Clock,
-  TrendingUp,
-  CheckCircle,
   AlertCircle,
+  Edit,
+  Clock,
+  BarChart3,
+  CheckCircle,
+  TrendingUp,
+  AlertTriangle,
+  Users,
 } from "lucide-react";
 
-type ProjectStatus = "planned" | "active" | "completed";
-
+// Reuse the same User interface from Dashboard
 interface User {
   _id: string;
   name: string;
@@ -26,98 +27,102 @@ interface User {
   role?: string;
 }
 
-interface ProjectType {
+interface TeamResponse {
+  count: number;
+  members: User[];
+}
+
+// Simplified Task interface that matches the Dashboard Task structure
+interface Task {
   _id: string;
-  name: string;
+  title: string;
   description: string;
+  project: string;
+  assignees: User[];
+  createdBy: User;
+  status: "todo" | "in_progress" | "done";
+  dueDate: string;
+  priority: "low" | "medium" | "high" | "critical";
+  notes: any[];
   createdAt: string;
   updatedAt: string;
   __v: number;
 }
 
-interface Project {
-  _id: string;
-  projectName: string;
-  location: string;
-  projectManager: User;
-  projectType: ProjectType;
-  startDate: string;
-  endDate: string;
-  createdBy: string;
-  status: ProjectStatus;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-}
-
-interface EditProjectModalProps {
+interface UpdateTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onProjectUpdated: () => void;
-  project: Project | null;
+  onTaskUpdated: () => void;
+  task: Task | null;
 }
 
-const EditProjectModal: React.FC<EditProjectModalProps> = ({
+const UpdateTaskModal: React.FC<UpdateTaskModalProps> = ({
   isOpen,
   onClose,
-  onProjectUpdated,
-  project,
+  onTaskUpdated,
+  task,
 }) => {
   const [formData, setFormData] = useState({
-    projectName: "",
-    location: "",
-    projectManagerId: "",
-    projectTypeId: "",
-    startDate: "",
-    endDate: "",
-    status: "planned" as ProjectStatus,
+    title: "",
+    description: "",
+    dueDate: "",
+    priority: "medium" as Task["priority"],
+    status: "todo" as Task["status"],
+    assigneeIds: [] as string[],
   });
-  const [projectTypes, setProjectTypes] = useState<ProjectType[]>([]);
-  const [projectManagers, setProjectManagers] = useState<User[]>([]);
+  const [teamMembers, setTeamMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen && project) {
-      fetchModalData();
+    if (isOpen && task) {
+      fetchTeamMembers();
       setFormData({
-        projectName: project.projectName || "",
-        location: project.location || "",
-        projectManagerId: project.projectManager?._id || "",
-        projectTypeId: project.projectType?._id || "",
-        startDate: project.startDate ? project.startDate.split("T")[0] : "",
-        endDate: project.endDate ? project.endDate.split("T")[0] : "",
-        status: project.status || "planned",
+        title: task.title || "",
+        description: task.description || "",
+        dueDate: task.dueDate ? task.dueDate.split("T")[0] : "",
+        priority: task.priority || "medium",
+        status: task.status || "todo",
+        assigneeIds: task.assignees
+          ? task.assignees.map((assignee) => assignee._id)
+          : [],
       });
     }
-  }, [isOpen, project]);
+  }, [isOpen, task]);
 
-  const fetchModalData = async () => {
+  const fetchTeamMembers = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [typesData, managersData] = await Promise.all([
-        getProjectTypes(),
-        getProjectManagers(),
-      ]);
-      setProjectTypes(typesData);
-      setProjectManagers(managersData);
+      const teamData: TeamResponse = await getTeam();
+      setTeamMembers(teamData.members);
     } catch (err) {
-      setError("Failed to load project data");
-      console.error("Error loading modal data:", err);
+      setError("Failed to load team members");
+      console.error("Error loading team members:", err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  const handleAssigneeChange = (assigneeId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      assigneeIds: prev.assigneeIds.includes(assigneeId)
+        ? prev.assigneeIds.filter((id) => id !== assigneeId)
+        : [...prev.assigneeIds, assigneeId],
     }));
   };
 
@@ -128,92 +133,121 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
     try {
       if (
-        !formData.projectName.trim() ||
-        !formData.location.trim() ||
-        !formData.projectManagerId ||
-        !formData.projectTypeId ||
-        !formData.startDate ||
-        !formData.endDate
+        !formData.title.trim() ||
+        !formData.description.trim() ||
+        !formData.dueDate
       ) {
         setError("Please fill in all required fields");
         return;
       }
 
-      if (new Date(formData.startDate) >= new Date(formData.endDate)) {
-        setError("End date must be after start date");
+      if (new Date(formData.dueDate) < new Date()) {
+        setError("Due date cannot be in the past");
         return;
       }
 
-      if (!project?._id) {
-        setError("Invalid project data");
+      if (!task?._id) {
+        setError("Invalid task data");
         return;
       }
 
       const payload = {
-        projectName: formData.projectName.trim(),
-        location: formData.location.trim(),
-        projectManagerId: formData.projectManagerId,
-        projectTypeId: formData.projectTypeId,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        projectId: task.project,
+        dueDate: formData.dueDate,
+        priority: formData.priority,
         status: formData.status,
+        assigneeIds: formData.assigneeIds,
       };
 
-      await updateProject(project._id, payload);
-      onProjectUpdated();
+      await updateTask(task._id, payload);
+      onTaskUpdated();
       handleClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update project");
+      setError(err instanceof Error ? err.message : "Failed to update task");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleClose = () => {
+    setFormData({
+      title: "",
+      description: "",
+      dueDate: "",
+      priority: "medium",
+      status: "todo",
+      assigneeIds: [],
+    });
     setError(null);
     onClose();
   };
 
-  const hasChanges = () => {
-    if (!project) return false;
-
-    return (
-      formData.projectName !== project.projectName ||
-      formData.location !== project.location ||
-      formData.projectManagerId !== project.projectManager?._id ||
-      formData.projectTypeId !== project.projectType?._id ||
-      formData.startDate !==
-        (project.startDate ? project.startDate.split("T")[0] : "") ||
-      formData.endDate !==
-        (project.endDate ? project.endDate.split("T")[0] : "") ||
-      formData.status !== project.status
-    );
+  const priorityConfig = {
+    low: {
+      label: "Low",
+      color: "bg-emerald-50 text-emerald-700",
+      icon: TrendingUp,
+    },
+    medium: {
+      label: "Medium",
+      color: "bg-amber-50 text-amber-700",
+      icon: AlertCircle,
+    },
+    high: {
+      label: "High",
+      color: "bg-orange-50 text-orange-700",
+      icon: AlertTriangle,
+    },
+    critical: {
+      label: "Critical",
+      color: "bg-red-50 text-red-700",
+      icon: Target,
+    },
   };
 
-  if (!isOpen || !project) return null;
-
   const statusConfig = {
-    planned: {
-      label: "Planned",
-      color: "bg-blue-50 text-blue-700",
+    todo: {
+      label: "To Do",
+      color: "bg-slate-50 text-slate-700",
       icon: Clock,
+      iconColor: "text-slate-600",
+    },
+    in_progress: {
+      label: "In Progress",
+      color: "bg-blue-50 text-blue-700",
+      icon: BarChart3,
       iconColor: "text-blue-600",
     },
-    active: {
-      label: "Active",
-      color: "bg-amber-50 text-amber-700",
-      icon: TrendingUp,
-      iconColor: "text-amber-600",
-    },
-    completed: {
-      label: "Completed",
+    done: {
+      label: "Done",
       color: "bg-emerald-50 text-emerald-700",
       icon: CheckCircle,
       iconColor: "text-emerald-600",
     },
   };
 
+  const currentPriority = priorityConfig[formData.priority];
   const currentStatus = statusConfig[formData.status];
+
+  const hasChanges = () => {
+    if (!task) return false;
+
+    return (
+      formData.title !== task.title ||
+      formData.description !== task.description ||
+      formData.dueDate !== (task.dueDate ? task.dueDate.split("T")[0] : "") ||
+      formData.priority !== task.priority ||
+      formData.status !== task.status ||
+      JSON.stringify(formData.assigneeIds.sort()) !==
+        JSON.stringify(
+          task.assignees ? task.assignees.map((a) => a._id).sort() : []
+        )
+    );
+  };
+
+  if (!isOpen || !task) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -223,12 +257,12 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center">
-                <FolderOpen className="w-6 h-6 text-slate-900" />
+                <Edit className="w-6 h-6 text-slate-900" />
               </div>
               <div>
-                <h2 className="text-xl font-bold">Edit Project</h2>
+                <h2 className="text-xl font-bold">Update Task</h2>
                 <p className="text-slate-300 text-sm mt-1">
-                  Update project details and information
+                  Update task details and information
                 </p>
               </div>
             </div>
@@ -249,7 +283,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
               <div className="w-12 h-12 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
               <div className="space-y-2">
                 <p className="text-slate-700 font-medium">
-                  Loading project data
+                  Loading team members
                 </p>
                 <p className="text-slate-500 text-sm">
                   Getting everything ready for you...
@@ -269,149 +303,69 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 </div>
               )}
 
-              {/* Project Name */}
+              {/* Task Title */}
               <div className="space-y-3">
                 <label className="block text-sm font-semibold text-slate-700">
-                  Project Name *
+                  Task Title *
                 </label>
                 <div className="relative">
                   <input
                     type="text"
-                    name="projectName"
-                    value={formData.projectName}
+                    name="title"
+                    value={formData.title}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
                       placeholder-slate-400 transition-all duration-200
                       focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
                       hover:border-slate-400 bg-white text-slate-900
                       disabled:bg-slate-50 disabled:cursor-not-allowed"
-                    placeholder="Enter project name"
+                    placeholder="Enter task title"
                     required
                     disabled={submitting}
                   />
                   <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                    <FolderOpen className="w-4 h-4 text-slate-400" />
+                    <FileText className="w-4 h-4 text-slate-400" />
                   </div>
                 </div>
               </div>
 
-              {/* Location */}
+              {/* Description */}
               <div className="space-y-3">
                 <label className="block text-sm font-semibold text-slate-700">
-                  Location *
+                  Description *
                 </label>
                 <div className="relative">
-                  <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
+                  <textarea
+                    name="description"
+                    value={formData.description}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
                       placeholder-slate-400 transition-all duration-200
                       focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
                       hover:border-slate-400 bg-white text-slate-900
-                      disabled:bg-slate-50 disabled:cursor-not-allowed"
-                    placeholder="Enter project location"
+                      disabled:bg-slate-50 disabled:cursor-not-allowed resize-none"
+                    placeholder="Enter task description"
+                    rows={3}
                     required
                     disabled={submitting}
                   />
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                    <MapPin className="w-4 h-4 text-slate-400" />
+                  <div className="absolute left-4 top-4">
+                    <FileText className="w-4 h-4 text-slate-400" />
                   </div>
                 </div>
               </div>
 
-              {/* Project Manager */}
-              <div className="space-y-3">
-                <label className="block text-sm font-semibold text-slate-700">
-                  Project Manager *
-                </label>
-                <div className="relative">
-                  <select
-                    name="projectManagerId"
-                    value={formData.projectManagerId}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
-                      transition-all duration-200
-                      focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                      hover:border-slate-400 bg-white text-slate-900
-                      disabled:bg-slate-50 disabled:cursor-not-allowed appearance-none"
-                    required
-                    disabled={submitting || projectManagers.length === 0}
-                  >
-                    <option value="">Select Project Manager</option>
-                    {projectManagers.map((manager) => (
-                      <option key={manager._id} value={manager._id}>
-                        {manager.name} ({manager.email})
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                    <User className="w-4 h-4 text-slate-400" />
-                  </div>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <div className="w-2 h-2 border-r-2 border-b-2 border-slate-400 transform rotate-45"></div>
-                  </div>
-                </div>
-                {projectManagers.length === 0 && !loading && (
-                  <p className="text-red-500 text-sm mt-1 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    No project managers available
-                  </p>
-                )}
-              </div>
-
-              {/* Project Type */}
-              <div className="space-y-3">
-                <label className="block text-sm font-semibold text-slate-700">
-                  Project Type *
-                </label>
-                <div className="relative">
-                  <select
-                    name="projectTypeId"
-                    value={formData.projectTypeId}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
-                      transition-all duration-200
-                      focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                      hover:border-slate-400 bg-white text-slate-900
-                      disabled:bg-slate-50 disabled:cursor-not-allowed appearance-none"
-                    required
-                    disabled={submitting || projectTypes.length === 0}
-                  >
-                    <option value="">Select Project Type</option>
-                    {projectTypes.map((type) => (
-                      <option key={type._id} value={type._id}>
-                        {type.name} - {type.description}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                    <Target className="w-4 h-4 text-slate-400" />
-                  </div>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <div className="w-2 h-2 border-r-2 border-b-2 border-slate-400 transform rotate-45"></div>
-                  </div>
-                </div>
-                {projectTypes.length === 0 && !loading && (
-                  <p className="text-red-500 text-sm mt-1 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    No project types available
-                  </p>
-                )}
-              </div>
-
-              {/* Dates and Status */}
+              {/* Due Date, Priority and Status */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-3">
                   <label className="block text-sm font-semibold text-slate-700">
-                    Start Date *
+                    Due Date *
                   </label>
                   <div className="relative">
                     <input
                       type="date"
-                      name="startDate"
-                      value={formData.startDate}
+                      name="dueDate"
+                      value={formData.dueDate}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
                         transition-all duration-200
@@ -420,6 +374,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                         disabled:bg-slate-50 disabled:cursor-not-allowed"
                       required
                       disabled={submitting}
+                      min={new Date().toISOString().split("T")[0]}
                     />
                     <div className="absolute left-4 top-1/2 -translate-y-1/2">
                       <Calendar className="w-4 h-4 text-slate-400" />
@@ -429,25 +384,30 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
                 <div className="space-y-3">
                   <label className="block text-sm font-semibold text-slate-700">
-                    End Date *
+                    Priority
                   </label>
                   <div className="relative">
-                    <input
-                      type="date"
-                      name="endDate"
-                      value={formData.endDate}
+                    <select
+                      name="priority"
+                      value={formData.priority}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
                         transition-all duration-200
                         focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
                         hover:border-slate-400 bg-white text-slate-900
-                        disabled:bg-slate-50 disabled:cursor-not-allowed"
-                      required
+                        disabled:bg-slate-50 disabled:cursor-not-allowed appearance-none"
                       disabled={submitting}
-                      min={formData.startDate}
-                    />
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="critical">Critical</option>
+                    </select>
                     <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                      <Calendar className="w-4 h-4 text-slate-400" />
+                      <currentPriority.icon className="w-4 h-4 text-slate-400" />
+                    </div>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <div className="w-2 h-2 border-r-2 border-b-2 border-slate-400 transform rotate-45"></div>
                     </div>
                   </div>
                 </div>
@@ -468,9 +428,9 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                         disabled:bg-slate-50 disabled:cursor-not-allowed appearance-none"
                       disabled={submitting}
                     >
-                      <option value="planned">Planned</option>
-                      <option value="active">Active</option>
-                      <option value="completed">Completed</option>
+                      <option value="todo">To Do</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="done">Done</option>
                     </select>
                     <div className="absolute left-4 top-1/2 -translate-y-1/2">
                       <currentStatus.icon
@@ -482,6 +442,53 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Assignees */}
+              <div className="space-y-3">
+                <label className="block text-sm font-semibold text-slate-700">
+                  Assign Team Members
+                </label>
+                <div className="border border-slate-300 rounded-xl p-4 bg-white max-h-48 overflow-y-auto space-y-3">
+                  {teamMembers.length === 0 ? (
+                    <div className="text-center py-4 text-slate-500 flex items-center justify-center gap-2">
+                      <Users className="w-4 h-4" />
+                      No team members available
+                    </div>
+                  ) : (
+                    teamMembers.map((member) => (
+                      <label
+                        key={member._id}
+                        className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-slate-50 transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.assigneeIds.includes(member._id)}
+                          onChange={() => handleAssigneeChange(member._id)}
+                          className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 disabled:opacity-50 w-4 h-4"
+                          disabled={submitting}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-slate-800 block">
+                            {member.name}
+                          </span>
+                          <span className="text-xs text-slate-500 block">
+                            {member.email} • {member.role || "No role"}
+                          </span>
+                        </div>
+                        {formData.assigneeIds.includes(member._id) && (
+                          <div className="w-2 h-2 bg-slate-900 rounded-full"></div>
+                        )}
+                      </label>
+                    ))
+                  )}
+                </div>
+                {formData.assigneeIds.length > 0 && (
+                  <p className="text-sm text-slate-600 font-medium flex items-center gap-2">
+                    <Users className="w-4 h-4 text-slate-600" />
+                    {formData.assigneeIds.length} team member(s) selected
+                  </p>
+                )}
               </div>
             </form>
           )}
@@ -513,7 +520,8 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 </>
               ) : (
                 <>
-                  <span>Update Project</span>
+                  <Edit className="w-4 h-4" />
+                  <span>Update Task</span>
                 </>
               )}
             </button>
@@ -524,4 +532,4 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
   );
 };
 
-export default EditProjectModal;
+export default UpdateTaskModal;

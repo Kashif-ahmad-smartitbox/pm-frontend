@@ -2,68 +2,59 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  getUsers,
-  createManagers,
-  createTeam,
-  deleteUser,
-  updateUser,
-} from "@/lib/api/users";
+  createProjectType,
+  deleteProjectType,
+  updateProjectType,
+  getProjectTypes,
+} from "@/lib/api/projectTypes";
 import {
   X,
-  UserPlus,
-  Building,
-  Users,
-  Mail,
-  Lock,
-  User,
+  FolderPlus,
+  Folder,
+  Edit,
   Trash2,
   MoreVertical,
-  Edit,
   AlertCircle,
   CheckCircle,
   Save,
   ArrowLeft,
+  FileText,
+  Type,
 } from "lucide-react";
 import ConfirmationModal from "./ConfirmationModal";
 
-interface User {
+interface ProjectType {
   _id: string;
   name: string;
-  email: string;
-  role: string;
+  description: string;
 }
 
-interface UserManagementModalProps {
+interface ProjectTypeManagementModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUserCreated: () => void;
+  onProjectTypeCreated: () => void;
 }
 
-const UserManagementModal: React.FC<UserManagementModalProps> = ({
+const ProjectTypeManagementModal: React.FC<ProjectTypeManagementModalProps> = ({
   isOpen,
   onClose,
-  onUserCreated,
+  onProjectTypeCreated,
 }) => {
   const [activeTab, setActiveTab] = useState<"existing" | "new">("existing");
-  const [userType, setUserType] = useState<"team_member" | "project_manager">(
-    "team_member"
-  );
-  const [users, setUsers] = useState<User[]>([]);
+  const [projectTypes, setProjectTypes] = useState<ProjectType[]>([]);
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+    description: "",
   });
   const [editFormData, setEditFormData] = useState<{
     [key: string]: {
       name: string;
-      email: string;
-      password: string;
-      confirmPassword: string;
+      description: string;
     };
   }>({});
-  const [editingUser, setEditingUser] = useState<string | null>(null);
+  const [editingProjectType, setEditingProjectType] = useState<string | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,43 +64,41 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   // Confirmation modal states
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
-    userId: string | null;
-    userName: string;
-  }>({ isOpen: false, userId: null, userName: "" });
+    projectTypeId: string | null;
+    projectTypeName: string;
+  }>({ isOpen: false, projectTypeId: null, projectTypeName: "" });
 
   useEffect(() => {
     if (isOpen && activeTab === "existing") {
-      fetchUsers();
+      fetchProjectTypes();
     }
   }, [isOpen, activeTab]);
 
-  const fetchUsers = async () => {
+  const fetchProjectTypes = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getUsers();
-      setUsers(data.users);
-      // Initialize edit form data for each user
+      const data = await getProjectTypes();
+      setProjectTypes(data.projectTypes || data);
+      // Initialize edit form data for each project type
       const editData: typeof editFormData = {};
-      data.users.forEach((user: User) => {
-        editData[user._id] = {
-          name: user.name,
-          email: user.email,
-          password: "",
-          confirmPassword: "",
+      (data.projectTypes || data).forEach((projectType: ProjectType) => {
+        editData[projectType._id] = {
+          name: projectType.name,
+          description: projectType.description,
         };
       });
       setEditFormData(editData);
     } catch (err) {
-      setError("Failed to load users");
-      console.error("Error loading users:", err);
+      setError("Failed to load project types");
+      console.error("Error loading project types:", err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -119,14 +108,14 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   };
 
   const handleEditInputChange = (
-    userId: string,
-    e: React.ChangeEvent<HTMLInputElement>
+    projectTypeId: string,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setEditFormData((prev) => ({
       ...prev,
-      [userId]: {
-        ...prev[userId],
+      [projectTypeId]: {
+        ...prev[projectTypeId],
         [name]: value,
       },
     }));
@@ -139,155 +128,136 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     setSuccess(null);
 
     try {
-      if (
-        !formData.name.trim() ||
-        !formData.email.trim() ||
-        !formData.password
-      ) {
-        setError("Please fill in all required fields");
-        return;
-      }
-
-      if (formData.password !== formData.confirmPassword) {
-        setError("Passwords do not match");
-        return;
-      }
-
-      if (formData.password.length < 6) {
-        setError("Password must be at least 6 characters long");
+      if (!formData.name.trim()) {
+        setError("Please fill in the project type name");
         return;
       }
 
       const payload = {
         name: formData.name.trim(),
-        email: formData.email.trim(),
-        password: formData.password,
+        description: formData.description.trim(),
       };
 
-      if (userType === "project_manager") {
-        await createManagers(payload);
-      } else {
-        await createTeam(payload);
-      }
+      await createProjectType(payload);
 
-      setSuccess(
-        `${
-          userType === "project_manager" ? "Project Manager" : "Team Member"
-        } created successfully!`
-      );
+      setSuccess("Project type created successfully!");
       setFormData({
         name: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
+        description: "",
       });
-      onUserCreated();
+      onProjectTypeCreated();
 
       setTimeout(() => {
         setActiveTab("existing");
-        fetchUsers();
+        fetchProjectTypes();
       }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create user");
+      setError(
+        err instanceof Error ? err.message : "Failed to create project type"
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleEditUser = async (userId: string) => {
+  const handleEditProjectType = async (projectTypeId: string) => {
     setSubmitting(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const userData = editFormData[userId];
+      const projectTypeData = editFormData[projectTypeId];
 
-      if (!userData.name.trim() || !userData.email.trim()) {
-        setError("Please fill in name and email");
+      if (!projectTypeData.name.trim()) {
+        setError("Please fill in the project type name");
         return;
       }
 
-      if (userData.password && userData.password !== userData.confirmPassword) {
-        setError("Passwords do not match");
-        return;
-      }
-
-      if (userData.password && userData.password.length < 6) {
-        setError("Password must be at least 6 characters long");
-        return;
-      }
-
-      const payload: any = {
-        name: userData.name.trim(),
-        email: userData.email.trim(),
+      const payload = {
+        name: projectTypeData.name.trim(),
+        description: projectTypeData.description.trim(),
       };
 
-      // Only include password if it's provided
-      if (userData.password) {
-        payload.password = userData.password;
-      }
-
-      await updateUser(userId, payload);
-      setSuccess("User updated successfully!");
-      setEditingUser(null);
-      fetchUsers();
+      await updateProjectType(projectTypeId, payload);
+      setSuccess("Project type updated successfully!");
+      setEditingProjectType(null);
+      fetchProjectTypes();
 
       setTimeout(() => {
         setSuccess(null);
       }, 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update user");
+      setError(
+        err instanceof Error ? err.message : "Failed to update project type"
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDeleteUser = async (userId: string, userName: string) => {
-    setDeleteConfirm({ isOpen: true, userId, userName });
+  const handleDeleteProjectType = async (
+    projectTypeId: string,
+    projectTypeName: string
+  ) => {
+    setDeleteConfirm({
+      isOpen: true,
+      projectTypeId,
+      projectTypeName,
+    });
     setMenuOpen(null);
   };
 
-  const confirmDeleteUser = async () => {
-    if (!deleteConfirm.userId) return;
+  const confirmDeleteProjectType = async () => {
+    if (!deleteConfirm.projectTypeId) return;
 
     setError(null);
     try {
-      await deleteUser(deleteConfirm.userId);
-      setUsers(users.filter((user) => user._id !== deleteConfirm.userId));
-      setSuccess("User deleted successfully!");
+      await deleteProjectType(deleteConfirm.projectTypeId);
+      setProjectTypes(
+        projectTypes.filter(
+          (projectType) => projectType._id !== deleteConfirm.projectTypeId
+        )
+      );
+      setSuccess("Project type deleted successfully!");
 
       setTimeout(() => {
         setSuccess(null);
       }, 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete user");
+      setError(
+        err instanceof Error ? err.message : "Failed to delete project type"
+      );
     } finally {
-      setDeleteConfirm({ isOpen: false, userId: null, userName: "" });
+      setDeleteConfirm({
+        isOpen: false,
+        projectTypeId: null,
+        projectTypeName: "",
+      });
     }
   };
 
-  const toggleMenu = (userId: string) => {
-    setMenuOpen(menuOpen === userId ? null : userId);
+  const toggleMenu = (projectTypeId: string) => {
+    setMenuOpen(menuOpen === projectTypeId ? null : projectTypeId);
   };
 
-  const startEditing = (userId: string) => {
-    setEditingUser(userId);
+  const startEditing = (projectTypeId: string) => {
+    setEditingProjectType(projectTypeId);
     setMenuOpen(null);
   };
 
   const cancelEditing = () => {
-    setEditingUser(null);
-    // Reset form data for the user being edited
-    if (editingUser) {
-      const user = users.find((u) => u._id === editingUser);
-      if (user) {
+    setEditingProjectType(null);
+    // Reset form data for the project type being edited
+    if (editingProjectType) {
+      const projectType = projectTypes.find(
+        (pt) => pt._id === editingProjectType
+      );
+      if (projectType) {
         setEditFormData((prev) => ({
           ...prev,
-          [editingUser]: {
-            name: user.name,
-            email: user.email,
-            password: "",
-            confirmPassword: "",
+          [editingProjectType]: {
+            name: projectType.name,
+            description: projectType.description,
           },
         }));
       }
@@ -297,53 +267,14 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const handleClose = () => {
     setFormData({
       name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
+      description: "",
     });
     setError(null);
     setSuccess(null);
     setActiveTab("existing");
     setMenuOpen(null);
-    setEditingUser(null);
+    setEditingProjectType(null);
     onClose();
-  };
-
-  const getRoleBadge = (role: string) => {
-    const roleConfig = {
-      project_manager: {
-        label: "Project Manager",
-        color: "bg-purple-50 text-purple-700",
-        icon: Building,
-      },
-      team_member: {
-        label: "Team Member",
-        color: "bg-blue-50 text-blue-700",
-        icon: Users,
-      },
-      admin: {
-        label: "Admin",
-        color: "bg-red-50 text-red-700",
-        icon: User,
-      },
-    };
-
-    const config = roleConfig[role as keyof typeof roleConfig] || {
-      label: role,
-      color: "bg-slate-50 text-slate-700",
-      icon: User,
-    };
-
-    const IconComponent = config.icon;
-
-    return (
-      <span
-        className={`px-3 py-1.5 rounded-lg text-xs font-medium ${config.color} flex items-center gap-1.5`}
-      >
-        <IconComponent className="w-3 h-3" />
-        {config.label}
-      </span>
-    );
   };
 
   if (!isOpen) return null;
@@ -357,12 +288,12 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center">
-                  <Users className="w-6 h-6 text-slate-900" />
+                  <Folder className="w-6 h-6 text-slate-900" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold">User Management</h2>
+                  <h2 className="text-xl font-bold">Project Type Management</h2>
                   <p className="text-slate-300 text-sm mt-1">
-                    Manage team members and project managers
+                    Manage different types of projects
                   </p>
                 </div>
               </div>
@@ -388,8 +319,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-2 justify-center">
-                  <User className="w-4 h-4" />
-                  Existing Users ({users.length})
+                  <Folder className="w-4 h-4" />
+                  Existing Project Types ({projectTypes.length})
                 </div>
               </button>
               <button
@@ -401,8 +332,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-2 justify-center">
-                  <UserPlus className="w-4 h-4" />
-                  Add New User
+                  <FolderPlus className="w-4 h-4" />
+                  Add New Project Type
                 </div>
               </button>
             </div>
@@ -412,7 +343,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           <div className="flex-1 overflow-y-auto min-h-0">
             <div className="p-6">
               {activeTab === "existing" ? (
-                // Existing Users Tab
+                // Existing Project Types Tab
                 <div>
                   {error && (
                     <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 mb-6">
@@ -441,54 +372,51 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                       <div className="w-12 h-12 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
                       <div className="space-y-2">
                         <p className="text-slate-700 font-medium">
-                          Loading users
+                          Loading project types
                         </p>
                         <p className="text-slate-500 text-sm">
-                          Getting team information...
+                          Getting project type information...
                         </p>
                       </div>
                     </div>
-                  ) : users.length === 0 ? (
+                  ) : projectTypes.length === 0 ? (
                     <div className="text-center py-12 space-y-4">
                       <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto">
-                        <Users className="w-8 h-8 text-slate-400" />
+                        <Folder className="w-8 h-8 text-slate-400" />
                       </div>
                       <div className="space-y-2">
                         <h3 className="text-lg font-semibold text-slate-800">
-                          No users found
+                          No project types found
                         </h3>
                         <p className="text-slate-600">
-                          Get started by adding team members or project managers
+                          Get started by adding your first project type
                         </p>
                       </div>
                       <button
                         onClick={() => setActiveTab("new")}
                         className="px-6 py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors flex items-center gap-2 mx-auto"
                       >
-                        <UserPlus className="w-4 h-4" />
-                        Add First User
+                        <FolderPlus className="w-4 h-4" />
+                        Add First Project Type
                       </button>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {users.map((user) => (
+                      {projectTypes.map((projectType) => (
                         <div
-                          key={user._id}
+                          key={projectType._id}
                           className="bg-white border border-slate-100 rounded-2xl p-4 hover:border-slate-200 transition-all duration-300 group relative"
                         >
-                          {editingUser === user._id ? (
+                          {editingProjectType === projectType._id ? (
                             // Edit Mode
                             <div className="space-y-4">
                               <div className="flex items-center justify-between">
                                 <h4 className="font-semibold text-slate-800">
-                                  Edit User
+                                  Edit Project Type
                                 </h4>
-                                <div className="flex items-center gap-2">
-                                  {getRoleBadge(user.role)}
-                                </div>
                               </div>
 
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-4">
                                 <div className="space-y-2">
                                   <label className="block text-sm font-medium text-slate-700">
                                     Name *
@@ -496,65 +424,32 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                                   <input
                                     type="text"
                                     name="name"
-                                    value={editFormData[user._id]?.name || ""}
-                                    onChange={(e) =>
-                                      handleEditInputChange(user._id, e)
-                                    }
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
-                                    placeholder="Enter name"
-                                  />
-                                </div>
-                                <div className="space-y-2">
-                                  <label className="block text-sm font-medium text-slate-700">
-                                    Email *
-                                  </label>
-                                  <input
-                                    type="email"
-                                    name="email"
-                                    value={editFormData[user._id]?.email || ""}
-                                    onChange={(e) =>
-                                      handleEditInputChange(user._id, e)
-                                    }
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
-                                    placeholder="Enter email"
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <label className="block text-sm font-medium text-slate-700">
-                                    New Password
-                                  </label>
-                                  <input
-                                    type="password"
-                                    name="password"
                                     value={
-                                      editFormData[user._id]?.password || ""
+                                      editFormData[projectType._id]?.name || ""
                                     }
                                     onChange={(e) =>
-                                      handleEditInputChange(user._id, e)
+                                      handleEditInputChange(projectType._id, e)
                                     }
                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
-                                    placeholder="Leave blank to keep current"
+                                    placeholder="Enter project type name"
                                   />
                                 </div>
                                 <div className="space-y-2">
                                   <label className="block text-sm font-medium text-slate-700">
-                                    Confirm Password
+                                    Description
                                   </label>
-                                  <input
-                                    type="password"
-                                    name="confirmPassword"
+                                  <textarea
+                                    name="description"
                                     value={
-                                      editFormData[user._id]?.confirmPassword ||
-                                      ""
+                                      editFormData[projectType._id]
+                                        ?.description || ""
                                     }
                                     onChange={(e) =>
-                                      handleEditInputChange(user._id, e)
+                                      handleEditInputChange(projectType._id, e)
                                     }
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
-                                    placeholder="Confirm new password"
+                                    rows={3}
+                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 resize-none"
+                                    placeholder="Enter project type description"
                                   />
                                 </div>
                               </div>
@@ -569,7 +464,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                                   Cancel
                                 </button>
                                 <button
-                                  onClick={() => handleEditUser(user._id)}
+                                  onClick={() =>
+                                    handleEditProjectType(projectType._id)
+                                  }
                                   disabled={submitting}
                                   className="px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors disabled:opacity-50 flex items-center gap-2"
                                 >
@@ -582,41 +479,45 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                             // View Mode
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-4 flex-1">
-                                <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 font-semibold text-lg">
-                                  {user.name.charAt(0).toUpperCase()}
+                                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                                  <Type className="w-6 h-6" />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <h4 className="font-semibold text-slate-800 truncate">
-                                    {user.name}
+                                    {projectType.name}
                                   </h4>
-                                  <p className="text-slate-600 text-sm truncate">
-                                    {user.email}
+                                  <p className="text-slate-600 text-sm mt-1 line-clamp-2">
+                                    {projectType.description ||
+                                      "No description provided"}
                                   </p>
                                 </div>
                               </div>
                               <div className="flex items-center gap-3">
-                                {getRoleBadge(user.role)}
-
                                 <div className="relative">
                                   <button
-                                    onClick={() => toggleMenu(user._id)}
+                                    onClick={() => toggleMenu(projectType._id)}
                                     className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
                                   >
                                     <MoreVertical className="w-4 h-4" />
                                   </button>
 
-                                  {menuOpen === user._id && (
+                                  {menuOpen === projectType._id && (
                                     <div className="absolute right-0 top-10 bg-white border border-slate-200 rounded-xl shadow-lg z-10 min-w-36 overflow-hidden">
                                       <button
-                                        onClick={() => startEditing(user._id)}
+                                        onClick={() =>
+                                          startEditing(projectType._id)
+                                        }
                                         className="w-full px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
                                       >
                                         <Edit className="w-4 h-4" />
-                                        Edit User
+                                        Edit
                                       </button>
                                       <button
                                         onClick={() =>
-                                          handleDeleteUser(user._id, user.name)
+                                          handleDeleteProjectType(
+                                            projectType._id,
+                                            projectType.name
+                                          )
                                         }
                                         className="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
                                       >
@@ -635,7 +536,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   )}
                 </div>
               ) : (
-                // Add New User Tab
+                // Add New Project Type Tab
                 <div>
                   {error && (
                     <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 mb-6">
@@ -660,77 +561,10 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   )}
 
                   <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* User Type Selection */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-slate-700">
-                        User Type *
-                      </label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <button
-                          type="button"
-                          onClick={() => setUserType("team_member")}
-                          className={`p-4 border-2 rounded-xl text-left transition-all duration-200 ${
-                            userType === "team_member"
-                              ? "border-slate-900 bg-slate-50"
-                              : "border-slate-200 hover:border-slate-300"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`p-2 rounded-lg ${
-                                userType === "team_member"
-                                  ? "bg-slate-900 text-white"
-                                  : "bg-slate-100 text-slate-600"
-                              }`}
-                            >
-                              <Users className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <div className="font-semibold text-slate-800">
-                                Team Member
-                              </div>
-                              <div className="text-sm text-slate-600">
-                                Can be assigned to tasks
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setUserType("project_manager")}
-                          className={`p-4 border-2 rounded-xl text-left transition-all duration-200 ${
-                            userType === "project_manager"
-                              ? "border-slate-900 bg-slate-50"
-                              : "border-slate-200 hover:border-slate-300"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`p-2 rounded-lg ${
-                                userType === "project_manager"
-                                  ? "bg-slate-900 text-white"
-                                  : "bg-slate-100 text-slate-600"
-                              }`}
-                            >
-                              <Building className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <div className="font-semibold text-slate-800">
-                                Project Manager
-                              </div>
-                              <div className="text-sm text-slate-600">
-                                Can manage projects
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      </div>
-                    </div>
-
                     {/* Name */}
                     <div className="space-y-3">
                       <label className="block text-sm font-semibold text-slate-700">
-                        Full Name *
+                        Project Type Name *
                       </label>
                       <div className="relative">
                         <input
@@ -743,92 +577,43 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                             focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
                             hover:border-slate-400 bg-white text-slate-900
                             disabled:bg-slate-50 disabled:cursor-not-allowed"
-                          placeholder="Enter full name"
+                          placeholder="Enter project type name (e.g., Infrastructure, Construction)"
                           required
                           disabled={submitting}
                         />
                         <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                          <User className="w-4 h-4 text-slate-400" />
+                          <Type className="w-4 h-4 text-slate-400" />
                         </div>
                       </div>
                     </div>
 
-                    {/* Email */}
+                    {/* Description */}
                     <div className="space-y-3">
                       <label className="block text-sm font-semibold text-slate-700">
-                        Email Address *
+                        Description
                       </label>
                       <div className="relative">
-                        <input
-                          type="email"
-                          name="email"
-                          value={formData.email}
+                        <textarea
+                          name="description"
+                          value={formData.description}
                           onChange={handleInputChange}
+                          rows={4}
                           className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
                             placeholder-slate-400 transition-all duration-200
                             focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                            hover:border-slate-400 bg-white text-slate-900
+                            hover:border-slate-400 bg-white text-slate-900 resize-none
                             disabled:bg-slate-50 disabled:cursor-not-allowed"
-                          placeholder="Enter email address"
-                          required
+                          placeholder="Enter project type description (e.g., Roads, bridges, construction projects)"
                           disabled={submitting}
                         />
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                          <Mail className="w-4 h-4 text-slate-400" />
+                        <div className="absolute left-4 top-4">
+                          <FileText className="w-4 h-4 text-slate-400" />
                         </div>
                       </div>
-                    </div>
-
-                    {/* Password */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <label className="block text-sm font-semibold text-slate-700">
-                          Password *
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
-                              transition-all duration-200
-                              focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                              hover:border-slate-400 bg-white text-slate-900
-                              disabled:bg-slate-50 disabled:cursor-not-allowed"
-                            placeholder="Enter password"
-                            required
-                            disabled={submitting}
-                          />
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                            <Lock className="w-4 h-4 text-slate-400" />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        <label className="block text-sm font-semibold text-slate-700">
-                          Confirm Password *
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="password"
-                            name="confirmPassword"
-                            value={formData.confirmPassword}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
-                              transition-all duration-200
-                              focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                              hover:border-slate-400 bg-white text-slate-900
-                              disabled:bg-slate-50 disabled:cursor-not-allowed"
-                            placeholder="Confirm password"
-                            required
-                            disabled={submitting}
-                          />
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                            <Lock className="w-4 h-4 text-slate-400" />
-                          </div>
-                        </div>
-                      </div>
+                      <p className="text-slate-500 text-sm">
+                        Optional: Provide a brief description of what this
+                        project type includes
+                      </p>
                     </div>
                   </form>
                 </div>
@@ -863,8 +648,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     </>
                   ) : (
                     <>
-                      <UserPlus className="w-4 h-4" />
-                      <span>Create User</span>
+                      <FolderPlus className="w-4 h-4" />
+                      <span>Create Project Type</span>
                     </>
                   )}
                 </button>
@@ -878,16 +663,20 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       <ConfirmationModal
         isOpen={deleteConfirm.isOpen}
         onClose={() =>
-          setDeleteConfirm({ isOpen: false, userId: null, userName: "" })
+          setDeleteConfirm({
+            isOpen: false,
+            projectTypeId: null,
+            projectTypeName: "",
+          })
         }
-        onConfirm={confirmDeleteUser}
-        title="Delete User"
-        message={`Are you sure you want to delete "${deleteConfirm.userName}"? This action cannot be undone.`}
-        confirmText="Delete User"
+        onConfirm={confirmDeleteProjectType}
+        title="Delete Project Type"
+        message={`Are you sure you want to delete "${deleteConfirm.projectTypeName}"? This action cannot be undone.`}
+        confirmText="Delete Project Type"
         variant="danger"
       />
     </>
   );
 };
 
-export default UserManagementModal;
+export default ProjectTypeManagementModal;

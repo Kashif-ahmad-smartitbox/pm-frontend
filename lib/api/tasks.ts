@@ -24,11 +24,28 @@ export function createNote(taskId: string, text: any) {
 
 export function updateTask(taskId: string, data: any) {
   return request(`/api/tasks/${taskId}`, {
-    method: "PUT",
+    method: "PATCH",
     body: data,
   });
 }
 
 export function deleteTask(taskId: string) {
   return request(`/api/tasks/${taskId}`, { method: "DELETE" });
+}
+
+export function getTaskMe(
+  page: number = 1,
+  limit: number = 9,
+  search: string = ""
+) {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+
+  if (search) {
+    params.append("search", search);
+  }
+
+  return request(`/api/tasks/me?${params.toString()}`);
 }

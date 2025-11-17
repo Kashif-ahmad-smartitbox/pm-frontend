@@ -1,4 +1,3 @@
-import { removeCookie } from "../cookies";
 import { request } from "./client";
 
 export function login(email: string, password: string) {
@@ -9,7 +8,6 @@ export function login(email: string, password: string) {
 }
 
 export function logout() {
-  removeCookie("authToken");
   return request("/api/auth/logout", {
     method: "POST",
   });
