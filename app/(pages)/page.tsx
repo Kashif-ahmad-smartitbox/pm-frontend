@@ -48,7 +48,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-2 bg-[#EFFFFA]">
+    <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-2 bg-gray-200">
       {/* LEFT SIDE - Desktop Only */}
       <section className="hidden lg:flex flex-col justify-between p-12 text-white relative overflow-hidden bg-gradient-to-br from-[#0E3554] to-[#1CC2B1]">
         <div className="absolute inset-0">
@@ -60,7 +60,7 @@ export default function Login() {
           <div className="flex items-center gap-4 mb-8">
             <img className="w-24" src="/logo.png" alt="site logo" />
             <div>
-              <h1 className="text-2xl font-bold">SKC Project Management</h1>
+              <h1 className="text-2xl font-bold">Project Management System</h1>
               <p className="text-teal-100 mt-1">Enterprise Management System</p>
             </div>
           </div>

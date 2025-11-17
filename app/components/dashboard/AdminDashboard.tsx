@@ -145,6 +145,7 @@ const STATS_CONFIG = [
     icon: FolderOpen,
     color: "text-[#0E3554]",
     bgColor: "bg-[#E1F3F0]",
+    mainBgColor: "bg-[#1bc5b4]",
   },
   {
     id: "planned",
@@ -152,6 +153,7 @@ const STATS_CONFIG = [
     icon: Clock,
     color: "text-[#0E3554]",
     bgColor: "bg-[#E0FFFA]",
+    mainBgColor: "bg-[#8CA9FF]",
   },
   {
     id: "active",
@@ -159,6 +161,7 @@ const STATS_CONFIG = [
     icon: TrendingUp,
     color: "text-[#1CC2B1]",
     bgColor: "bg-[#FFF4DD]",
+    mainBgColor: "bg-[#FFF2C6]",
   },
   {
     id: "completed",
@@ -166,6 +169,7 @@ const STATS_CONFIG = [
     icon: CheckCircle,
     color: "text-[#1CC2B1]",
     bgColor: "bg-[#E1F3F0]",
+    mainBgColor: "bg-[#8BAE66]",
   },
 ] as const;
 
@@ -402,7 +406,7 @@ const ProjectCard = ({
   menuOpen: boolean;
   onToggleMenu: () => void;
 }) => (
-  <div className="bg-white rounded-2xl p-5 border border-[#D9F3EE] hover:shadow-md hover:border-[#1CC2B1] transition-all duration-300 group">
+  <div className="bg-gray-100 rounded-2xl p-5 border border-[#D9F3EE] hover:shadow-md hover:border-[#1CC2B1] transition-all duration-300 group">
     {/* Header */}
     <div className="flex items-start justify-between mb-4">
       <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -480,7 +484,7 @@ const ProjectCard = ({
     {/* Action Button */}
     <button
       onClick={onViewTasks}
-      className="w-full py-2.5 bg-[#EFFFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center justify-center gap-2 text-sm"
+      className="w-full py-2.5 bg-[#c3c3c3] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center justify-center gap-2 text-sm"
     >
       <Eye className="w-4 h-4" />
       View Tasks
@@ -626,7 +630,7 @@ const StatsSection = ({
 }: {
   counts: { total: number; planned: number; active: number; completed: number };
 }) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
     {STATS_CONFIG.map((stat) => {
       const IconComponent = stat.icon;
       const value = counts[stat.id as keyof typeof counts];
@@ -635,30 +639,69 @@ const StatsSection = ({
       return (
         <div
           key={stat.id}
-          className="bg-white rounded-2xl p-6 border border-[#D9F3EE] hover:shadow-md transition-all duration-300"
+          className={`${stat.mainBgColor} rounded-2xl p-5 border border-white/30 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] group relative overflow-hidden backdrop-blur-sm`}
         >
-          <div className="flex items-center justify-between mb-4">
-            <div
-              className={`w-12 h-12 rounded-xl ${stat.bgColor} flex items-center justify-center`}
-            >
-              <IconComponent className={`w-6 h-6 ${stat.color}`} />
+          {/* Animated gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+          {/* Subtle shine effect */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/50 to-transparent transform -translate-y-full group-hover:translate-y-0 transition-transform duration-700" />
+
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-12 h-12 rounded-xl ${stat.bgColor} flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-lg border border-white/30`}
+                >
+                  <IconComponent
+                    className={`w-6 h-6 ${stat.color} drop-shadow-sm`}
+                  />
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-[#0E3554]/80 uppercase tracking-wider">
+                    {stat.label}
+                  </div>
+                  <div className="text-2xl font-bold text-[#0E3554] mt-1">
+                    {value}
+                  </div>
+                </div>
+              </div>
+
+              {/* Percentage badge */}
+              <div className="text-right">
+                <div className="w-14 h-14 bg-white/40 rounded-full flex items-center justify-center border border-white/50 shadow-lg">
+                  <span className="text-lg font-black text-[#0E3554]">
+                    {percentage}%
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-[#0E3554]">{value}</div>
-              <div className="text-sm text-slate-500">{percentage}%</div>
+
+            {/* Enhanced progress bar */}
+            <div className="mt-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-medium text-[#0E3554]/80">
+                  Progress
+                </span>
+                <span className="text-xs font-bold text-[#0E3554]">
+                  {percentage}%
+                </span>
+              </div>
+              <div className="w-full bg-white/30 rounded-full h-2 shadow-inner overflow-hidden">
+                <div
+                  className={`h-2 rounded-full transition-all duration-1000 ease-out bg-gradient-to-r from-[#0E3554] to-[#0E3554]/80 shadow-md group-hover:shadow-lg relative overflow-hidden`}
+                  style={{ width: `${percentage}%` }}
+                >
+                  {/* Shimmer effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 animate-shimmer" />
+                </div>
+              </div>
             </div>
           </div>
-          <div className="text-sm font-medium text-[#0E3554] uppercase tracking-wide">
-            {stat.label}
-          </div>
-          <div className="w-full bg-[#EFFFFA] rounded-full h-1.5 mt-3">
-            <div
-              className={`h-1.5 rounded-full transition-all duration-500 ${
-                stat.id === "active" ? "bg-[#1CC2B1]" : "bg-[#0E3554]"
-              }`}
-              style={{ width: `${percentage}%` }}
-            />
-          </div>
+
+          {/* Corner accents */}
+          <div className="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-white/40 rounded-tr-xl" />
+          <div className="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-white/40 rounded-bl-xl" />
         </div>
       );
     })}
@@ -680,7 +723,7 @@ const TaskList = ({
     {tasks.map((task) => (
       <div
         key={task._id}
-        className="bg-white rounded-2xl p-4 border border-[#D9F3EE] hover:shadow-md transition-all duration-300"
+        className="bg-gray-100 rounded-2xl p-4 border border-[#D9F3EE] hover:shadow-md transition-all duration-300"
       >
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
@@ -1138,7 +1181,7 @@ export default function AdminDashboard() {
   if (error) return <ErrorState error={error} onRetry={fetchProjects} />;
 
   return (
-    <div className="min-h-screen bg-[#EFFFFA] p-4 sm:p-6">
+    <div className="min-h-screen bg-gray-200 p-4 sm:p-6">
       {/* Modern Header */}
       <header className="bg-gradient-to-br from-[#0E3554] to-[#1CC2B1] rounded-2xl p-4 sm:p-6 mb-6 text-white relative">
         <div className="absolute inset-0">
