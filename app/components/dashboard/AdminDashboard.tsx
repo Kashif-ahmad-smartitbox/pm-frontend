@@ -141,50 +141,50 @@ const STATS_CONFIG = [
     id: "total",
     label: "Total Projects",
     icon: FolderOpen,
-    color: "text-slate-700",
-    bgColor: "bg-slate-50",
+    color: "text-[#0E3554]",
+    bgColor: "bg-[#E1F3F0]",
   },
   {
     id: "planned",
     label: "Planned",
     icon: Clock,
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
+    color: "text-[#0E3554]",
+    bgColor: "bg-[#E0FFFA]",
   },
   {
     id: "active",
     label: "In Progress",
     icon: TrendingUp,
-    color: "text-amber-600",
-    bgColor: "bg-amber-50",
+    color: "text-[#1CC2B1]",
+    bgColor: "bg-[#FFF4DD]",
   },
   {
     id: "completed",
     label: "Completed",
     icon: CheckCircle,
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-50",
+    color: "text-[#1CC2B1]",
+    bgColor: "bg-[#E1F3F0]",
   },
 ] as const;
 
 const STATUS_CONFIG = {
   planned: {
     label: "Planned",
-    color: "bg-blue-50 text-blue-700",
+    color: "bg-[#E0FFFA] text-[#0E3554]",
     icon: Clock,
-    iconColor: "text-blue-600",
+    iconColor: "text-[#0E3554]",
   },
   active: {
     label: "In Progress",
-    color: "bg-amber-50 text-amber-700",
+    color: "bg-[#FFF4DD] text-[#E6A93A]",
     icon: TrendingUp,
-    iconColor: "text-amber-600",
+    iconColor: "text-[#E6A93A]",
   },
   completed: {
     label: "Completed",
-    color: "bg-emerald-50 text-emerald-700",
+    color: "bg-[#E1F3F0] text-[#1CC2B1]",
     icon: CheckCircle,
-    iconColor: "text-emerald-600",
+    iconColor: "text-[#1CC2B1]",
   },
 } as const;
 
@@ -197,27 +197,27 @@ const TASK_STATUS_CONFIG = {
   },
   in_progress: {
     label: "In Progress",
-    color: "bg-blue-50 text-blue-700",
+    color: "bg-[#E0FFFA] text-[#0E3554]",
     icon: BarChart3,
-    iconColor: "text-blue-600",
+    iconColor: "text-[#0E3554]",
   },
   done: {
     label: "Done",
-    color: "bg-emerald-50 text-emerald-700",
+    color: "bg-[#E1F3F0] text-[#1CC2B1]",
     icon: CheckCircle,
-    iconColor: "text-emerald-600",
+    iconColor: "text-[#1CC2B1]",
   },
 } as const;
 
 const PRIORITY_CONFIG = {
   low: {
     label: "Low",
-    color: "bg-emerald-50 text-emerald-700",
+    color: "bg-[#E1F3F0] text-[#1CC2B1]",
     icon: TrendingUp,
   },
   medium: {
     label: "Medium",
-    color: "bg-amber-50 text-amber-700",
+    color: "bg-[#FFF4DD] text-[#E6A93A]",
     icon: AlertCircle,
   },
   high: {
@@ -336,7 +336,7 @@ const ProfileDropdown = ({
       <div className="relative">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors border border-white/20"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors border border-white/20 z-50"
         >
           <div className="text-right">
             <div className="text-sm font-medium text-white">
@@ -352,9 +352,9 @@ const ProfileDropdown = ({
         </button>
 
         {isOpen && (
-          <div className="absolute right-0 top-12 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50 min-w-48">
-            <div className="px-4 py-3 border-b border-slate-100">
-              <div className="text-sm font-medium text-slate-900">
+          <div className="absolute right-0 top-12 bg-white rounded-xl shadow-lg border border-[#D9F3EE] py-2 z-50 min-w-48">
+            <div className="px-4 py-3 border-b border-[#D9F3EE]">
+              <div className="text-sm font-medium text-[#0E3554]">
                 {user.name || "Unknown User"}
               </div>
               <div className="text-xs text-slate-500">
@@ -400,15 +400,15 @@ const ProjectCard = ({
   menuOpen: boolean;
   onToggleMenu: () => void;
 }) => (
-  <div className="bg-white rounded-2xl p-5 border border-slate-100 hover:shadow-md hover:border-slate-200 transition-all duration-300 group">
+  <div className="bg-white rounded-2xl p-5 border border-[#D9F3EE] hover:shadow-md hover:border-[#1CC2B1] transition-all duration-300 group">
     {/* Header */}
     <div className="flex items-start justify-between mb-4">
       <div className="flex items-start gap-3 flex-1 min-w-0">
-        <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center flex-shrink-0">
-          <FolderOpen className="w-5 h-5 text-slate-600" />
+        <div className="w-10 h-10 bg-[#EFFFFA] rounded-xl flex items-center justify-center flex-shrink-0">
+          <FolderOpen className="w-5 h-5 text-[#0E3554]" />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-semibold text-slate-900 truncate mb-1">
+          <h3 className="text-lg font-semibold text-[#0E3554] truncate mb-1">
             {project.projectName}
           </h3>
           <div className="flex items-center gap-2 text-sm text-slate-600">
@@ -424,16 +424,16 @@ const ProjectCard = ({
         <div className="relative">
           <button
             onClick={onToggleMenu}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+            className="p-2 text-slate-400 hover:text-[#0E3554] hover:bg-[#EFFFFA] rounded-lg transition-colors"
           >
             <MoreVertical className="w-4 h-4" />
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-10 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-10 min-w-36">
+            <div className="absolute right-0 top-10 bg-white rounded-xl shadow-lg border border-[#D9F3EE] py-1 z-10 min-w-36">
               <button
                 onClick={() => onEdit(project)}
-                className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                className="w-full px-3 py-2 text-left text-sm text-[#0E3554] hover:bg-[#EFFFFA] flex items-center gap-2 transition-colors"
               >
                 <Edit className="w-4 h-4" />
                 Edit
@@ -455,19 +455,19 @@ const ProjectCard = ({
     <div className="space-y-3 mb-4">
       <div className="flex items-center justify-between text-sm">
         <span className="text-slate-500">Manager</span>
-        <span className="font-medium text-slate-900">
+        <span className="font-medium text-[#0E3554]">
           {project.projectManager?.name || "N/A"}
         </span>
       </div>
       <div className="flex items-center justify-between text-sm">
         <span className="text-slate-500">Type</span>
-        <span className="font-medium text-slate-900">
+        <span className="font-medium text-[#0E3554]">
           {project.projectType?.name || "N/A"}
         </span>
       </div>
       <div className="flex items-center justify-between text-sm">
         <span className="text-slate-500">Start Date</span>
-        <span className="font-medium text-slate-900">
+        <span className="font-medium text-[#0E3554]">
           {project.startDate
             ? new Date(project.startDate).toLocaleDateString()
             : "N/A"}
@@ -478,7 +478,7 @@ const ProjectCard = ({
     {/* Action Button */}
     <button
       onClick={onViewTasks}
-      className="w-full py-2.5 bg-slate-50 text-slate-700 rounded-lg font-medium hover:bg-slate-100 transition-colors flex items-center justify-center gap-2 text-sm"
+      className="w-full py-2.5 bg-[#EFFFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center justify-center gap-2 text-sm"
     >
       <Eye className="w-4 h-4" />
       View Tasks
@@ -501,16 +501,16 @@ const ProjectListItem = ({
   menuOpen: boolean;
   onToggleMenu: () => void;
 }) => (
-  <div className="bg-white rounded-2xl p-4 border border-slate-100 hover:shadow-md transition-all duration-300">
+  <div className="bg-white rounded-2xl p-4 border border-[#D9F3EE] hover:shadow-md transition-all duration-300">
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-4 flex-1">
-        <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center">
-          <FolderOpen className="w-6 h-6 text-slate-600" />
+        <div className="w-12 h-12 bg-[#EFFFFA] rounded-xl flex items-center justify-center">
+          <FolderOpen className="w-6 h-6 text-[#0E3554]" />
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-base font-semibold text-slate-900 truncate">
+            <h3 className="text-base font-semibold text-[#0E3554] truncate">
               {project.projectName}
             </h3>
             <StatusBadge status={project.status} />
@@ -538,7 +538,7 @@ const ProjectListItem = ({
       <div className="flex items-center gap-2">
         <button
           onClick={onViewTasks}
-          className="px-3 py-1.5 bg-slate-50 text-slate-700 rounded-lg font-medium hover:bg-slate-100 transition-colors flex items-center gap-1.5 text-sm"
+          className="px-3 py-1.5 bg-[#EFFFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center gap-1.5 text-sm"
         >
           <Eye className="w-4 h-4" />
           Tasks
@@ -547,16 +547,16 @@ const ProjectListItem = ({
         <div className="relative">
           <button
             onClick={onToggleMenu}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+            className="p-2 text-slate-400 hover:text-[#0E3554] hover:bg-[#EFFFFA] rounded-lg transition-colors"
           >
             <MoreVertical className="w-4 h-4" />
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-10 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-10 min-w-32">
+            <div className="absolute right-0 top-10 bg-white rounded-xl shadow-lg border border-[#D9F3EE] py-1 z-10 min-w-32">
               <button
                 onClick={() => onEdit(project)}
-                className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                className="w-full px-3 py-2 text-left text-sm text-[#0E3554] hover:bg-[#EFFFFA] flex items-center gap-2 transition-colors"
               >
                 <Edit className="w-4 h-4" />
                 Edit
@@ -577,11 +577,11 @@ const ProjectListItem = ({
 );
 
 const LoadingState = () => (
-  <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+  <div className="min-h-screen bg-[#EFFFFA] flex items-center justify-center p-6">
     <div className="text-center space-y-4">
-      <div className="w-12 h-12 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+      <div className="w-12 h-12 border-3 border-[#D9F3EE] border-t-[#1CC2B1] rounded-full animate-spin mx-auto"></div>
       <div className="space-y-2">
-        <h3 className="text-lg font-semibold text-slate-900">
+        <h3 className="text-lg font-semibold text-[#0E3554]">
           Loading Dashboard
         </h3>
         <p className="text-slate-600">Preparing your workspace...</p>
@@ -597,20 +597,20 @@ const ErrorState = ({
   error: string;
   onRetry: () => void;
 }) => (
-  <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+  <div className="min-h-screen bg-[#EFFFFA] flex items-center justify-center p-6">
     <div className="text-center space-y-6 max-w-md">
       <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto">
         <AlertCircle className="w-6 h-6 text-red-600" />
       </div>
       <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-slate-900">
+        <h3 className="text-lg font-semibold text-[#0E3554]">
           Unable to Load Dashboard
         </h3>
         <p className="text-slate-600">{error}</p>
       </div>
       <button
         onClick={onRetry}
-        className="px-6 py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 mx-auto"
+        className="px-6 py-3 bg-[#0E3554] text-white rounded-lg font-medium hover:bg-[#0A2A42] transition-colors flex items-center justify-center gap-2 mx-auto"
       >
         <RefreshCw className="w-4 h-4" />
         Try Again
@@ -633,7 +633,7 @@ const StatsSection = ({
       return (
         <div
           key={stat.id}
-          className="bg-white rounded-2xl p-6 border border-slate-100 hover:shadow-md transition-all duration-300"
+          className="bg-white rounded-2xl p-6 border border-[#D9F3EE] hover:shadow-md transition-all duration-300"
         >
           <div className="flex items-center justify-between mb-4">
             <div
@@ -642,18 +642,18 @@ const StatsSection = ({
               <IconComponent className={`w-6 h-6 ${stat.color}`} />
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-slate-900">{value}</div>
+              <div className="text-2xl font-bold text-[#0E3554]">{value}</div>
               <div className="text-sm text-slate-500">{percentage}%</div>
             </div>
           </div>
-          <div className="text-sm font-medium text-slate-700 uppercase tracking-wide">
+          <div className="text-sm font-medium text-[#0E3554] uppercase tracking-wide">
             {stat.label}
           </div>
-          <div className="w-full bg-slate-100 rounded-full h-1.5 mt-3">
+          <div className="w-full bg-[#EFFFFA] rounded-full h-1.5 mt-3">
             <div
-              className={`h-1.5 rounded-full transition-all duration-500 ${stat.bgColor
-                .replace("bg-", "bg-")
-                .replace("-50", "-500")}`}
+              className={`h-1.5 rounded-full transition-all duration-500 ${
+                stat.id === "active" ? "bg-[#1CC2B1]" : "bg-[#0E3554]"
+              }`}
               style={{ width: `${percentage}%` }}
             />
           </div>
@@ -678,11 +678,11 @@ const TaskList = ({
     {tasks.map((task) => (
       <div
         key={task._id}
-        className="bg-white rounded-2xl p-4 border border-slate-100 hover:shadow-md transition-all duration-300"
+        className="bg-white rounded-2xl p-4 border border-[#D9F3EE] hover:shadow-md transition-all duration-300"
       >
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
-            <h3 className="text-base font-semibold text-slate-900 mb-2 flex items-center gap-2">
+            <h3 className="text-base font-semibold text-[#0E3554] mb-2 flex items-center gap-2">
               <FileText className="w-4 h-4 text-slate-400" />
               {task.title}
             </h3>
@@ -722,7 +722,7 @@ const TaskList = ({
               {task.assignees.map((assignee) => (
                 <span
                   key={assignee._id}
-                  className="text-xs bg-slate-100 px-2 py-1 rounded-md text-slate-700 font-medium"
+                  className="text-xs bg-[#EFFFFA] px-2 py-1 rounded-md text-[#0E3554] font-medium"
                 >
                   {assignee.name}
                 </span>
@@ -732,17 +732,17 @@ const TaskList = ({
         )}
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-100">
+        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[#D9F3EE]">
           <button
             onClick={() => onTaskClick(task)}
-            className="px-3 py-1.5 bg-slate-50 text-slate-700 rounded-lg font-medium hover:bg-slate-100 transition-colors flex items-center gap-1.5 text-sm"
+            className="px-3 py-1.5 bg-[#EFFFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center gap-1.5 text-sm"
           >
             <FileText className="w-3 h-3" />
             View Notes
           </button>
           <button
             onClick={() => onEditTask(task)}
-            className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg font-medium hover:bg-blue-100 transition-colors flex items-center gap-1.5 text-sm"
+            className="px-3 py-1.5 bg-[#E0FFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center gap-1.5 text-sm"
           >
             <Edit className="w-3 h-3" />
             Edit Task
@@ -762,16 +762,16 @@ const TaskList = ({
 
 const EmptyTasksState = ({ onCreateTask }: { onCreateTask: () => void }) => (
   <div className="text-center py-12">
-    <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+    <div className="w-16 h-16 bg-[#EFFFFA] rounded-2xl flex items-center justify-center mx-auto mb-4">
       <FileText className="w-6 h-6 text-slate-400" />
     </div>
-    <h3 className="text-lg font-semibold text-slate-900 mb-2">No tasks yet</h3>
+    <h3 className="text-lg font-semibold text-[#0E3554] mb-2">No tasks yet</h3>
     <p className="text-slate-600 mb-6">
       Get started by creating the first task
     </p>
     <button
       onClick={onCreateTask}
-      className="px-6 py-2.5 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors flex items-center gap-2 mx-auto"
+      className="px-6 py-2.5 bg-[#0E3554] text-white rounded-lg font-medium hover:bg-[#0A2A42] transition-colors flex items-center gap-2 mx-auto"
     >
       <Plus className="w-4 h-4" />
       Create First Task
@@ -781,7 +781,7 @@ const EmptyTasksState = ({ onCreateTask }: { onCreateTask: () => void }) => (
 
 const LoadingTasksState = () => (
   <div className="text-center py-12">
-    <div className="w-8 h-8 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+    <div className="w-8 h-8 border-2 border-[#D9F3EE] border-t-[#1CC2B1] rounded-full animate-spin mx-auto"></div>
     <p className="mt-3 text-slate-600 text-sm font-medium">
       Loading project tasks...
     </p>
@@ -823,7 +823,7 @@ const Pagination = ({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+    <div className="flex items-center justify-between px-6 py-4 border-t border-[#D9F3EE] bg-[#EFFFFA]">
       <div className="text-sm text-slate-600">
         Showing {startItem}-{endItem} of {totalItems} projects
       </div>
@@ -832,7 +832,7 @@ const Pagination = ({
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="p-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded-lg border border-[#D9F3EE] text-slate-600 hover:bg-[#EFFFFA] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -843,8 +843,8 @@ const Pagination = ({
             onClick={() => onPageChange(page)}
             className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
               currentPage === page
-                ? "bg-slate-900 text-white"
-                : "text-slate-600 hover:bg-slate-100 border border-slate-300"
+                ? "bg-[#0E3554] text-white"
+                : "text-slate-600 hover:bg-[#EFFFFA] border border-[#D9F3EE]"
             }`}
           >
             {page}
@@ -854,7 +854,7 @@ const Pagination = ({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="p-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded-lg border border-[#D9F3EE] text-slate-600 hover:bg-[#EFFFFA] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronRightIcon className="w-4 h-4" />
         </button>
@@ -1135,55 +1135,62 @@ export default function AdminDashboard() {
   if (error) return <ErrorState error={error} onRetry={fetchProjects} />;
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <div className="min-h-screen bg-[#EFFFFA] p-6">
       {/* Modern Header */}
-      <header className="bg-slate-900 rounded-2xl p-6 mb-7 text-white">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center">
-              <LayoutDashboard className="w-6 h-6 text-slate-900" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">
-                Project Dashboard
-              </h1>
-              <p className="text-slate-300 mt-1">
-                Manage your projects and tasks
-              </p>
-            </div>
-          </div>
+      <header className="bg-gradient-to-br from-[#0E3554] to-[#1CC2B1] rounded-2xl p-6 mb-7 text-white relative">
+        <div className="absolute inset-0">
+          <div className="absolute top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl opacity-60" />
+          <div className="absolute bottom-20 -right-20 w-80 h-80 bg-black/10 rounded-full blur-3xl opacity-60" />
+        </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowProjectTypesModal(true)}
-              className="px-4 py-2.5 bg-white/10 text-slate-200 rounded-lg font-medium hover:bg-white/20 transition-colors flex items-center gap-2 border border-white/20"
-            >
-              <Building className="w-4 h-4" />
-              Project Types
-            </button>
-
-            <button
-              onClick={() => setShowUserManagementModal(true)}
-              className="px-4 py-2.5 bg-white/10 text-slate-200 rounded-lg font-medium hover:bg-white/20 transition-colors flex items-center gap-2 border border-white/20"
-            >
-              <Users className="w-4 h-4" />
-              Team Management
-            </button>
-
-            {user ? (
-              <ProfileDropdown user={user} onLogout={handleLogout} />
-            ) : (
-              <div className="flex items-center gap-3 px-3 py-2 rounded-lg border border-white/20 opacity-70">
-                <div className="text-right">
-                  <div className="text-sm font-medium text-white">
-                    Not logged in
-                  </div>
-                </div>
-                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
+        <div className="relative z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4">
+                <img className="w-12 h-12" src="/logo.png" alt="site logo" />
+                <div>
+                  <h1 className="text-2xl font-bold text-white">
+                    SKC Project Management
+                  </h1>
+                  <p className="text-teal-100 mt-1">
+                    Enterprise Management System
+                  </p>
                 </div>
               </div>
-            )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowProjectTypesModal(true)}
+                className="px-4 py-2.5 bg-white/10 text-slate-200 rounded-lg font-medium hover:bg-white/20 transition-colors flex items-center gap-2 border border-white/20"
+              >
+                <Building className="w-4 h-4" />
+                Project Types
+              </button>
+
+              <button
+                onClick={() => setShowUserManagementModal(true)}
+                className="px-4 py-2.5 bg-white/10 text-slate-200 rounded-lg font-medium hover:bg-white/20 transition-colors flex items-center gap-2 border border-white/20"
+              >
+                <Users className="w-4 h-4" />
+                Team Management
+              </button>
+
+              {user ? (
+                <ProfileDropdown user={user} onLogout={handleLogout} />
+              ) : (
+                <div className="flex items-center gap-3 px-3 py-2 rounded-lg border border-white/20 opacity-70">
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-white">
+                      Not logged in
+                    </div>
+                  </div>
+                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -1195,25 +1202,25 @@ export default function AdminDashboard() {
         )}
 
         {/* Projects Section */}
-        <section className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+        <section className="bg-white rounded-2xl border border-[#D9F3EE] overflow-hidden">
           {/* Section Header */}
-          <div className="border-b border-slate-100 p-6">
+          <div className="border-b border-[#D9F3EE] p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-[#0E3554] flex items-center gap-3">
                   {selectedProject ? (
                     <>
-                      <FolderOpen className="w-5 h-5 text-blue-600" />
+                      <FolderOpen className="w-5 h-5 text-[#1CC2B1]" />
                       {selectedProject.project.projectName}
                     </>
                   ) : viewAllProjects ? (
                     <>
-                      <Archive className="w-5 h-5 text-slate-600" />
+                      <Archive className="w-5 h-5 text-[#0E3554]" />
                       All Projects ({pagination.totalItems})
                     </>
                   ) : (
                     <>
-                      <TrendingUp className="w-5 h-5 text-slate-600" />
+                      <TrendingUp className="w-5 h-5 text-[#0E3554]" />
                       Latest Projects
                     </>
                   )}
@@ -1232,14 +1239,14 @@ export default function AdminDashboard() {
                   <>
                     <button
                       onClick={handleBackToProjects}
-                      className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium transition-colors flex items-center gap-2"
+                      className="px-4 py-2 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-colors flex items-center gap-2"
                     >
                       <ArrowLeft className="w-4 h-4" />
                       Back
                     </button>
                     <button
                       onClick={() => setShowNewTaskModal(true)}
-                      className="px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors flex items-center gap-2"
+                      className="px-4 py-2 bg-[#0E3554] text-white rounded-lg font-medium hover:bg-[#0A2A42] transition-colors flex items-center gap-2"
                     >
                       <Plus className="w-4 h-4" />
                       New Task
@@ -1247,13 +1254,13 @@ export default function AdminDashboard() {
                   </>
                 ) : viewAllProjects ? (
                   <>
-                    <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                    <div className="flex items-center gap-1 bg-[#EFFFFA] rounded-lg p-1">
                       <button
                         onClick={() => setViewMode("grid")}
                         className={`p-2 rounded-md transition-all ${
                           viewMode === "grid"
-                            ? "bg-white text-slate-900 shadow-sm"
-                            : "text-slate-600 hover:text-slate-900"
+                            ? "bg-white text-[#0E3554] shadow-sm"
+                            : "text-slate-600 hover:text-[#0E3554]"
                         }`}
                       >
                         <Grid3X3 className="w-4 h-4" />
@@ -1262,8 +1269,8 @@ export default function AdminDashboard() {
                         onClick={() => setViewMode("list")}
                         className={`p-2 rounded-md transition-all ${
                           viewMode === "list"
-                            ? "bg-white text-slate-900 shadow-sm"
-                            : "text-slate-600 hover:text-slate-900"
+                            ? "bg-white text-[#0E3554] shadow-sm"
+                            : "text-slate-600 hover:text-[#0E3554]"
                         }`}
                       >
                         <List className="w-4 h-4" />
@@ -1277,13 +1284,13 @@ export default function AdminDashboard() {
                         placeholder="Search projects..."
                         value={searchTerm}
                         onChange={(e) => handleSearch(e.target.value)}
-                        className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white w-64 transition-all"
+                        className="pl-10 pr-4 py-2 border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1] bg-white w-64 transition-all"
                       />
                     </div>
 
                     <button
                       onClick={handleBackToOverview}
-                      className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium transition-colors flex items-center gap-2"
+                      className="px-4 py-2 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-colors flex items-center gap-2"
                     >
                       <ArrowLeft className="w-4 h-4" />
                       Overview
@@ -1293,14 +1300,14 @@ export default function AdminDashboard() {
                   <>
                     <button
                       onClick={() => setViewAllProjects(true)}
-                      className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors flex items-center gap-2"
+                      className="px-4 py-2 bg-[#EFFFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center gap-2"
                     >
                       View All
                       <ChevronRight className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => setShowNewProjectModal(true)}
-                      className="px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors flex items-center gap-2"
+                      className="px-4 py-2 bg-[#0E3554] text-white rounded-lg font-medium hover:bg-[#0A2A42] transition-colors flex items-center gap-2"
                     >
                       <Plus className="w-4 h-4" />
                       New Project
@@ -1312,18 +1319,18 @@ export default function AdminDashboard() {
 
             {selectedProject && (
               <div className="flex items-center gap-4 mt-4">
-                <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-slate-600 bg-[#EFFFFA] px-3 py-1.5 rounded-lg">
                   <MapPin className="w-4 h-4" />
                   {selectedProject.project.location}
                 </div>
-                <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-[#0E3554] bg-[#E0FFFA] px-3 py-1.5 rounded-lg">
                   <Calendar className="w-4 h-4" />
                   Start:{" "}
                   {new Date(
                     selectedProject.project.startDate
                   ).toLocaleDateString()}
                 </div>
-                <div className="flex items-center gap-2 text-sm text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-[#1CC2B1] bg-[#E1F3F0] px-3 py-1.5 rounded-lg">
                   <Calendar className="w-4 h-4" />
                   End:{" "}
                   {new Date(
@@ -1332,7 +1339,7 @@ export default function AdminDashboard() {
                 </div>
                 <button
                   onClick={() => handleEditProject(selectedProject.project)}
-                  className="ml-auto px-3 py-1.5 text-blue-600 hover:text-blue-800 font-medium transition-colors flex items-center gap-1.5 text-sm"
+                  className="ml-auto px-3 py-1.5 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-colors flex items-center gap-1.5 text-sm"
                 >
                   <Edit className="w-4 h-4" />
                   Edit Project
@@ -1437,14 +1444,14 @@ export default function AdminDashboard() {
                 {/* View All Card */}
                 {pagination.totalItems > 3 && (
                   <div
-                    className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-6 hover:border-slate-400 transition-colors flex items-center justify-center cursor-pointer group"
+                    className="bg-[#EFFFFA] border-2 border-dashed border-[#D9F3EE] rounded-2xl p-6 hover:border-[#1CC2B1] transition-colors flex items-center justify-center cursor-pointer group"
                     onClick={() => setViewAllProjects(true)}
                   >
                     <div className="text-center space-y-3">
-                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mx-auto group-hover:bg-slate-100 transition-colors">
-                        <ChevronRight className="w-6 h-6 text-slate-600" />
+                      <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mx-auto group-hover:bg-[#EFFFFA] transition-colors">
+                        <ChevronRight className="w-6 h-6 text-[#0E3554]" />
                       </div>
-                      <h3 className="font-semibold text-slate-900">
+                      <h3 className="font-semibold text-[#0E3554]">
                         View All Projects
                       </h3>
                       <p className="text-slate-600 text-sm">

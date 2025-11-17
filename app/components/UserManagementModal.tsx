@@ -313,17 +313,17 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     const roleConfig = {
       project_manager: {
         label: "Project Manager",
-        color: "bg-purple-50 text-purple-700",
+        color: "bg-[#E0FFFA] text-[#0E3554]",
         icon: Building,
       },
       team_member: {
         label: "Team Member",
-        color: "bg-blue-50 text-blue-700",
+        color: "bg-[#E1F3F0] text-[#1CC2B1]",
         icon: Users,
       },
       admin: {
         label: "Admin",
-        color: "bg-red-50 text-red-700",
+        color: "bg-[#FFF4DD] text-[#E6A93A]",
         icon: User,
       },
     };
@@ -351,24 +351,24 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   return (
     <>
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col">
+        <div className="bg-white rounded-2xl shadow-sm border border-[#D9F3EE] overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col">
           {/* Header */}
-          <div className="bg-slate-900 text-white p-6 flex-shrink-0">
+          <div className="bg-gradient-to-br from-[#0E3554] to-[#1CC2B1] text-white p-6 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center">
-                  <Users className="w-6 h-6 text-slate-900" />
+                  <Users className="w-6 h-6 text-[#0E3554]" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold">User Management</h2>
-                  <p className="text-slate-300 text-sm mt-1">
+                  <p className="text-teal-100 text-sm mt-1">
                     Manage team members and project managers
                   </p>
                 </div>
               </div>
               <button
                 onClick={handleClose}
-                className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
+                className="w-8 h-8 flex items-center justify-center text-teal-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
                 disabled={submitting}
               >
                 <X className="w-5 h-5" />
@@ -377,14 +377,14 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           </div>
 
           {/* Tabs */}
-          <div className="border-b border-slate-100 bg-white flex-shrink-0">
+          <div className="border-b border-[#D9F3EE] bg-white flex-shrink-0">
             <div className="flex">
               <button
                 onClick={() => setActiveTab("existing")}
                 className={`flex-1 px-6 py-4 text-sm font-semibold border-b-2 transition-all duration-200 ${
                   activeTab === "existing"
-                    ? "border-slate-900 text-slate-900 bg-slate-50"
-                    : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                    ? "border-[#0E3554] text-[#0E3554] bg-[#EFFFFA]"
+                    : "border-transparent text-slate-500 hover:text-[#0E3554] hover:bg-[#EFFFFA]"
                 }`}
               >
                 <div className="flex items-center gap-2 justify-center">
@@ -396,8 +396,8 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 onClick={() => setActiveTab("new")}
                 className={`flex-1 px-6 py-4 text-sm font-semibold border-b-2 transition-all duration-200 ${
                   activeTab === "new"
-                    ? "border-slate-900 text-slate-900 bg-slate-50"
-                    : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                    ? "border-[#0E3554] text-[#0E3554] bg-[#EFFFFA]"
+                    : "border-transparent text-slate-500 hover:text-[#0E3554] hover:bg-[#EFFFFA]"
                 }`}
               >
                 <div className="flex items-center gap-2 justify-center">
@@ -438,9 +438,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
                   {loading ? (
                     <div className="text-center py-12 space-y-4">
-                      <div className="w-12 h-12 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+                      <div className="w-12 h-12 border-3 border-[#D9F3EE] border-t-[#1CC2B1] rounded-full animate-spin mx-auto"></div>
                       <div className="space-y-2">
-                        <p className="text-slate-700 font-medium">
+                        <p className="text-[#0E3554] font-medium">
                           Loading users
                         </p>
                         <p className="text-slate-500 text-sm">
@@ -450,11 +450,11 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     </div>
                   ) : users.length === 0 ? (
                     <div className="text-center py-12 space-y-4">
-                      <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto">
+                      <div className="w-16 h-16 bg-[#EFFFFA] rounded-2xl flex items-center justify-center mx-auto">
                         <Users className="w-8 h-8 text-slate-400" />
                       </div>
                       <div className="space-y-2">
-                        <h3 className="text-lg font-semibold text-slate-800">
+                        <h3 className="text-lg font-semibold text-[#0E3554]">
                           No users found
                         </h3>
                         <p className="text-slate-600">
@@ -463,7 +463,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                       </div>
                       <button
                         onClick={() => setActiveTab("new")}
-                        className="px-6 py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors flex items-center gap-2 mx-auto"
+                        className="px-6 py-3 bg-[#0E3554] text-white rounded-lg font-medium hover:bg-[#0A2A42] transition-colors flex items-center gap-2 mx-auto"
                       >
                         <UserPlus className="w-4 h-4" />
                         Add First User
@@ -474,13 +474,13 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                       {users.map((user) => (
                         <div
                           key={user._id}
-                          className="bg-white border border-slate-100 rounded-2xl p-4 hover:border-slate-200 transition-all duration-300 group relative"
+                          className="bg-white border border-[#D9F3EE] rounded-2xl p-4 hover:border-[#1CC2B1] transition-all duration-300 group relative"
                         >
                           {editingUser === user._id ? (
                             // Edit Mode
                             <div className="space-y-4">
                               <div className="flex items-center justify-between">
-                                <h4 className="font-semibold text-slate-800">
+                                <h4 className="font-semibold text-[#0E3554]">
                                   Edit User
                                 </h4>
                                 <div className="flex items-center gap-2">
@@ -490,7 +490,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                  <label className="block text-sm font-medium text-slate-700">
+                                  <label className="block text-sm font-medium text-[#0E3554]">
                                     Name *
                                   </label>
                                   <input
@@ -500,12 +500,12 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                                     onChange={(e) =>
                                       handleEditInputChange(user._id, e)
                                     }
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
+                                    className="w-full px-3 py-2 border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]"
                                     placeholder="Enter name"
                                   />
                                 </div>
                                 <div className="space-y-2">
-                                  <label className="block text-sm font-medium text-slate-700">
+                                  <label className="block text-sm font-medium text-[#0E3554]">
                                     Email *
                                   </label>
                                   <input
@@ -515,7 +515,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                                     onChange={(e) =>
                                       handleEditInputChange(user._id, e)
                                     }
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
+                                    className="w-full px-3 py-2 border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]"
                                     placeholder="Enter email"
                                   />
                                 </div>
@@ -523,7 +523,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                  <label className="block text-sm font-medium text-slate-700">
+                                  <label className="block text-sm font-medium text-[#0E3554]">
                                     New Password
                                   </label>
                                   <input
@@ -535,12 +535,12 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                                     onChange={(e) =>
                                       handleEditInputChange(user._id, e)
                                     }
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
+                                    className="w-full px-3 py-2 border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]"
                                     placeholder="Leave blank to keep current"
                                   />
                                 </div>
                                 <div className="space-y-2">
-                                  <label className="block text-sm font-medium text-slate-700">
+                                  <label className="block text-sm font-medium text-[#0E3554]">
                                     Confirm Password
                                   </label>
                                   <input
@@ -553,17 +553,17 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                                     onChange={(e) =>
                                       handleEditInputChange(user._id, e)
                                     }
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
+                                    className="w-full px-3 py-2 border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]"
                                     placeholder="Confirm new password"
                                   />
                                 </div>
                               </div>
 
-                              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                              <div className="flex justify-end gap-3 pt-4 border-t border-[#D9F3EE]">
                                 <button
                                   onClick={cancelEditing}
                                   disabled={submitting}
-                                  className="px-4 py-2 text-slate-600 hover:text-slate-800 font-medium disabled:opacity-50 transition-colors hover:bg-slate-100 rounded-lg flex items-center gap-2"
+                                  className="px-4 py-2 text-[#0E3554] hover:text-[#1CC2B1] font-medium disabled:opacity-50 transition-colors hover:bg-[#EFFFFA] rounded-lg flex items-center gap-2"
                                 >
                                   <ArrowLeft className="w-4 h-4" />
                                   Cancel
@@ -571,7 +571,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                                 <button
                                   onClick={() => handleEditUser(user._id)}
                                   disabled={submitting}
-                                  className="px-4 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors disabled:opacity-50 flex items-center gap-2"
+                                  className="px-4 py-2 bg-[#0E3554] text-white rounded-lg font-medium hover:bg-[#0A2A42] transition-colors disabled:opacity-50 flex items-center gap-2"
                                 >
                                   <Save className="w-4 h-4" />
                                   {submitting ? "Saving..." : "Save Changes"}
@@ -582,11 +582,11 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                             // View Mode
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-4 flex-1">
-                                <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700 font-semibold text-lg">
+                                <div className="w-12 h-12 bg-[#EFFFFA] rounded-xl flex items-center justify-center text-[#0E3554] font-semibold text-lg">
                                   {user.name.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-slate-800 truncate">
+                                  <h4 className="font-semibold text-[#0E3554] truncate">
                                     {user.name}
                                   </h4>
                                   <p className="text-slate-600 text-sm truncate">
@@ -600,16 +600,16 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                                 <div className="relative">
                                   <button
                                     onClick={() => toggleMenu(user._id)}
-                                    className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+                                    className="p-2 text-slate-400 hover:text-[#0E3554] rounded-lg hover:bg-[#EFFFFA] transition-colors"
                                   >
                                     <MoreVertical className="w-4 h-4" />
                                   </button>
 
                                   {menuOpen === user._id && (
-                                    <div className="absolute right-0 top-10 bg-white border border-slate-200 rounded-xl shadow-lg z-10 min-w-36 overflow-hidden">
+                                    <div className="absolute right-0 top-10 bg-white border border-[#D9F3EE] rounded-xl shadow-lg z-10 min-w-36 overflow-hidden">
                                       <button
                                         onClick={() => startEditing(user._id)}
-                                        className="w-full px-4 py-3 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
+                                        className="w-full px-4 py-3 text-left text-sm text-[#0E3554] hover:bg-[#EFFFFA] flex items-center gap-2 transition-colors"
                                       >
                                         <Edit className="w-4 h-4" />
                                         Edit User
@@ -662,7 +662,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   <form onSubmit={handleSubmit} className="space-y-6">
                     {/* User Type Selection */}
                     <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-slate-700">
+                      <label className="block text-sm font-semibold text-[#0E3554]">
                         User Type *
                       </label>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -671,22 +671,22 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                           onClick={() => setUserType("team_member")}
                           className={`p-4 border-2 rounded-xl text-left transition-all duration-200 ${
                             userType === "team_member"
-                              ? "border-slate-900 bg-slate-50"
-                              : "border-slate-200 hover:border-slate-300"
+                              ? "border-[#0E3554] bg-[#EFFFFA]"
+                              : "border-[#D9F3EE] hover:border-[#0E3554]"
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             <div
                               className={`p-2 rounded-lg ${
                                 userType === "team_member"
-                                  ? "bg-slate-900 text-white"
-                                  : "bg-slate-100 text-slate-600"
+                                  ? "bg-[#0E3554] text-white"
+                                  : "bg-[#EFFFFA] text-[#0E3554]"
                               }`}
                             >
                               <Users className="w-5 h-5" />
                             </div>
                             <div>
-                              <div className="font-semibold text-slate-800">
+                              <div className="font-semibold text-[#0E3554]">
                                 Team Member
                               </div>
                               <div className="text-sm text-slate-600">
@@ -700,22 +700,22 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                           onClick={() => setUserType("project_manager")}
                           className={`p-4 border-2 rounded-xl text-left transition-all duration-200 ${
                             userType === "project_manager"
-                              ? "border-slate-900 bg-slate-50"
-                              : "border-slate-200 hover:border-slate-300"
+                              ? "border-[#0E3554] bg-[#EFFFFA]"
+                              : "border-[#D9F3EE] hover:border-[#0E3554]"
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             <div
                               className={`p-2 rounded-lg ${
                                 userType === "project_manager"
-                                  ? "bg-slate-900 text-white"
-                                  : "bg-slate-100 text-slate-600"
+                                  ? "bg-[#0E3554] text-white"
+                                  : "bg-[#EFFFFA] text-[#0E3554]"
                               }`}
                             >
                               <Building className="w-5 h-5" />
                             </div>
                             <div>
-                              <div className="font-semibold text-slate-800">
+                              <div className="font-semibold text-[#0E3554]">
                                 Project Manager
                               </div>
                               <div className="text-sm text-slate-600">
@@ -729,7 +729,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
                     {/* Name */}
                     <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-slate-700">
+                      <label className="block text-sm font-semibold text-[#0E3554]">
                         Full Name *
                       </label>
                       <div className="relative">
@@ -738,11 +738,11 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                           name="name"
                           value={formData.name}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
+                          className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
                             placeholder-slate-400 transition-all duration-200
-                            focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                            hover:border-slate-400 bg-white text-slate-900
-                            disabled:bg-slate-50 disabled:cursor-not-allowed"
+                            focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                            hover:border-[#0E3554] bg-white text-[#0E3554]
+                            disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
                           placeholder="Enter full name"
                           required
                           disabled={submitting}
@@ -755,7 +755,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
                     {/* Email */}
                     <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-slate-700">
+                      <label className="block text-sm font-semibold text-[#0E3554]">
                         Email Address *
                       </label>
                       <div className="relative">
@@ -764,11 +764,11 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                           name="email"
                           value={formData.email}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
+                          className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
                             placeholder-slate-400 transition-all duration-200
-                            focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                            hover:border-slate-400 bg-white text-slate-900
-                            disabled:bg-slate-50 disabled:cursor-not-allowed"
+                            focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                            hover:border-[#0E3554] bg-white text-[#0E3554]
+                            disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
                           placeholder="Enter email address"
                           required
                           disabled={submitting}
@@ -782,7 +782,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     {/* Password */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-3">
-                        <label className="block text-sm font-semibold text-slate-700">
+                        <label className="block text-sm font-semibold text-[#0E3554]">
                           Password *
                         </label>
                         <div className="relative">
@@ -791,11 +791,11 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                             name="password"
                             value={formData.password}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
+                            className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
                               transition-all duration-200
-                              focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                              hover:border-slate-400 bg-white text-slate-900
-                              disabled:bg-slate-50 disabled:cursor-not-allowed"
+                              focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                              hover:border-[#0E3554] bg-white text-[#0E3554]
+                              disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
                             placeholder="Enter password"
                             required
                             disabled={submitting}
@@ -806,7 +806,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                         </div>
                       </div>
                       <div className="space-y-3">
-                        <label className="block text-sm font-semibold text-slate-700">
+                        <label className="block text-sm font-semibold text-[#0E3554]">
                           Confirm Password *
                         </label>
                         <div className="relative">
@@ -815,11 +815,11 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                             name="confirmPassword"
                             value={formData.confirmPassword}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
+                            className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
                               transition-all duration-200
-                              focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                              hover:border-slate-400 bg-white text-slate-900
-                              disabled:bg-slate-50 disabled:cursor-not-allowed"
+                              focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                              hover:border-[#0E3554] bg-white text-[#0E3554]
+                              disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
                             placeholder="Confirm password"
                             required
                             disabled={submitting}
@@ -837,12 +837,12 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="border-t border-slate-100 p-6 bg-white flex-shrink-0">
+          <div className="border-t border-[#D9F3EE] p-6 bg-white flex-shrink-0">
             <div className="flex justify-end gap-3">
               <button
                 onClick={handleClose}
                 disabled={submitting}
-                className="px-6 py-2.5 text-slate-600 hover:text-slate-800 font-medium disabled:opacity-50 transition-colors hover:bg-slate-100 rounded-lg"
+                className="px-6 py-2.5 text-[#0E3554] hover:text-[#1CC2B1] font-medium disabled:opacity-50 transition-colors hover:bg-[#EFFFFA] rounded-lg"
               >
                 {activeTab === "existing" ? "Close" : "Cancel"}
               </button>
@@ -851,7 +851,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   onClick={handleSubmit}
                   disabled={submitting}
                   className="px-6 py-2.5 rounded-lg font-medium
-                    bg-slate-900 hover:bg-slate-800
+                    bg-[#0E3554] hover:bg-[#0A2A42]
                     transition-all duration-200
                     disabled:opacity-70 disabled:cursor-not-allowed
                     flex items-center justify-center gap-2 text-white"

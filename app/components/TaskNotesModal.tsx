@@ -98,19 +98,19 @@ const TaskNotesModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden w-full max-w-2xl max-h-[85vh] flex flex-col">
+      <div className="bg-white rounded-2xl shadow-sm border border-[#D9F3EE] overflow-hidden w-full max-w-2xl max-h-[85vh] flex flex-col">
         {/* Header */}
-        <div className="bg-slate-900 text-white p-6 flex-shrink-0">
+        <div className="bg-gradient-to-br from-[#0E3554] to-[#1CC2B1] text-white p-6 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center flex-shrink-0">
-                <MessageSquare className="w-6 h-6 text-slate-900" />
+                <MessageSquare className="w-6 h-6 text-[#0E3554]" />
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-xl font-bold text-white truncate">
                   {task.title}
                 </h2>
-                <div className="text-slate-300 text-sm mt-1 flex items-start gap-2">
+                <div className="text-teal-100 text-sm mt-1 flex items-start gap-2">
                   <FileText className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <p className="flex-1 min-w-0 line-clamp-2 leading-relaxed">
                     {task.description}
@@ -120,7 +120,7 @@ const TaskNotesModal = ({
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
+              className="w-8 h-8 flex items-center justify-center text-teal-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
             >
               <X className="w-5 h-5" />
             </button>
@@ -128,17 +128,17 @@ const TaskNotesModal = ({
         </div>
 
         {/* Task Info */}
-        <div className="border-b border-slate-100 p-4 bg-slate-50 flex-shrink-0">
+        <div className="border-b border-[#D9F3EE] p-4 bg-[#EFFFFA] flex-shrink-0">
           <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-            <span className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+            <span className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-[#D9F3EE]">
               <User className="w-4 h-4" />
               Created by {getAuthorName(task.createdBy)}
             </span>
-            <span className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+            <span className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-[#D9F3EE]">
               <Calendar className="w-4 h-4" />
               Due: {new Date(task.dueDate).toLocaleDateString()}
             </span>
-            <span className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+            <span className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-[#D9F3EE]">
               <Users className="w-4 h-4" />
               {task.assignees?.length || 0} assignee(s)
             </span>
@@ -148,20 +148,20 @@ const TaskNotesModal = ({
         {/* Notes List */}
         <div className="flex-1 p-6 overflow-y-auto min-h-0">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-2 h-8 bg-slate-900 rounded-full"></div>
-            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-slate-600" />
+            <div className="w-2 h-8 bg-[#0E3554] rounded-full"></div>
+            <h3 className="text-lg font-bold text-[#0E3554] flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-[#1CC2B1]" />
               Notes ({task.notes?.length || 0})
             </h3>
           </div>
 
           {!task.notes || task.notes.length === 0 ? (
             <div className="text-center py-12 space-y-4">
-              <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto">
+              <div className="w-16 h-16 bg-[#EFFFFA] rounded-2xl flex items-center justify-center mx-auto">
                 <MessageSquare className="w-8 h-8 text-slate-400" />
               </div>
               <div className="space-y-2">
-                <p className="text-slate-700 font-medium">No notes yet</p>
+                <p className="text-[#0E3554] font-medium">No notes yet</p>
                 <p className="text-slate-500 text-sm">
                   Be the first to add a note to this task
                 </p>
@@ -172,15 +172,15 @@ const TaskNotesModal = ({
               {task.notes.map((note) => (
                 <div
                   key={note._id}
-                  className="bg-white border border-slate-200 rounded-xl p-4 hover:border-slate-300 transition-colors"
+                  className="bg-white border border-[#D9F3EE] rounded-xl p-4 hover:border-[#1CC2B1] transition-colors"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                      <div className="w-8 h-8 bg-[#0E3554] rounded-full flex items-center justify-center text-white text-sm font-semibold">
                         {getAuthorInitial(note.author)}
                       </div>
                       <div>
-                        <span className="font-semibold text-slate-800 block">
+                        <span className="font-semibold text-[#0E3554] block">
                           {getAuthorName(note.author)}
                         </span>
                         <span className="text-xs text-slate-500 flex items-center gap-1">
@@ -189,7 +189,7 @@ const TaskNotesModal = ({
                         </span>
                       </div>
                     </div>
-                    <span className="text-sm text-slate-500 flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-lg flex-shrink-0">
+                    <span className="text-sm text-slate-500 flex items-center gap-1.5 bg-[#EFFFFA] px-2.5 py-1 rounded-lg flex-shrink-0">
                       <Clock className="w-3 h-3" />
                       {new Date(note.createdAt).toLocaleDateString()} at{" "}
                       {new Date(note.createdAt).toLocaleTimeString([], {
@@ -198,7 +198,7 @@ const TaskNotesModal = ({
                       })}
                     </span>
                   </div>
-                  <p className="text-slate-700 leading-relaxed pl-11">
+                  <p className="text-[#0E3554] leading-relaxed pl-11">
                     {note.text}
                   </p>
                 </div>
@@ -208,7 +208,7 @@ const TaskNotesModal = ({
         </div>
 
         {/* Add Note Form */}
-        <div className="border-t border-slate-100 p-6 bg-white flex-shrink-0">
+        <div className="border-t border-[#D9F3EE] p-6 bg-white flex-shrink-0">
           <div className="space-y-4">
             <div className="relative">
               <textarea
@@ -216,11 +216,11 @@ const TaskNotesModal = ({
                 onChange={(e) => setNewNote(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Type your note here... (Ctrl+Enter to send)"
-                className="w-full px-4 py-3 pl-12 pr-4 border border-slate-300 rounded-xl 
+                className="w-full px-4 py-3 pl-12 pr-4 border border-[#D9F3EE] rounded-xl 
                   placeholder-slate-400 transition-all duration-200
-                  focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                  hover:border-slate-400 bg-white text-slate-900
-                  disabled:bg-slate-50 disabled:cursor-not-allowed resize-none"
+                  focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                  hover:border-[#0E3554] bg-white text-[#0E3554]
+                  disabled:bg-[#EFFFFA] disabled:cursor-not-allowed resize-none"
                 rows={3}
               />
               <div className="absolute left-4 top-4">
@@ -234,7 +234,7 @@ const TaskNotesModal = ({
               <div className="flex items-center gap-3 order-1 sm:order-2 w-full sm:w-auto">
                 <button
                   onClick={onClose}
-                  className="px-4 sm:px-6 py-2.5 text-slate-600 hover:text-slate-800 font-medium transition-colors hover:bg-slate-100 rounded-lg flex-1 sm:flex-none text-center"
+                  className="px-4 sm:px-6 py-2.5 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-colors hover:bg-[#EFFFFA] rounded-lg flex-1 sm:flex-none text-center"
                 >
                   Cancel
                 </button>
@@ -242,7 +242,7 @@ const TaskNotesModal = ({
                   onClick={handleAddNote}
                   disabled={!newNote.trim() || addingNote}
                   className="px-4 sm:px-6 py-2.5 rounded-lg font-medium
-                    bg-slate-900 hover:bg-slate-800
+                    bg-[#0E3554] hover:bg-[#0A2A42]
                     transition-all duration-200
                     disabled:opacity-50 disabled:cursor-not-allowed
                     flex items-center justify-center gap-2 text-white flex-1 sm:flex-none"

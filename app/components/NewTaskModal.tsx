@@ -153,12 +153,12 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
   const priorityConfig = {
     low: {
       label: "Low",
-      color: "bg-emerald-50 text-emerald-700",
+      color: "bg-[#E1F3F0] text-[#1CC2B1]",
       icon: TrendingUp,
     },
     medium: {
       label: "Medium",
-      color: "bg-amber-50 text-amber-700",
+      color: "bg-[#FFF4DD] text-[#E6A93A]",
       icon: AlertCircle,
     },
     high: {
@@ -182,15 +182,15 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
     },
     in_progress: {
       label: "In Progress",
-      color: "bg-blue-50 text-blue-700",
+      color: "bg-[#E0FFFA] text-[#0E3554]",
       icon: BarChart3,
-      iconColor: "text-blue-600",
+      iconColor: "text-[#0E3554]",
     },
     done: {
       label: "Done",
-      color: "bg-emerald-50 text-emerald-700",
+      color: "bg-[#E1F3F0] text-[#1CC2B1]",
       icon: CheckCircle,
-      iconColor: "text-emerald-600",
+      iconColor: "text-[#1CC2B1]",
     },
   };
 
@@ -200,24 +200,24 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 w-full max-w-2xl max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-[#D9F3EE] w-full max-w-2xl max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="bg-slate-900 text-white p-6">
+        <div className="bg-gradient-to-br from-[#0E3554] to-[#1CC2B1] text-white p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center">
-                <Plus className="w-6 h-6 text-slate-900" />
+                <Plus className="w-6 h-6 text-[#0E3554]" />
               </div>
               <div>
                 <h2 className="text-xl font-bold">Create New Task</h2>
-                <p className="text-slate-300 text-sm mt-1">
+                <p className="text-teal-100 text-sm mt-1">
                   Add a new task to the project
                 </p>
               </div>
             </div>
             <button
               onClick={handleClose}
-              className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
+              className="w-8 h-8 flex items-center justify-center text-teal-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
               disabled={submitting}
             >
               <X className="w-5 h-5" />
@@ -229,9 +229,9 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
         <div className="p-6 max-h-[60vh] overflow-y-auto">
           {loading ? (
             <div className="text-center py-12 space-y-4">
-              <div className="w-12 h-12 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+              <div className="w-12 h-12 border-3 border-[#D9F3EE] border-t-[#1CC2B1] rounded-full animate-spin mx-auto"></div>
               <div className="space-y-2">
-                <p className="text-slate-700 font-medium">
+                <p className="text-[#0E3554] font-medium">
                   Loading team members
                 </p>
                 <p className="text-slate-500 text-sm">
@@ -254,7 +254,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
 
               {/* Task Title */}
               <div className="space-y-3">
-                <label className="block text-sm font-semibold text-slate-700">
+                <label className="block text-sm font-semibold text-[#0E3554]">
                   Task Title *
                 </label>
                 <div className="relative">
@@ -263,11 +263,11 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
                     name="title"
                     value={formData.title}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
+                    className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
                       placeholder-slate-400 transition-all duration-200
-                      focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                      hover:border-slate-400 bg-white text-slate-900
-                      disabled:bg-slate-50 disabled:cursor-not-allowed"
+                      focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                      hover:border-[#0E3554] bg-white text-[#0E3554]
+                      disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
                     placeholder="Enter task title"
                     required
                     disabled={submitting}
@@ -280,7 +280,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
 
               {/* Description */}
               <div className="space-y-3">
-                <label className="block text-sm font-semibold text-slate-700">
+                <label className="block text-sm font-semibold text-[#0E3554]">
                   Description *
                 </label>
                 <div className="relative">
@@ -288,11 +288,11 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
+                    className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
                       placeholder-slate-400 transition-all duration-200
-                      focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                      hover:border-slate-400 bg-white text-slate-900
-                      disabled:bg-slate-50 disabled:cursor-not-allowed resize-none"
+                      focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                      hover:border-[#0E3554] bg-white text-[#0E3554]
+                      disabled:bg-[#EFFFFA] disabled:cursor-not-allowed resize-none"
                     placeholder="Enter task description"
                     rows={3}
                     required
@@ -307,7 +307,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
               {/* Due Date and Priority */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-3">
-                  <label className="block text-sm font-semibold text-slate-700">
+                  <label className="block text-sm font-semibold text-[#0E3554]">
                     Due Date *
                   </label>
                   <div className="relative">
@@ -316,11 +316,11 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
                       name="dueDate"
                       value={formData.dueDate}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
+                      className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
                         transition-all duration-200
-                        focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                        hover:border-slate-400 bg-white text-slate-900
-                        disabled:bg-slate-50 disabled:cursor-not-allowed"
+                        focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                        hover:border-[#0E3554] bg-white text-[#0E3554]
+                        disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
                       required
                       disabled={submitting}
                       min={new Date().toISOString().split("T")[0]}
@@ -331,7 +331,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <label className="block text-sm font-semibold text-slate-700">
+                  <label className="block text-sm font-semibold text-[#0E3554]">
                     Priority
                   </label>
                   <div className="relative">
@@ -339,11 +339,11 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
                       name="priority"
                       value={formData.priority}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
+                      className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
                         transition-all duration-200
-                        focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                        hover:border-slate-400 bg-white text-slate-900
-                        disabled:bg-slate-50 disabled:cursor-not-allowed appearance-none"
+                        focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                        hover:border-[#0E3554] bg-white text-[#0E3554]
+                        disabled:bg-[#EFFFFA] disabled:cursor-not-allowed appearance-none"
                       disabled={submitting}
                     >
                       <option value="low">Low</option>
@@ -363,10 +363,10 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
 
               {/* Assignees */}
               <div className="space-y-3">
-                <label className="block text-sm font-semibold text-slate-700">
+                <label className="block text-sm font-semibold text-[#0E3554]">
                   Assign Team Members
                 </label>
-                <div className="border border-slate-300 rounded-xl p-4 bg-white max-h-48 overflow-y-auto space-y-3">
+                <div className="border border-[#D9F3EE] rounded-xl p-4 bg-white max-h-48 overflow-y-auto space-y-3">
                   {teamMembers.length === 0 ? (
                     <div className="text-center py-4 text-slate-500 flex items-center justify-center gap-2">
                       <Users className="w-4 h-4" />
@@ -376,17 +376,17 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
                     teamMembers.map((member) => (
                       <label
                         key={member._id}
-                        className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-slate-50 transition-colors"
+                        className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-[#EFFFFA] transition-colors"
                       >
                         <input
                           type="checkbox"
                           checked={formData.assigneeIds.includes(member._id)}
                           onChange={() => handleAssigneeChange(member._id)}
-                          className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 disabled:opacity-50 w-4 h-4"
+                          className="rounded border-[#D9F3EE] text-[#0E3554] focus:ring-[#1CC2B1] disabled:opacity-50 w-4 h-4"
                           disabled={submitting}
                         />
                         <div className="flex-1 min-w-0">
-                          <span className="text-sm font-semibold text-slate-800 block">
+                          <span className="text-sm font-semibold text-[#0E3554] block">
                             {member.name}
                           </span>
                           <span className="text-xs text-slate-500 block">
@@ -394,15 +394,15 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
                           </span>
                         </div>
                         {formData.assigneeIds.includes(member._id) && (
-                          <div className="w-2 h-2 bg-slate-900 rounded-full"></div>
+                          <div className="w-2 h-2 bg-[#0E3554] rounded-full"></div>
                         )}
                       </label>
                     ))
                   )}
                 </div>
                 {formData.assigneeIds.length > 0 && (
-                  <p className="text-sm text-slate-600 font-medium flex items-center gap-2">
-                    <Users className="w-4 h-4 text-slate-600" />
+                  <p className="text-sm text-[#0E3554] font-medium flex items-center gap-2">
+                    <Users className="w-4 h-4 text-[#0E3554]" />
                     {formData.assigneeIds.length} team member(s) selected
                   </p>
                 )}
@@ -412,12 +412,12 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-slate-100 p-6 bg-white">
+        <div className="border-t border-[#D9F3EE] p-6 bg-white">
           <div className="flex justify-end gap-3">
             <button
               onClick={handleClose}
               disabled={submitting}
-              className="px-6 py-2.5 text-slate-600 hover:text-slate-800 font-medium disabled:opacity-50 transition-colors hover:bg-slate-100 rounded-lg"
+              className="px-6 py-2.5 text-[#0E3554] hover:text-[#1CC2B1] font-medium disabled:opacity-50 transition-colors hover:bg-[#EFFFFA] rounded-lg"
             >
               Cancel
             </button>
@@ -425,7 +425,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
               onClick={handleSubmit}
               disabled={submitting || loading}
               className="px-6 py-2.5 rounded-lg font-medium
-                bg-slate-900 hover:bg-slate-800
+                bg-[#0E3554] hover:bg-[#0A2A42]
                 transition-all duration-200
                 disabled:opacity-70 disabled:cursor-not-allowed
                 flex items-center justify-center gap-2 text-white"

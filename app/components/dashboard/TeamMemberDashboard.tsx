@@ -90,35 +90,35 @@ interface TasksResponse {
   tasks: TaskWithProjectDetails[];
 }
 
-// Constants
+// Constants (updated with new color scheme)
 const STATS_CONFIG = [
   {
     id: "total",
     label: "Total Tasks",
     icon: FileText,
-    color: "text-slate-700",
-    bgColor: "bg-slate-50",
+    color: "text-[#0E3554]",
+    bgColor: "bg-[#E1F3F0]",
   },
   {
     id: "todo",
     label: "To Do",
     icon: Clock,
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
+    color: "text-[#0E3554]",
+    bgColor: "bg-[#E0FFFA]",
   },
   {
     id: "in_progress",
     label: "In Progress",
     icon: BarChart3,
-    color: "text-amber-600",
-    bgColor: "bg-amber-50",
+    color: "text-[#1CC2B1]",
+    bgColor: "bg-[#FFF4DD]",
   },
   {
     id: "done",
     label: "Completed",
     icon: CheckCircle,
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-50",
+    color: "text-[#1CC2B1]",
+    bgColor: "bg-[#E1F3F0]",
   },
 ] as const;
 
@@ -131,27 +131,27 @@ const TASK_STATUS_CONFIG = {
   },
   in_progress: {
     label: "In Progress",
-    color: "bg-blue-50 text-blue-700",
+    color: "bg-[#E0FFFA] text-[#0E3554]",
     icon: BarChart3,
-    iconColor: "text-blue-600",
+    iconColor: "text-[#0E3554]",
   },
   done: {
     label: "Done",
-    color: "bg-emerald-50 text-emerald-700",
+    color: "bg-[#E1F3F0] text-[#1CC2B1]",
     icon: CheckCircle,
-    iconColor: "text-emerald-600",
+    iconColor: "text-[#1CC2B1]",
   },
 } as const;
 
 const PRIORITY_CONFIG = {
   low: {
     label: "Low",
-    color: "bg-emerald-50 text-emerald-700",
+    color: "bg-[#E1F3F0] text-[#1CC2B1]",
     icon: TrendingUp,
   },
   medium: {
     label: "Medium",
-    color: "bg-amber-50 text-amber-700",
+    color: "bg-[#FFF4DD] text-[#E6A93A]",
     icon: AlertCircle,
   },
   high: {
@@ -183,7 +183,7 @@ const useDebounce = (value: string, delay: number) => {
   return debouncedValue;
 };
 
-// Components
+// Components (updated with new color scheme)
 const TaskStatusBadge = ({ status }: { status: TaskStatus }) => {
   const config = TASK_STATUS_CONFIG[status];
   const IconComponent = config.icon;
@@ -231,7 +231,7 @@ const StatusButton = ({
     return (
       <button
         onClick={() => onStatusChange(taskId, "in_progress", taskTitle)}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200 text-sm"
+        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#0E3554] text-white rounded-lg font-semibold hover:bg-[#0A2A42] transition-all duration-200 text-sm"
       >
         <Play className="w-3 h-3" />
         <span>Start Progress</span>
@@ -243,7 +243,7 @@ const StatusButton = ({
     return (
       <button
         onClick={() => onStatusChange(taskId, "done", taskTitle)}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-all duration-200 text-sm"
+        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1CC2B1] text-white rounded-lg font-semibold hover:bg-[#19B09F] transition-all duration-200 text-sm"
       >
         <CheckCircle2 className="w-3 h-3" />
         <span>Mark Complete</span>
@@ -252,7 +252,7 @@ const StatusButton = ({
   }
 
   return (
-    <div className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-100 text-emerald-800 rounded-lg font-semibold text-sm">
+    <div className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#E1F3F0] text-[#1CC2B1] rounded-lg font-semibold text-sm">
       <CheckCircle2 className="w-3 h-3" />
       <span>Completed</span>
     </div>
@@ -318,9 +318,9 @@ const ProfileDropdown = ({
         </button>
 
         {isOpen && (
-          <div className="absolute right-0 top-12 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50 min-w-48">
-            <div className="px-4 py-3 border-b border-slate-100">
-              <div className="text-sm font-medium text-slate-900">
+          <div className="absolute right-0 top-12 bg-white rounded-xl shadow-lg border border-[#D9F3EE] py-2 z-50 min-w-48">
+            <div className="px-4 py-3 border-b border-[#D9F3EE]">
+              <div className="text-sm font-medium text-[#0E3554]">
                 {user.name || "Unknown User"}
               </div>
               <div className="text-xs text-slate-500">
@@ -352,11 +352,11 @@ const ProfileDropdown = ({
 };
 
 const LoadingState = () => (
-  <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+  <div className="min-h-screen bg-[#EFFFFA] flex items-center justify-center p-6">
     <div className="text-center space-y-4">
-      <div className="w-12 h-12 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+      <div className="w-12 h-12 border-3 border-[#D9F3EE] border-t-[#1CC2B1] rounded-full animate-spin mx-auto"></div>
       <div className="space-y-2">
-        <h3 className="text-lg font-semibold text-slate-900">
+        <h3 className="text-lg font-semibold text-[#0E3554]">
           Loading Dashboard
         </h3>
         <p className="text-slate-600">Preparing your workspace...</p>
@@ -372,20 +372,20 @@ const ErrorState = ({
   error: string;
   onRetry: () => void;
 }) => (
-  <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+  <div className="min-h-screen bg-[#EFFFFA] flex items-center justify-center p-6">
     <div className="text-center space-y-6 max-w-md">
       <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
         <AlertCircle className="w-6 h-6 text-red-600" />
       </div>
       <div className="space-y-3">
-        <h3 className="text-lg font-semibold text-slate-900">
+        <h3 className="text-lg font-semibold text-[#0E3554]">
           Unable to Load Dashboard
         </h3>
         <p className="text-slate-600">{error}</p>
       </div>
       <button
         onClick={onRetry}
-        className="px-6 py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 mx-auto"
+        className="px-6 py-3 bg-[#0E3554] text-white rounded-lg font-medium hover:bg-[#0A2A42] transition-colors flex items-center justify-center gap-2 mx-auto"
       >
         <RefreshCw className="w-4 h-4" />
         Try Again
@@ -430,7 +430,7 @@ const StatsSection = ({
       return (
         <div
           key={stat.id}
-          className="bg-white rounded-2xl p-6 border border-slate-100 hover:shadow-md transition-all duration-300"
+          className="bg-white rounded-2xl p-6 border border-[#D9F3EE] hover:shadow-md transition-all duration-300"
         >
           <div className="flex items-center justify-between mb-4">
             <div
@@ -439,18 +439,18 @@ const StatsSection = ({
               <IconComponent className={`w-6 h-6 ${stat.color}`} />
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-slate-900">{value}</div>
+              <div className="text-2xl font-bold text-[#0E3554]">{value}</div>
               <div className="text-sm text-slate-500">{percentage}%</div>
             </div>
           </div>
-          <div className="text-sm font-medium text-slate-700 uppercase tracking-wide">
+          <div className="text-sm font-medium text-[#0E3554] uppercase tracking-wide">
             {stat.label}
           </div>
-          <div className="w-full bg-slate-100 rounded-full h-1.5 mt-3">
+          <div className="w-full bg-[#EFFFFA] rounded-full h-1.5 mt-3">
             <div
-              className={`h-1.5 rounded-full transition-all duration-500 ${stat.bgColor
-                .replace("bg-", "bg-")
-                .replace("-50", "-500")}`}
+              className={`h-1.5 rounded-full transition-all duration-500 ${
+                stat.id === "in_progress" ? "bg-[#1CC2B1]" : "bg-[#0E3554]"
+              }`}
               style={{ width: `${percentage}%` }}
             />
           </div>
@@ -484,23 +484,23 @@ const TaskCard = ({
     new Date(task.dueDate) < new Date() && task.status !== "done";
 
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-100 hover:shadow-md hover:border-slate-200 transition-all duration-300 group h-full flex flex-col">
+    <div className="bg-white rounded-2xl p-5 border border-[#D9F3EE] hover:shadow-md hover:border-[#1CC2B1] transition-all duration-300 group h-full flex flex-col">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-start gap-3 flex-1 min-w-0">
           <div
             className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
               task.status === "done"
-                ? "bg-emerald-50 text-emerald-600"
+                ? "bg-[#E1F3F0] text-[#1CC2B1]"
                 : task.status === "in_progress"
-                ? "bg-blue-50 text-blue-600"
-                : "bg-slate-50 text-slate-600"
+                ? "bg-[#E0FFFA] text-[#0E3554]"
+                : "bg-[#EFFFFA] text-[#0E3554]"
             }`}
           >
             <FileText className="w-5 h-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-base font-semibold text-slate-900 truncate mb-1 group-hover:text-slate-800">
+            <h3 className="text-base font-semibold text-[#0E3554] truncate mb-1 group-hover:text-[#1CC2B1]">
               {task.title}
             </h3>
             <p className="text-slate-600 text-sm line-clamp-2">
@@ -532,7 +532,7 @@ const TaskCard = ({
           <span className="text-slate-500">Due Date</span>
           <span
             className={`font-medium ${
-              isOverdue ? "text-red-600" : "text-slate-900"
+              isOverdue ? "text-red-600" : "text-[#0E3554]"
             }`}
           >
             {new Date(task.dueDate).toLocaleDateString()}
@@ -543,23 +543,23 @@ const TaskCard = ({
         </div>
         <div className="flex items-center justify-between text-sm">
           <span className="text-slate-500">Created By</span>
-          <span className="font-medium text-slate-900 truncate ml-2">
+          <span className="font-medium text-[#0E3554] truncate ml-2">
             {task.createdBy.name}
           </span>
         </div>
         <div className="flex items-center justify-between text-sm">
           <span className="text-slate-500">Notes</span>
-          <span className="font-medium text-slate-900">
+          <span className="font-medium text-[#0E3554]">
             {task.notes ? task.notes.length : 0}
           </span>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="space-y-2 pt-4 border-t border-slate-100">
+      <div className="space-y-2 pt-4 border-t border-[#D9F3EE]">
         <button
           onClick={() => onTaskClick(convertTaskForModal(task))}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 text-slate-700 rounded-lg font-medium hover:bg-slate-100 transition-colors text-sm"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#EFFFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors text-sm"
         >
           <Eye className="w-3 h-3" />
           View Notes
@@ -577,10 +577,10 @@ const TaskCard = ({
 
 const EmptyTasksState = () => (
   <div className="text-center py-12">
-    <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+    <div className="w-16 h-16 bg-[#EFFFFA] rounded-2xl flex items-center justify-center mx-auto mb-4">
       <FileText className="w-6 h-6 text-slate-400" />
     </div>
-    <h3 className="text-lg font-semibold text-slate-900 mb-2">
+    <h3 className="text-lg font-semibold text-[#0E3554] mb-2">
       No tasks assigned
     </h3>
     <p className="text-slate-600">
@@ -591,7 +591,7 @@ const EmptyTasksState = () => (
 
 const LoadingTasksState = () => (
   <div className="text-center py-12">
-    <div className="w-8 h-8 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+    <div className="w-8 h-8 border-2 border-[#D9F3EE] border-t-[#1CC2B1] rounded-full animate-spin mx-auto"></div>
     <p className="mt-3 text-slate-600 text-sm font-medium">
       Loading your tasks...
     </p>
@@ -633,7 +633,7 @@ const Pagination = ({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+    <div className="flex items-center justify-between px-6 py-4 border-t border-[#D9F3EE] bg-[#EFFFFA]">
       <div className="text-sm text-slate-600">
         Showing {startItem}-{endItem} of {totalItems} tasks
       </div>
@@ -642,7 +642,7 @@ const Pagination = ({
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="p-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded-lg border border-[#D9F3EE] text-slate-600 hover:bg-[#EFFFFA] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -653,8 +653,8 @@ const Pagination = ({
             onClick={() => onPageChange(page)}
             className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
               currentPage === page
-                ? "bg-slate-900 text-white"
-                : "text-slate-600 hover:bg-slate-100 border border-slate-300"
+                ? "bg-[#0E3554] text-white"
+                : "text-slate-600 hover:bg-[#EFFFFA] border border-[#D9F3EE]"
             }`}
           >
             {page}
@@ -664,7 +664,7 @@ const Pagination = ({
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="p-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="p-2 rounded-lg border border-[#D9F3EE] text-slate-600 hover:bg-[#EFFFFA] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <ChevronRightIcon className="w-4 h-4" />
         </button>
@@ -892,39 +892,44 @@ export default function TeamMemberDashboard() {
   if (error) return <ErrorState error={error} onRetry={fetchTasks} />;
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <div className="min-h-screen bg-[#EFFFFA] p-6">
       {/* Modern Header */}
-      <header className="bg-slate-900 rounded-2xl p-6 mb-7 text-white">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center">
-              <LayoutDashboard className="w-6 h-6 text-slate-900" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">
-                Team Member Dashboard
-              </h1>
-              <p className="text-slate-300 mt-1">
-                Manage your projects and tasks
-              </p>
-            </div>
-          </div>
+      <header className="bg-gradient-to-br from-[#0E3554] to-[#1CC2B1] rounded-2xl p-6 mb-7 text-white relative">
+        <div className="absolute inset-0">
+          <div className="absolute top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl opacity-60" />
+          <div className="absolute bottom-20 -right-20 w-80 h-80 bg-black/10 rounded-full blur-3xl opacity-60" />
+        </div>
 
-          <div className="flex items-center gap-3">
-            {user ? (
-              <ProfileDropdown user={user} onLogout={handleLogout} />
-            ) : (
-              <div className="flex items-center gap-3 px-3 py-2 rounded-lg border border-white/20 opacity-70">
-                <div className="text-right">
-                  <div className="text-sm font-medium text-white">
-                    Not logged in
-                  </div>
-                </div>
-                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
+        <div className="relative z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4">
+                <img className="w-12 h-12" src="/logo.png" alt="site logo" />
+                <div>
+                  <h1 className="text-2xl font-bold text-white">
+                    SKC Project Management
+                  </h1>
+                  <p className="text-teal-100 mt-1">Team Member Dashboard</p>
                 </div>
               </div>
-            )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              {user ? (
+                <ProfileDropdown user={user} onLogout={handleLogout} />
+              ) : (
+                <div className="flex items-center gap-3 px-3 py-2 rounded-lg border border-white/20 opacity-70">
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-white">
+                      Not logged in
+                    </div>
+                  </div>
+                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -934,13 +939,13 @@ export default function TeamMemberDashboard() {
         <StatsSection stats={stats} />
 
         {/* Tasks Section */}
-        <section className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+        <section className="bg-white rounded-2xl border border-[#D9F3EE] overflow-hidden">
           {/* Section Header */}
-          <div className="border-b border-slate-100 p-6">
+          <div className="border-b border-[#D9F3EE] p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-3">
-                  <FileText className="w-5 h-5 text-blue-600" />
+                <h2 className="text-xl font-semibold text-[#0E3554] flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-[#1CC2B1]" />
                   My Tasks ({pagination.totalItems})
                 </h2>
                 <p className="text-slate-600 mt-1">
@@ -956,7 +961,7 @@ export default function TeamMemberDashboard() {
                     placeholder="Search tasks..."
                     value={searchTerm}
                     onChange={(e) => handleSearch(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white w-64 transition-all"
+                    className="pl-10 pr-4 py-2 border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1] bg-white w-64 transition-all"
                   />
                 </div>
               </div>

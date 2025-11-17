@@ -195,21 +195,21 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
   const statusConfig = {
     planned: {
       label: "Planned",
-      color: "bg-blue-50 text-blue-700",
+      color: "bg-[#E0FFFA] text-[#0E3554]",
       icon: Clock,
-      iconColor: "text-blue-600",
+      iconColor: "text-[#0E3554]",
     },
     active: {
       label: "Active",
-      color: "bg-amber-50 text-amber-700",
+      color: "bg-[#FFF4DD] text-[#E6A93A]",
       icon: TrendingUp,
-      iconColor: "text-amber-600",
+      iconColor: "text-[#E6A93A]",
     },
     completed: {
       label: "Completed",
-      color: "bg-emerald-50 text-emerald-700",
+      color: "bg-[#E1F3F0] text-[#1CC2B1]",
       icon: CheckCircle,
-      iconColor: "text-emerald-600",
+      iconColor: "text-[#1CC2B1]",
     },
   };
 
@@ -217,24 +217,24 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 w-full max-w-2xl max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-[#D9F3EE] w-full max-w-2xl max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="bg-slate-900 text-white p-6">
+        <div className="bg-gradient-to-br from-[#0E3554] to-[#1CC2B1] text-white p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center">
-                <FolderOpen className="w-6 h-6 text-slate-900" />
+                <FolderOpen className="w-6 h-6 text-[#0E3554]" />
               </div>
               <div>
                 <h2 className="text-xl font-bold">Edit Project</h2>
-                <p className="text-slate-300 text-sm mt-1">
+                <p className="text-teal-100 text-sm mt-1">
                   Update project details and information
                 </p>
               </div>
             </div>
             <button
               onClick={handleClose}
-              className="w-8 h-8 flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
+              className="w-8 h-8 flex items-center justify-center text-teal-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
               disabled={submitting}
             >
               <X className="w-5 h-5" />
@@ -246,9 +246,9 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
         <div className="p-6 max-h-[60vh] overflow-y-auto">
           {loading ? (
             <div className="text-center py-12 space-y-4">
-              <div className="w-12 h-12 border-3 border-slate-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+              <div className="w-12 h-12 border-3 border-[#D9F3EE] border-t-[#1CC2B1] rounded-full animate-spin mx-auto"></div>
               <div className="space-y-2">
-                <p className="text-slate-700 font-medium">
+                <p className="text-[#0E3554] font-medium">
                   Loading project data
                 </p>
                 <p className="text-slate-500 text-sm">
@@ -271,7 +271,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
               {/* Project Name */}
               <div className="space-y-3">
-                <label className="block text-sm font-semibold text-slate-700">
+                <label className="block text-sm font-semibold text-[#0E3554]">
                   Project Name *
                 </label>
                 <div className="relative">
@@ -280,11 +280,11 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                     name="projectName"
                     value={formData.projectName}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
+                    className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
                       placeholder-slate-400 transition-all duration-200
-                      focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                      hover:border-slate-400 bg-white text-slate-900
-                      disabled:bg-slate-50 disabled:cursor-not-allowed"
+                      focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                      hover:border-[#0E3554] bg-white text-[#0E3554]
+                      disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
                     placeholder="Enter project name"
                     required
                     disabled={submitting}
@@ -297,7 +297,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
               {/* Location */}
               <div className="space-y-3">
-                <label className="block text-sm font-semibold text-slate-700">
+                <label className="block text-sm font-semibold text-[#0E3554]">
                   Location *
                 </label>
                 <div className="relative">
@@ -306,11 +306,11 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                     name="location"
                     value={formData.location}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
+                    className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
                       placeholder-slate-400 transition-all duration-200
-                      focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                      hover:border-slate-400 bg-white text-slate-900
-                      disabled:bg-slate-50 disabled:cursor-not-allowed"
+                      focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                      hover:border-[#0E3554] bg-white text-[#0E3554]
+                      disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
                     placeholder="Enter project location"
                     required
                     disabled={submitting}
@@ -323,7 +323,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
               {/* Project Manager */}
               <div className="space-y-3">
-                <label className="block text-sm font-semibold text-slate-700">
+                <label className="block text-sm font-semibold text-[#0E3554]">
                   Project Manager *
                 </label>
                 <div className="relative">
@@ -331,11 +331,11 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                     name="projectManagerId"
                     value={formData.projectManagerId}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
+                    className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
                       transition-all duration-200
-                      focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                      hover:border-slate-400 bg-white text-slate-900
-                      disabled:bg-slate-50 disabled:cursor-not-allowed appearance-none"
+                      focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                      hover:border-[#0E3554] bg-white text-[#0E3554]
+                      disabled:bg-[#EFFFFA] disabled:cursor-not-allowed appearance-none"
                     required
                     disabled={submitting || projectManagers.length === 0}
                   >
@@ -363,7 +363,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
               {/* Project Type */}
               <div className="space-y-3">
-                <label className="block text-sm font-semibold text-slate-700">
+                <label className="block text-sm font-semibold text-[#0E3554]">
                   Project Type *
                 </label>
                 <div className="relative">
@@ -371,11 +371,11 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                     name="projectTypeId"
                     value={formData.projectTypeId}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
+                    className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
                       transition-all duration-200
-                      focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                      hover:border-slate-400 bg-white text-slate-900
-                      disabled:bg-slate-50 disabled:cursor-not-allowed appearance-none"
+                      focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                      hover:border-[#0E3554] bg-white text-[#0E3554]
+                      disabled:bg-[#EFFFFA] disabled:cursor-not-allowed appearance-none"
                     required
                     disabled={submitting || projectTypes.length === 0}
                   >
@@ -404,7 +404,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
               {/* Dates and Status */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-3">
-                  <label className="block text-sm font-semibold text-slate-700">
+                  <label className="block text-sm font-semibold text-[#0E3554]">
                     Start Date *
                   </label>
                   <div className="relative">
@@ -413,11 +413,11 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                       name="startDate"
                       value={formData.startDate}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
+                      className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
                         transition-all duration-200
-                        focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                        hover:border-slate-400 bg-white text-slate-900
-                        disabled:bg-slate-50 disabled:cursor-not-allowed"
+                        focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                        hover:border-[#0E3554] bg-white text-[#0E3554]
+                        disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
                       required
                       disabled={submitting}
                     />
@@ -428,7 +428,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 </div>
 
                 <div className="space-y-3">
-                  <label className="block text-sm font-semibold text-slate-700">
+                  <label className="block text-sm font-semibold text-[#0E3554]">
                     End Date *
                   </label>
                   <div className="relative">
@@ -437,11 +437,11 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                       name="endDate"
                       value={formData.endDate}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
+                      className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
                         transition-all duration-200
-                        focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                        hover:border-slate-400 bg-white text-slate-900
-                        disabled:bg-slate-50 disabled:cursor-not-allowed"
+                        focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                        hover:border-[#0E3554] bg-white text-[#0E3554]
+                        disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
                       required
                       disabled={submitting}
                       min={formData.startDate}
@@ -453,7 +453,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 </div>
 
                 <div className="space-y-3">
-                  <label className="block text-sm font-semibold text-slate-700">
+                  <label className="block text-sm font-semibold text-[#0E3554]">
                     Status
                   </label>
                   <div className="relative">
@@ -461,11 +461,11 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                       name="status"
                       value={formData.status}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
+                      className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
                         transition-all duration-200
-                        focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                        hover:border-slate-400 bg-white text-slate-900
-                        disabled:bg-slate-50 disabled:cursor-not-allowed appearance-none"
+                        focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                        hover:border-[#0E3554] bg-white text-[#0E3554]
+                        disabled:bg-[#EFFFFA] disabled:cursor-not-allowed appearance-none"
                       disabled={submitting}
                     >
                       <option value="planned">Planned</option>
@@ -488,12 +488,12 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-slate-100 p-6 bg-white">
+        <div className="border-t border-[#D9F3EE] p-6 bg-white">
           <div className="flex justify-end gap-3">
             <button
               onClick={handleClose}
               disabled={submitting}
-              className="px-6 py-2.5 text-slate-600 hover:text-slate-800 font-medium disabled:opacity-50 transition-colors hover:bg-slate-100 rounded-lg"
+              className="px-6 py-2.5 text-[#0E3554] hover:text-[#1CC2B1] font-medium disabled:opacity-50 transition-colors hover:bg-[#EFFFFA] rounded-lg"
             >
               Cancel
             </button>
@@ -501,7 +501,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
               onClick={handleSubmit}
               disabled={submitting || loading || !hasChanges()}
               className="px-6 py-2.5 rounded-lg font-medium
-                bg-slate-900 hover:bg-slate-800
+                bg-[#0E3554] hover:bg-[#0A2A42]
                 transition-all duration-200
                 disabled:opacity-70 disabled:cursor-not-allowed
                 flex items-center justify-center gap-2 text-white"

@@ -63,117 +63,90 @@ export default function Login() {
     {
       icon: Shield,
       text: "Enterprise-grade security",
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
+      color: "text-[#0E3554]",
+      bgColor: "bg-[#E1F3F0]",
     },
     {
       icon: Users,
       text: "Team collaboration tools",
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
+      color: "text-[#1CC2B1]",
+      bgColor: "bg-[#E0FFFA]",
     },
     {
       icon: Headphones,
       text: "24/7 dedicated support",
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50",
+      color: "text-[#E6A93A]",
+      bgColor: "bg-[#FFF4DD]",
     },
   ];
 
   return (
-    <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-2 bg-slate-50">
-      {/* LEFT SIDE - MODERN HERO SECTION */}
-      <section className="hidden lg:flex flex-col justify-between p-12 bg-slate-900 text-white relative overflow-hidden">
-        {/* Background Elements */}
+    <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-2 bg-[#EFFFFA]">
+      {/* LEFT SIDE */}
+      <section className="hidden lg:flex flex-col justify-between p-12 text-white relative overflow-hidden bg-gradient-to-br from-[#0E3554] to-[#1CC2B1]">
         <div className="absolute inset-0">
-          <div className="absolute top-20 -left-20 w-64 h-64 bg-slate-800 rounded-full opacity-50"></div>
-          <div className="absolute bottom-20 -right-20 w-80 h-80 bg-slate-800 rounded-full opacity-30"></div>
+          <div className="absolute top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl opacity-60" />
+          <div className="absolute bottom-20 -right-20 w-80 h-80 bg-black/10 rounded-full blur-3xl opacity-60" />
         </div>
 
-        {/* Header Content */}
         <div className="relative z-10">
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center">
-              <LayoutDashboard className="w-6 h-6 text-slate-900" />
-            </div>
+            <img className="w-24" src="/logo.png" alt="site logo" />
             <div>
-              <h1 className="text-3xl font-bold">Project Dashboard</h1>
-              <p className="text-slate-400 mt-1">
-                Enterprise Management System
-              </p>
+              <h1 className="text-2xl font-bold">SKC Project Management</h1>
+              <p className="text-teal-100 mt-1">Enterprise Management System</p>
             </div>
           </div>
 
-          <div className="mt-16">
-            <h2 className="text-4xl font-bold leading-tight mb-6">
-              Welcome Back
-              <span className="block text-slate-300 mt-2">
-                Continue your work
-              </span>
-            </h2>
-            <p className="text-slate-400 text-lg max-w-md leading-relaxed">
-              Access your personalized workspace where productivity meets
-              innovation. Manage projects, collaborate with teams, and drive
-              results.
-            </p>
-          </div>
+          <h2 className="text-3xl font-bold leading-tight mb-6">
+            Welcome Back
+            <span className="block text-teal-100 mt-2">Continue your work</span>
+          </h2>
+          <p className="text-teal-100/90 text-lg max-w-md leading-relaxed">
+            Access your personalized workspace where productivity meets
+            innovation.
+          </p>
         </div>
 
-        {/* Feature List */}
         <div className="relative z-10 space-y-4">
           {features.map((feature, index) => (
             <div
               key={index}
-              className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10"
+              className="flex items-center gap-4 p-4 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-sm"
             >
               <div
                 className={`w-12 h-12 rounded-xl ${feature.bgColor} flex items-center justify-center`}
               >
-                <feature.icon className={`w-5 h-5 ${feature.color}`} />
+                <feature.icon className={`w-4 h-4 ${feature.color}`} />
               </div>
-              <span className="text-slate-200 font-medium">{feature.text}</span>
+              <span className="text-white font-medium">{feature.text}</span>
             </div>
           ))}
         </div>
 
-        {/* Footer Note */}
-        <div className="relative z-10 pt-8 border-t border-slate-700">
-          <p className="text-sm text-slate-400 flex items-center gap-2">
-            <Fingerprint className="w-4 h-4" />
+        <div className="relative z-10 pt-8 border-t border-white/20">
+          <p className="text-sm text-teal-100 flex items-center gap-2">
+            <Fingerprint className="w-4 h-4 text-[#1CC2B1]" />
             <span>Your data is encrypted and secure</span>
           </p>
         </div>
       </section>
 
-      {/* RIGHT SIDE - CLEAN FORM */}
+      {/* RIGHT SIDE */}
       <main className="flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md">
-          {/* Mobile Header */}
-          <div className="lg:hidden text-center mb-10">
-            <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <LayoutDashboard className="w-7 h-7 text-white" />
-            </div>
-            <h2 className="text-3xl font-bold text-slate-900 mb-2">
-              Welcome Back
-            </h2>
-            <p className="text-slate-600">Sign in to continue your work</p>
-          </div>
-
-          {/* Desktop Header */}
           <div className="hidden lg:block text-left mb-10">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-2 h-8 bg-slate-900 rounded-full"></div>
-              <h2 className="text-3xl font-bold text-slate-900">Sign In</h2>
+              <div className="w-2 h-8 bg-[#0E3554] rounded-full" />
+              <h2 className="text-3xl font-bold text-[#0E3554]">Sign In</h2>
             </div>
             <p className="text-slate-600 pl-5">
               Enter your credentials to access your account
             </p>
           </div>
 
-          {/* Form Container */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+          <div className="bg-white rounded-2xl p-8 border border-[#D9F3EE]">
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Error Alert */}
               {error && (
                 <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3">
                   <div className="p-1 bg-red-100 rounded-lg">
@@ -185,11 +158,11 @@ export default function Login() {
                 </div>
               )}
 
-              {/* Email Field */}
+              {/* EMAIL */}
               <div className="space-y-3">
                 <label
                   htmlFor="email"
-                  className="block text-sm font-semibold text-slate-700"
+                  className="block text-sm font-semibold text-slate-800"
                 >
                   Email Address
                 </label>
@@ -200,26 +173,23 @@ export default function Login() {
                     type="email"
                     required
                     className="w-full px-4 py-3 pl-12 border border-slate-300 rounded-xl 
-                      placeholder-slate-400 transition-all duration-200
-                      focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                      hover:border-slate-400 bg-white text-slate-900
-                      disabled:bg-slate-50 disabled:cursor-not-allowed"
+                    placeholder-slate-400 transition-all
+                    focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                    hover:border-[#0E3554]"
                     placeholder="you@company.com"
                     value={formData.email}
                     onChange={handleInputChange}
                     disabled={loading}
                   />
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                    <Mail className="w-4 h-4 text-slate-400" />
-                  </div>
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 </div>
               </div>
 
-              {/* Password Field */}
+              {/* PASSWORD */}
               <div className="space-y-3">
                 <label
                   htmlFor="password"
-                  className="block text-sm font-semibold text-slate-700"
+                  className="block text-sm font-semibold text-slate-800"
                 >
                   Password
                 </label>
@@ -230,93 +200,63 @@ export default function Login() {
                     type={showPwd ? "text" : "password"}
                     required
                     className="w-full px-4 py-3 pl-12 pr-12 border border-slate-300 rounded-xl
-                      placeholder-slate-400 transition-all duration-200
-                      focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900
-                      hover:border-slate-400 bg-white text-slate-900
-                      disabled:bg-slate-50 disabled:cursor-not-allowed"
+                    placeholder-slate-400 transition-all
+                    focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                    hover:border-[#0E3554]"
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={handleInputChange}
                     disabled={loading}
                   />
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                    <Lock className="w-4 h-4 text-slate-400" />
-                  </div>
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+
                   <button
                     type="button"
                     onClick={() => setShowPwd((s) => !s)}
                     disabled={loading}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 
-                      text-slate-400 hover:text-slate-600 transition-colors duration-200
-                      disabled:opacity-50 disabled:cursor-not-allowed p-1"
-                    aria-label={showPwd ? "Hide password" : "Show password"}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
                   >
-                    {showPwd ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
+                    {showPwd ? <EyeOff /> : <Eye />}
                   </button>
                 </div>
               </div>
 
-              {/* Submit Button */}
+              {/* BUTTON */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 px-4 rounded-xl font-semibold
-                  bg-slate-900 hover:bg-slate-800
-                  transition-all duration-200
-                  disabled:opacity-70 disabled:cursor-not-allowed
-                  flex items-center justify-center gap-2 text-white"
+                className="w-full py-3.5 rounded-xl font-semibold
+                bg-[#0E3554] hover:bg-[#0A2A42]
+                text-white transition-all"
               >
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Signing in...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Sign In</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
+                {loading ? "Signing in..." : "Sign In"}
               </button>
             </form>
 
-            {/* Divider */}
-            <div className="my-8">
-              <div className="border-t border-slate-200"></div>
-            </div>
+            <div className="my-8 border-t border-[#D9F3EE]" />
 
-            {/* Support Text */}
-            <div className="text-center">
-              <p className="text-sm text-slate-600">
-                Need help accessing your account?{" "}
-                <a
-                  href="/support"
-                  className="text-slate-900 hover:text-slate-700 font-semibold transition-colors duration-200 hover:underline inline-flex items-center gap-1"
-                >
-                  <span>Contact support</span>
-                  <ArrowRight className="w-3 h-3" />
-                </a>
-              </p>
-            </div>
+            <p className="text-center text-sm text-slate-600">
+              Need help accessing your account?{" "}
+              <a
+                href="/support"
+                className="text-[#0E3554] font-semibold hover:underline"
+              >
+                Contact support
+              </a>
+            </p>
           </div>
 
-          {/* Footer */}
           <footer className="mt-8 text-center space-y-3">
             <p className="text-sm text-slate-600">
               Don't have an account?{" "}
               <a
                 href="/"
-                className="text-slate-900 hover:text-slate-700 font-semibold transition-colors duration-200 hover:underline inline-flex items-center gap-1"
+                className="text-[#0E3554] font-semibold hover:underline"
               >
-                <span>Get started</span>
-                <ArrowRight className="w-3 h-3" />
+                Get started
               </a>
             </p>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            <p className="text-xs text-slate-500">
               Secure access to your workspace
             </p>
           </footer>
