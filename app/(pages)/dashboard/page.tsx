@@ -18,16 +18,16 @@ interface User {
 }
 
 const DashboardLoading = () => (
-  <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30 flex items-center justify-center p-4">
+  <div className="min-h-screen bg-gradient-to-br from-[#EFFFFA] to-[#E1F3F0] flex items-center justify-center p-4">
     <div className="text-center space-y-6">
       <div className="relative">
-        <div className="w-20 h-20 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+        <div className="w-20 h-20 border-4 border-[#D9F3EE] border-t-[#1CC2B1] rounded-full animate-spin mx-auto"></div>
         <div className="absolute inset-0 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-pulse" />
+          <Loader2 className="w-8 h-8 text-[#1CC2B1] animate-pulse" />
         </div>
       </div>
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold text-slate-800">Loading Dashboard</h2>
+        <h2 className="text-2xl font-bold text-[#0E3554]">Loading Dashboard</h2>
         <p className="text-slate-600 max-w-sm">
           Preparing your workspace... This will just take a moment.
         </p>
@@ -36,7 +36,7 @@ const DashboardLoading = () => (
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
+            className="w-2 h-2 bg-[#1CC2B1] rounded-full animate-bounce"
             style={{ animationDelay: `${i * 0.1}s` }}
           />
         ))}
@@ -46,13 +46,13 @@ const DashboardLoading = () => (
 );
 
 const DashboardError = ({ message }: { message: string }) => (
-  <div className="min-h-screen bg-gradient-to-br from-slate-50 to-red-50/30 flex items-center justify-center p-6">
+  <div className="min-h-screen bg-gradient-to-br from-[#EFFFFA] to-red-50/30 flex items-center justify-center p-6">
     <div className="max-w-md w-full text-center space-y-6">
       <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
         <ShieldAlert className="w-8 h-8 text-red-600" />
       </div>
       <div className="space-y-3">
-        <h2 className="text-2xl font-bold text-slate-800">Access Issue</h2>
+        <h2 className="text-2xl font-bold text-[#0E3554]">Access Issue</h2>
         <p className="text-slate-600 leading-relaxed">{message}</p>
       </div>
       <div className="space-y-3 pt-4">
@@ -61,13 +61,13 @@ const DashboardError = ({ message }: { message: string }) => (
             removeCookie("authToken");
             window.location.reload();
           }}
-          className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors duration-200"
+          className="w-full py-3 px-4 bg-[#0E3554] hover:bg-[#0A2A42] text-white rounded-xl font-semibold transition-colors duration-200"
         >
           Logout and Try Again
         </button>
         <a
           href="/support"
-          className="inline-block text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200"
+          className="inline-block text-sm text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-colors duration-200"
         >
           Contact Support →
         </a>
@@ -140,13 +140,13 @@ function Dashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-amber-50/30 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-gradient-to-br from-[#EFFFFA] to-[#FFF4DD] flex items-center justify-center p-6">
         <div className="max-w-md w-full text-center space-y-6">
-          <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <UserX className="w-8 h-8 text-amber-600" />
+          <div className="w-16 h-16 bg-[#FFF4DD] rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <UserX className="w-8 h-8 text-[#E6A93A]" />
           </div>
           <div className="space-y-3">
-            <h2 className="text-2xl font-bold text-slate-800">
+            <h2 className="text-2xl font-bold text-[#0E3554]">
               Authentication Required
             </h2>
             <p className="text-slate-600 leading-relaxed">
@@ -156,7 +156,7 @@ function Dashboard() {
           <div className="space-y-3 pt-4">
             <a
               href="/"
-              className="inline-block w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors duration-200"
+              className="inline-block w-full py-3 px-4 bg-[#0E3554] hover:bg-[#0A2A42] text-white rounded-xl font-semibold transition-colors duration-200"
             >
               Go to Login
             </a>

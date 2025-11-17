@@ -31,6 +31,8 @@ import {
   ChevronLeft,
   ChevronRight as ChevronRightIcon,
   LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 
 // Types (same as admin dashboard)
@@ -392,7 +394,7 @@ const ProjectCard = ({
   onViewTasks: () => void;
   isProjectManager?: boolean;
 }) => (
-  <div className="bg-white rounded-2xl p-5 border border-[#D9F3EE] hover:shadow-md hover:border-[#1CC2B1] transition-all duration-300 group">
+  <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#D9F3EE] hover:shadow-md hover:border-[#1CC2B1] transition-all duration-300 group">
     {/* Header */}
     <div className="flex items-start justify-between mb-4">
       <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -400,7 +402,7 @@ const ProjectCard = ({
           <FolderOpen className="w-5 h-5 text-[#0E3554]" />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-semibold text-[#0E3554] truncate mb-1">
+          <h3 className="text-base sm:text-lg font-semibold text-[#0E3554] truncate mb-1">
             {project.projectName}
           </h3>
           <div className="flex items-center gap-2 text-sm text-slate-600">
@@ -419,13 +421,13 @@ const ProjectCard = ({
     <div className="space-y-3 mb-4">
       <div className="flex items-center justify-between text-sm">
         <span className="text-slate-500">Manager</span>
-        <span className="font-medium text-[#0E3554]">
+        <span className="font-medium text-[#0E3554] truncate ml-2">
           {project.projectManager?.name || "N/A"}
         </span>
       </div>
       <div className="flex items-center justify-between text-sm">
         <span className="text-slate-500">Type</span>
-        <span className="font-medium text-[#0E3554]">
+        <span className="font-medium text-[#0E3554] truncate ml-2">
           {project.projectType?.name || "N/A"}
         </span>
       </div>
@@ -458,24 +460,24 @@ const ProjectListItem = ({
   onViewTasks: () => void;
 }) => (
   <div className="bg-white rounded-2xl p-4 border border-[#D9F3EE] hover:shadow-md transition-all duration-300">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-4 flex-1">
-        <div className="w-12 h-12 bg-[#EFFFFA] rounded-xl flex items-center justify-center">
+    <div className="flex items-center justify-between flex-col sm:flex-row gap-4">
+      <div className="flex items-center gap-4 flex-1 w-full">
+        <div className="w-12 h-12 bg-[#EFFFFA] rounded-xl flex items-center justify-center flex-shrink-0">
           <FolderOpen className="w-6 h-6 text-[#0E3554]" />
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-2 flex-col sm:flex-row sm:items-start">
             <h3 className="text-base font-semibold text-[#0E3554] truncate">
               {project.projectName}
             </h3>
             <StatusBadge status={project.status} />
           </div>
 
-          <div className="flex items-center gap-4 text-sm text-slate-600">
+          <div className="flex items-center gap-4 text-sm text-slate-600 flex-wrap">
             <span className="flex items-center gap-1.5">
               <MapPin className="w-4 h-4" />
-              {project.location}
+              <span className="truncate max-w-32">{project.location}</span>
             </span>
             <span className="flex items-center gap-1.5">
               <User className="w-4 h-4" />
@@ -491,10 +493,10 @@ const ProjectListItem = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
         <button
           onClick={onViewTasks}
-          className="px-3 py-1.5 bg-[#EFFFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center gap-1.5 text-sm"
+          className="px-3 py-1.5 bg-[#EFFFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center gap-1.5 text-sm w-full sm:w-auto justify-center"
         >
           <Eye className="w-4 h-4" />
           Tasks
@@ -505,7 +507,7 @@ const ProjectListItem = ({
 );
 
 const LoadingState = () => (
-  <div className="min-h-screen bg-[#EFFFFA] flex items-center justify-center p-6">
+  <div className="min-h-screen bg-[#EFFFFA] flex items-center justify-center p-4 sm:p-6">
     <div className="text-center space-y-4">
       <div className="w-12 h-12 border-3 border-[#D9F3EE] border-t-[#1CC2B1] rounded-full animate-spin mx-auto"></div>
       <div className="space-y-2">
@@ -525,7 +527,7 @@ const ErrorState = ({
   error: string;
   onRetry: () => void;
 }) => (
-  <div className="min-h-screen bg-[#EFFFFA] flex items-center justify-center p-6">
+  <div className="min-h-screen bg-[#EFFFFA] flex items-center justify-center p-4 sm:p-6">
     <div className="text-center space-y-6 max-w-md">
       <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
         <AlertCircle className="w-6 h-6 text-red-600" />
@@ -561,16 +563,20 @@ const StatsSection = ({
       return (
         <div
           key={stat.id}
-          className="bg-white rounded-2xl p-6 border border-[#D9F3EE] hover:shadow-md transition-all duration-300"
+          className="bg-white rounded-2xl p-4 sm:p-6 border border-[#D9F3EE] hover:shadow-md transition-all duration-300"
         >
           <div className="flex items-center justify-between mb-4">
             <div
-              className={`w-12 h-12 rounded-xl ${stat.bgColor} flex items-center justify-center`}
+              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl ${stat.bgColor} flex items-center justify-center`}
             >
-              <IconComponent className={`w-6 h-6 ${stat.color}`} />
+              <IconComponent
+                className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.color}`}
+              />
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-[#0E3554]">{value}</div>
+              <div className="text-xl sm:text-2xl font-bold text-[#0E3554]">
+                {value}
+              </div>
               <div className="text-sm text-slate-500">{percentage}%</div>
             </div>
           </div>
@@ -608,8 +614,8 @@ const TaskList = ({
         key={task._id}
         className="bg-white rounded-2xl p-4 border border-[#D9F3EE] hover:shadow-md transition-all duration-300"
       >
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
+        <div className="flex items-start justify-between mb-3 flex-col sm:flex-row gap-3">
+          <div className="flex-1 min-w-0">
             <h3 className="text-base font-semibold text-[#0E3554] mb-2 flex items-center gap-2">
               <FileText className="w-4 h-4 text-slate-400" />
               {task.title}
@@ -618,14 +624,14 @@ const TaskList = ({
               {task.description}
             </p>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+          <div className="flex items-center gap-2 flex-shrink-0 sm:ml-4">
             <TaskStatusBadge status={task.status} />
             <PriorityBadge priority={task.priority} />
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-sm text-slate-600">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between text-sm text-slate-600 flex-wrap gap-2">
+          <div className="flex items-center gap-4 flex-wrap">
             <span className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4" />
               Due: {new Date(task.dueDate).toLocaleDateString()}
@@ -646,7 +652,7 @@ const TaskList = ({
             <span className="text-xs text-slate-500 font-medium">
               Assignees:
             </span>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-wrap">
               {task.assignees.map((assignee) => (
                 <span
                   key={assignee._id}
@@ -660,10 +666,10 @@ const TaskList = ({
         )}
 
         {/* Action Buttons - Project Managers can only edit tasks, not delete */}
-        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[#D9F3EE]">
+        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[#D9F3EE] flex-wrap">
           <button
             onClick={() => onTaskClick(task)}
-            className="px-3 py-1.5 bg-[#EFFFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center gap-1.5 text-sm"
+            className="px-3 py-1.5 bg-[#EFFFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center gap-1.5 text-sm flex-1 sm:flex-none justify-center"
           >
             <FileText className="w-3 h-3" />
             View Notes
@@ -671,7 +677,7 @@ const TaskList = ({
           {isProjectManager && (
             <button
               onClick={() => onEditTask(task)}
-              className="px-3 py-1.5 bg-[#E0FFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center gap-1.5 text-sm"
+              className="px-3 py-1.5 bg-[#E0FFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center gap-1.5 text-sm flex-1 sm:flex-none justify-center"
             >
               <Edit className="w-3 h-3" />
               Edit Task
@@ -684,7 +690,7 @@ const TaskList = ({
 );
 
 const EmptyTasksState = ({ onCreateTask }: { onCreateTask: () => void }) => (
-  <div className="text-center py-12">
+  <div className="text-center py-8 sm:py-12">
     <div className="w-16 h-16 bg-[#EFFFFA] rounded-2xl flex items-center justify-center mx-auto mb-4">
       <FileText className="w-6 h-6 text-slate-400" />
     </div>
@@ -703,7 +709,7 @@ const EmptyTasksState = ({ onCreateTask }: { onCreateTask: () => void }) => (
 );
 
 const LoadingTasksState = () => (
-  <div className="text-center py-12">
+  <div className="text-center py-8 sm:py-12">
     <div className="w-8 h-8 border-2 border-[#D9F3EE] border-t-[#1CC2B1] rounded-full animate-spin mx-auto"></div>
     <p className="mt-3 text-slate-600 text-sm font-medium">
       Loading project tasks...
@@ -746,8 +752,8 @@ const Pagination = ({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-t border-[#D9F3EE] bg-[#EFFFFA]">
-      <div className="text-sm text-slate-600">
+    <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-t border-[#D9F3EE] bg-[#EFFFFA] flex-col gap-4 sm:flex-row">
+      <div className="text-sm text-slate-600 text-center sm:text-left">
         Showing {startItem}-{endItem} of {totalItems} projects
       </div>
 
@@ -818,6 +824,7 @@ export default function ProjectManagerDashboard() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showUpdateTaskModal, setShowUpdateTaskModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const { user, logout } = useAuth();
 
@@ -962,9 +969,9 @@ export default function ProjectManagerDashboard() {
   if (error) return <ErrorState error={error} onRetry={fetchProjects} />;
 
   return (
-    <div className="min-h-screen bg-[#EFFFFA] p-6">
+    <div className="min-h-screen bg-[#EFFFFA] p-4 sm:p-6">
       {/* Modern Header */}
-      <header className="bg-gradient-to-br from-[#0E3554] to-[#1CC2B1] rounded-2xl p-6 mb-7 text-white relative">
+      <header className="bg-gradient-to-br from-[#0E3554] to-[#1CC2B1] rounded-2xl p-4 sm:p-6 mb-6 text-white relative">
         <div className="absolute inset-0">
           <div className="absolute top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl opacity-60" />
           <div className="absolute bottom-20 -right-20 w-80 h-80 bg-black/10 rounded-full blur-3xl opacity-60" />
@@ -972,21 +979,44 @@ export default function ProjectManagerDashboard() {
 
         <div className="relative z-10">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-4">
-                <img className="w-12 h-12" src="/logo.png" alt="site logo" />
-                <div>
-                  <h1 className="text-2xl font-bold text-white">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <img
+                  className="w-10 h-10 sm:w-12 sm:h-12"
+                  src="/logo.png"
+                  alt="site logo"
+                />
+                <div className="hidden sm:block">
+                  <h1 className="text-xl sm:text-2xl font-bold text-white">
                     SKC Project Management
                   </h1>
-                  <p className="text-teal-100 mt-1">
+                  <p className="text-teal-100 mt-1 text-sm">
                     Project Manager Dashboard
                   </p>
+                </div>
+                <div className="sm:hidden">
+                  <h1 className="text-lg font-bold text-white">SKC PM</h1>
+                  <p className="text-teal-100 text-xs">Project Manager</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            {/* Mobile Menu Button */}
+            <div className="sm:hidden">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
+              >
+                {mobileMenuOpen ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+
+            {/* Desktop Actions */}
+            <div className="hidden sm:flex items-center gap-3">
               <button
                 onClick={() => setShowTeamManagementModal(true)}
                 className="px-4 py-2.5 bg-white/10 text-slate-200 rounded-lg font-medium hover:bg-white/20 transition-colors flex items-center gap-2 border border-white/20"
@@ -1011,10 +1041,33 @@ export default function ProjectManagerDashboard() {
               )}
             </div>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="mt-4 pt-4 border-t border-white/20 sm:hidden">
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    setShowTeamManagementModal(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-2.5 bg-white/10 text-slate-200 rounded-lg font-medium hover:bg-white/20 transition-colors flex items-center gap-2 border border-white/20"
+                >
+                  <Users className="w-4 h-4" />
+                  Team Management
+                </button>
+                {user && (
+                  <div className="mt-2">
+                    <ProfileDropdown user={user} onLogout={handleLogout} />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
-      <main className="space-y-7">
+      <main className="space-y-6">
         {/* Stats Section */}
         {!selectedProject && !viewAllProjects && (
           <StatsSection counts={counts} />
@@ -1023,14 +1076,16 @@ export default function ProjectManagerDashboard() {
         {/* Projects Section */}
         <section className="bg-white rounded-2xl border border-[#D9F3EE] overflow-hidden">
           {/* Section Header */}
-          <div className="border-b border-[#D9F3EE] p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-[#0E3554] flex items-center gap-3">
+          <div className="border-b border-[#D9F3EE] p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg sm:text-xl font-semibold text-[#0E3554] flex items-center gap-3">
                   {selectedProject ? (
                     <>
                       <FolderOpen className="w-5 h-5 text-[#1CC2B1]" />
-                      {selectedProject.project.projectName}
+                      <span className="truncate">
+                        {selectedProject.project.projectName}
+                      </span>
                     </>
                   ) : viewAllProjects ? (
                     <>
@@ -1044,7 +1099,7 @@ export default function ProjectManagerDashboard() {
                     </>
                   )}
                 </h2>
-                <p className="text-slate-600 mt-1">
+                <p className="text-slate-600 mt-1 text-sm">
                   {selectedProject
                     ? "Project tasks and details"
                     : viewAllProjects
@@ -1053,22 +1108,23 @@ export default function ProjectManagerDashboard() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 {selectedProject ? (
                   <>
                     <button
                       onClick={handleBackToProjects}
-                      className="px-4 py-2 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-colors flex items-center gap-2"
+                      className="px-4 py-2 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-colors flex items-center gap-2 text-sm"
                     >
                       <ArrowLeft className="w-4 h-4" />
-                      Back
+                      <span className="hidden sm:inline">Back</span>
                     </button>
                     <button
                       onClick={() => setShowNewTaskModal(true)}
-                      className="px-4 py-2 bg-[#0E3554] text-white rounded-lg font-medium hover:bg-[#0A2A42] transition-colors flex items-center gap-2"
+                      className="px-4 py-2 bg-[#0E3554] text-white rounded-lg font-medium hover:bg-[#0A2A42] transition-colors flex items-center gap-2 text-sm"
                     >
                       <Plus className="w-4 h-4" />
-                      New Task
+                      <span className="hidden sm:inline">New Task</span>
+                      <span className="sm:hidden">Task</span>
                     </button>
                   </>
                 ) : viewAllProjects ? (
@@ -1096,32 +1152,33 @@ export default function ProjectManagerDashboard() {
                       </button>
                     </div>
 
-                    <div className="relative">
+                    <div className="relative flex-1 sm:flex-none min-w-0">
                       <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                       <input
                         type="text"
                         placeholder="Search projects..."
                         value={searchTerm}
                         onChange={(e) => handleSearch(e.target.value)}
-                        className="pl-10 pr-4 py-2 border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1] bg-white w-64 transition-all"
+                        className="pl-10 pr-4 py-2 border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1] bg-white w-full sm:w-64 transition-all text-sm"
                       />
                     </div>
 
                     <button
                       onClick={handleBackToOverview}
-                      className="px-4 py-2 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-colors flex items-center gap-2"
+                      className="px-4 py-2 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-colors flex items-center gap-2 text-sm"
                     >
                       <ArrowLeft className="w-4 h-4" />
-                      Overview
+                      <span className="hidden sm:inline">Overview</span>
                     </button>
                   </>
                 ) : (
                   <>
                     <button
                       onClick={() => setViewAllProjects(true)}
-                      className="px-4 py-2 bg-[#EFFFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center gap-2"
+                      className="px-4 py-2 bg-[#EFFFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center gap-2 text-sm"
                     >
-                      View All
+                      <span className="hidden sm:inline">View All</span>
+                      <span className="sm:hidden">All</span>
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   </>
@@ -1130,10 +1187,12 @@ export default function ProjectManagerDashboard() {
             </div>
 
             {selectedProject && (
-              <div className="flex items-center gap-4 mt-4">
+              <div className="flex items-center gap-2 mt-4 flex-wrap">
                 <div className="flex items-center gap-2 text-sm text-slate-600 bg-[#EFFFFA] px-3 py-1.5 rounded-lg">
                   <MapPin className="w-4 h-4" />
-                  {selectedProject.project.location}
+                  <span className="truncate max-w-32">
+                    {selectedProject.project.location}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-[#0E3554] bg-[#E0FFFA] px-3 py-1.5 rounded-lg">
                   <Calendar className="w-4 h-4" />
@@ -1154,7 +1213,7 @@ export default function ProjectManagerDashboard() {
           </div>
 
           {/* Content */}
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {selectedProject ? (
               // Tasks List View
               <div>

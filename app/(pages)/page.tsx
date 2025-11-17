@@ -3,19 +3,7 @@
 import React, { useState } from "react";
 import { login } from "@/lib/api/auth";
 import { setCookie } from "@/lib/cookies";
-import {
-  Eye,
-  EyeOff,
-  Mail,
-  Lock,
-  ArrowRight,
-  Shield,
-  Users,
-  Headphones,
-  LayoutDashboard,
-  AlertCircle,
-  Fingerprint,
-} from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -59,30 +47,9 @@ export default function Login() {
     }
   };
 
-  const features = [
-    {
-      icon: Shield,
-      text: "Enterprise-grade security",
-      color: "text-[#0E3554]",
-      bgColor: "bg-[#E1F3F0]",
-    },
-    {
-      icon: Users,
-      text: "Team collaboration tools",
-      color: "text-[#1CC2B1]",
-      bgColor: "bg-[#E0FFFA]",
-    },
-    {
-      icon: Headphones,
-      text: "24/7 dedicated support",
-      color: "text-[#E6A93A]",
-      bgColor: "bg-[#FFF4DD]",
-    },
-  ];
-
   return (
     <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-2 bg-[#EFFFFA]">
-      {/* LEFT SIDE */}
+      {/* LEFT SIDE - Desktop Only */}
       <section className="hidden lg:flex flex-col justify-between p-12 text-white relative overflow-hidden bg-gradient-to-br from-[#0E3554] to-[#1CC2B1]">
         <div className="absolute inset-0">
           <div className="absolute top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl opacity-60" />
@@ -109,24 +76,83 @@ export default function Login() {
         </div>
 
         <div className="relative z-10 space-y-4">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-4 p-4 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-sm"
-            >
-              <div
-                className={`w-12 h-12 rounded-xl ${feature.bgColor} flex items-center justify-center`}
+          <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-sm">
+            <div className="w-12 h-12 rounded-xl bg-[#E1F3F0] flex items-center justify-center">
+              <svg
+                className="w-4 h-4 text-[#0E3554]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <feature.icon className={`w-4 h-4 ${feature.color}`} />
-              </div>
-              <span className="text-white font-medium">{feature.text}</span>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
+              </svg>
             </div>
-          ))}
+            <span className="text-white font-medium">
+              Enterprise-grade security
+            </span>
+          </div>
+          <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-sm">
+            <div className="w-12 h-12 rounded-xl bg-[#E0FFFA] flex items-center justify-center">
+              <svg
+                className="w-4 h-4 text-[#1CC2B1]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+            </div>
+            <span className="text-white font-medium">
+              Team collaboration tools
+            </span>
+          </div>
+          <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-sm">
+            <div className="w-12 h-12 rounded-xl bg-[#FFF4DD] flex items-center justify-center">
+              <svg
+                className="w-4 h-4 text-[#E6A93A]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <span className="text-white font-medium">
+              24/7 dedicated support
+            </span>
+          </div>
         </div>
 
         <div className="relative z-10 pt-8 border-t border-white/20">
           <p className="text-sm text-teal-100 flex items-center gap-2">
-            <Fingerprint className="w-4 h-4 text-[#1CC2B1]" />
+            <svg
+              className="w-4 h-4 text-[#1CC2B1]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"
+              />
+            </svg>
             <span>Your data is encrypted and secure</span>
           </p>
         </div>
@@ -135,6 +161,18 @@ export default function Login() {
       {/* RIGHT SIDE */}
       <main className="flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md">
+          {/* Mobile Logo Only */}
+          <div className="lg:hidden mb-8 text-center">
+            <div className="flex justify-center mb-6">
+              <img className="w-16 h-16" src="/logo.png" alt="site logo" />
+            </div>
+            <h2 className="text-2xl font-bold text-[#0E3554] mb-2">Sign In</h2>
+            <p className="text-slate-600 text-sm">
+              Enter your credentials to access your account
+            </p>
+          </div>
+
+          {/* Desktop Header */}
           <div className="hidden lg:block text-left mb-10">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-2 h-8 bg-[#0E3554] rounded-full" />
@@ -145,7 +183,7 @@ export default function Login() {
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl p-8 border border-[#D9F3EE]">
+          <div className="bg-white rounded-2xl p-6 lg:p-8 border border-[#D9F3EE]">
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
                 <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3">

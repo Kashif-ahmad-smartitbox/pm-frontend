@@ -32,6 +32,8 @@ import {
   ChevronRight as ChevronRightIcon,
   LogOut,
   Building,
+  Menu,
+  X,
 } from "lucide-react";
 
 // Types
@@ -516,7 +518,7 @@ const ProjectListItem = ({
             <StatusBadge status={project.status} />
           </div>
 
-          <div className="flex items-center gap-4 text-sm text-slate-600">
+          <div className="flex items-center gap-4 text-sm text-slate-600 flex-wrap">
             <span className="flex items-center gap-1.5">
               <MapPin className="w-4 h-4" />
               {project.location}
@@ -696,8 +698,8 @@ const TaskList = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-sm text-slate-600">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between text-sm text-slate-600 flex-wrap gap-2">
+          <div className="flex items-center gap-4 flex-wrap">
             <span className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4" />
               Due: {new Date(task.dueDate).toLocaleDateString()}
@@ -718,7 +720,7 @@ const TaskList = ({
             <span className="text-xs text-slate-500 font-medium">
               Assignees:
             </span>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-wrap">
               {task.assignees.map((assignee) => (
                 <span
                   key={assignee._id}
@@ -732,7 +734,7 @@ const TaskList = ({
         )}
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[#D9F3EE]">
+        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[#D9F3EE] flex-wrap">
           <button
             onClick={() => onTaskClick(task)}
             className="px-3 py-1.5 bg-[#EFFFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center gap-1.5 text-sm"
@@ -823,8 +825,8 @@ const Pagination = ({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-t border-[#D9F3EE] bg-[#EFFFFA]">
-      <div className="text-sm text-slate-600">
+    <div className="flex items-center justify-between px-6 py-4 border-t border-[#D9F3EE] bg-[#EFFFFA] flex-col gap-4 sm:flex-row">
+      <div className="text-sm text-slate-600 text-center sm:text-left">
         Showing {startItem}-{endItem} of {totalItems} projects
       </div>
 
@@ -902,6 +904,7 @@ export default function AdminDashboard() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [viewAllProjects, setViewAllProjects] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showUpdateTaskModal, setShowUpdateTaskModal] = useState(false);
@@ -1135,9 +1138,9 @@ export default function AdminDashboard() {
   if (error) return <ErrorState error={error} onRetry={fetchProjects} />;
 
   return (
-    <div className="min-h-screen bg-[#EFFFFA] p-6">
+    <div className="min-h-screen bg-[#EFFFFA] p-4 sm:p-6">
       {/* Modern Header */}
-      <header className="bg-gradient-to-br from-[#0E3554] to-[#1CC2B1] rounded-2xl p-6 mb-7 text-white relative">
+      <header className="bg-gradient-to-br from-[#0E3554] to-[#1CC2B1] rounded-2xl p-4 sm:p-6 mb-6 text-white relative">
         <div className="absolute inset-0">
           <div className="absolute top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl opacity-60" />
           <div className="absolute bottom-20 -right-20 w-80 h-80 bg-black/10 rounded-full blur-3xl opacity-60" />
@@ -1145,27 +1148,51 @@ export default function AdminDashboard() {
 
         <div className="relative z-10">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-4">
-                <img className="w-12 h-12" src="/logo.png" alt="site logo" />
-                <div>
-                  <h1 className="text-2xl font-bold text-white">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <img
+                  className="w-10 h-10 sm:w-12 sm:h-12"
+                  src="/logo.png"
+                  alt="site logo"
+                />
+                <div className="hidden sm:block">
+                  <h1 className="text-xl sm:text-2xl font-bold text-white">
                     SKC Project Management
                   </h1>
-                  <p className="text-teal-100 mt-1">
+                  <p className="text-teal-100 mt-1 text-sm">
                     Enterprise Management System
                   </p>
+                </div>
+                <div className="sm:hidden">
+                  <h1 className="text-lg font-bold text-white">SKC PM</h1>
+                  <p className="text-teal-100 text-xs">Admin Dashboard</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            {/* Mobile Menu Button */}
+            <div className="sm:hidden">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
+              >
+                {mobileMenuOpen ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+
+            {/* Desktop Actions */}
+            <div className="hidden sm:flex items-center gap-3">
               <button
                 onClick={() => setShowProjectTypesModal(true)}
                 className="px-4 py-2.5 bg-white/10 text-slate-200 rounded-lg font-medium hover:bg-white/20 transition-colors flex items-center gap-2 border border-white/20"
               >
                 <Building className="w-4 h-4" />
-                Project Types
+                <span className="hidden lg:inline">Project Types</span>
+                <span className="lg:hidden">Types</span>
               </button>
 
               <button
@@ -1173,7 +1200,8 @@ export default function AdminDashboard() {
                 className="px-4 py-2.5 bg-white/10 text-slate-200 rounded-lg font-medium hover:bg-white/20 transition-colors flex items-center gap-2 border border-white/20"
               >
                 <Users className="w-4 h-4" />
-                Team Management
+                <span className="hidden lg:inline">Team Management</span>
+                <span className="lg:hidden">Team</span>
               </button>
 
               {user ? (
@@ -1192,10 +1220,43 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="mt-4 pt-4 border-t border-white/20 sm:hidden">
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    setShowProjectTypesModal(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-2.5 bg-white/10 text-slate-200 rounded-lg font-medium hover:bg-white/20 transition-colors flex items-center gap-2 border border-white/20"
+                >
+                  <Building className="w-4 h-4" />
+                  Project Types
+                </button>
+                <button
+                  onClick={() => {
+                    setShowUserManagementModal(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-2.5 bg-white/10 text-slate-200 rounded-lg font-medium hover:bg-white/20 transition-colors flex items-center gap-2 border border-white/20"
+                >
+                  <Users className="w-4 h-4" />
+                  Team Management
+                </button>
+                {user && (
+                  <div className="mt-2">
+                    <ProfileDropdown user={user} onLogout={handleLogout} />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
-      <main className="space-y-7">
+      <main className="space-y-6">
         {/* Stats Section */}
         {!selectedProject && !viewAllProjects && (
           <StatsSection counts={counts} />
@@ -1204,14 +1265,16 @@ export default function AdminDashboard() {
         {/* Projects Section */}
         <section className="bg-white rounded-2xl border border-[#D9F3EE] overflow-hidden">
           {/* Section Header */}
-          <div className="border-b border-[#D9F3EE] p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-[#0E3554] flex items-center gap-3">
+          <div className="border-b border-[#D9F3EE] p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg sm:text-xl font-semibold text-[#0E3554] flex items-center gap-3">
                   {selectedProject ? (
                     <>
                       <FolderOpen className="w-5 h-5 text-[#1CC2B1]" />
-                      {selectedProject.project.projectName}
+                      <span className="truncate">
+                        {selectedProject.project.projectName}
+                      </span>
                     </>
                   ) : viewAllProjects ? (
                     <>
@@ -1225,7 +1288,7 @@ export default function AdminDashboard() {
                     </>
                   )}
                 </h2>
-                <p className="text-slate-600 mt-1">
+                <p className="text-slate-600 mt-1 text-sm">
                   {selectedProject
                     ? "Project tasks and details"
                     : viewAllProjects
@@ -1234,22 +1297,23 @@ export default function AdminDashboard() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 {selectedProject ? (
                   <>
                     <button
                       onClick={handleBackToProjects}
-                      className="px-4 py-2 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-colors flex items-center gap-2"
+                      className="px-4 py-2 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-colors flex items-center gap-2 text-sm"
                     >
                       <ArrowLeft className="w-4 h-4" />
-                      Back
+                      <span className="hidden sm:inline">Back</span>
                     </button>
                     <button
                       onClick={() => setShowNewTaskModal(true)}
-                      className="px-4 py-2 bg-[#0E3554] text-white rounded-lg font-medium hover:bg-[#0A2A42] transition-colors flex items-center gap-2"
+                      className="px-4 py-2 bg-[#0E3554] text-white rounded-lg font-medium hover:bg-[#0A2A42] transition-colors flex items-center gap-2 text-sm"
                     >
                       <Plus className="w-4 h-4" />
-                      New Task
+                      <span className="hidden sm:inline">New Task</span>
+                      <span className="sm:hidden">Task</span>
                     </button>
                   </>
                 ) : viewAllProjects ? (
@@ -1277,40 +1341,42 @@ export default function AdminDashboard() {
                       </button>
                     </div>
 
-                    <div className="relative">
+                    <div className="relative flex-1 sm:flex-none">
                       <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                       <input
                         type="text"
                         placeholder="Search projects..."
                         value={searchTerm}
                         onChange={(e) => handleSearch(e.target.value)}
-                        className="pl-10 pr-4 py-2 border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1] bg-white w-64 transition-all"
+                        className="pl-10 pr-4 py-2 border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1] bg-white w-full sm:w-64 transition-all text-sm"
                       />
                     </div>
 
                     <button
                       onClick={handleBackToOverview}
-                      className="px-4 py-2 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-colors flex items-center gap-2"
+                      className="px-4 py-2 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-colors flex items-center gap-2 text-sm"
                     >
                       <ArrowLeft className="w-4 h-4" />
-                      Overview
+                      <span className="hidden sm:inline">Overview</span>
                     </button>
                   </>
                 ) : (
                   <>
                     <button
                       onClick={() => setViewAllProjects(true)}
-                      className="px-4 py-2 bg-[#EFFFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center gap-2"
+                      className="px-4 py-2 bg-[#EFFFFA] text-[#0E3554] rounded-lg font-medium hover:bg-[#1CC2B1] hover:text-white transition-colors flex items-center gap-2 text-sm"
                     >
-                      View All
+                      <span className="hidden sm:inline">View All</span>
+                      <span className="sm:hidden">All</span>
                       <ChevronRight className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => setShowNewProjectModal(true)}
-                      className="px-4 py-2 bg-[#0E3554] text-white rounded-lg font-medium hover:bg-[#0A2A42] transition-colors flex items-center gap-2"
+                      className="px-4 py-2 bg-[#0E3554] text-white rounded-lg font-medium hover:bg-[#0A2A42] transition-colors flex items-center gap-2 text-sm"
                     >
                       <Plus className="w-4 h-4" />
-                      New Project
+                      <span className="hidden sm:inline">New Project</span>
+                      <span className="sm:hidden">Project</span>
                     </button>
                   </>
                 )}
@@ -1318,10 +1384,12 @@ export default function AdminDashboard() {
             </div>
 
             {selectedProject && (
-              <div className="flex items-center gap-4 mt-4">
+              <div className="flex items-center gap-2 mt-4 flex-wrap">
                 <div className="flex items-center gap-2 text-sm text-slate-600 bg-[#EFFFFA] px-3 py-1.5 rounded-lg">
                   <MapPin className="w-4 h-4" />
-                  {selectedProject.project.location}
+                  <span className="truncate max-w-32">
+                    {selectedProject.project.location}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-[#0E3554] bg-[#E0FFFA] px-3 py-1.5 rounded-lg">
                   <Calendar className="w-4 h-4" />
@@ -1342,14 +1410,15 @@ export default function AdminDashboard() {
                   className="ml-auto px-3 py-1.5 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-colors flex items-center gap-1.5 text-sm"
                 >
                   <Edit className="w-4 h-4" />
-                  Edit Project
+                  <span className="hidden sm:inline">Edit Project</span>
+                  <span className="sm:hidden">Edit</span>
                 </button>
               </div>
             )}
           </div>
 
           {/* Content */}
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {selectedProject ? (
               // Tasks List View
               <div>
