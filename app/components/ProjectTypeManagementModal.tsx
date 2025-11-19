@@ -35,39 +35,35 @@ interface ProjectTypeManagementModalProps {
   onProjectTypeCreated: () => void;
 }
 
+type TabType = "existing" | "new";
+
 const ProjectTypeManagementModal: React.FC<ProjectTypeManagementModalProps> = ({
   isOpen,
   onClose,
   onProjectTypeCreated,
 }) => {
-  const [activeTab, setActiveTab] = useState<"existing" | "new">("existing");
+  const [activeTab, setActiveTab] = useState<TabType>("existing");
   const [projectTypes, setProjectTypes] = useState<ProjectType[]>([]);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-  });
-  const [editFormData, setEditFormData] = useState<{
-    [key: string]: {
-      name: string;
-      description: string;
-    };
-  }>({});
-  const [editingProjectType, setEditingProjectType] = useState<string | null>(
-    null
-  );
+  const [formData, setFormData] = useState({ name: "", description: "" });
+  const [editFormData, setEditFormData] = useState<
+    Record<string, { name: string; description: string }>
+  >({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const [message, setMessage] = useState<{
+    type: "error" | "success";
+    text: string;
+  } | null>(null);
 
-  // Confirmation modal states
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
-    projectTypeId: string | null;
-    projectTypeName: string;
-  }>({ isOpen: false, projectTypeId: null, projectTypeName: "" });
+    id: string | null;
+    name: string;
+  }>({ isOpen: false, id: null, name: "" });
 
+  // Fetch project types when modal opens
   useEffect(() => {
     if (isOpen && activeTab === "existing") {
       fetchProjectTypes();
@@ -76,558 +72,272 @@ const ProjectTypeManagementModal: React.FC<ProjectTypeManagementModalProps> = ({
 
   const fetchProjectTypes = async () => {
     setLoading(true);
-    setError(null);
+    setMessage(null);
     try {
       const data = await getProjectTypes();
-      setProjectTypes(data.projectTypes || data);
-      // Initialize edit form data for each project type
+      const types = data.projectTypes || data;
+      setProjectTypes(types);
+
+      // Initialize edit form data
       const editData: typeof editFormData = {};
-      (data.projectTypes || data).forEach((projectType: ProjectType) => {
-        editData[projectType._id] = {
-          name: projectType.name,
-          description: projectType.description,
-        };
+      types.forEach((type: ProjectType) => {
+        editData[type._id] = { name: type.name, description: type.description };
       });
       setEditFormData(editData);
-    } catch (err) {
-      setError("Failed to load project types");
-      console.error("Error loading project types:", err);
+    } catch {
+      setMessage({ type: "error", text: "Failed to load project types" });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  const handleApiCall = async (
+    apiCall: () => Promise<void>,
+    successMsg: string
   ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleEditInputChange = (
-    projectTypeId: string,
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setEditFormData((prev) => ({
-      ...prev,
-      [projectTypeId]: {
-        ...prev[projectTypeId],
-        [name]: value,
-      },
-    }));
+    setSubmitting(true);
+    setMessage(null);
+    try {
+      await apiCall();
+      setMessage({ type: "success", text: successMsg });
+      return true;
+    } catch (err) {
+      setMessage({
+        type: "error",
+        text: err instanceof Error ? err.message : "Operation failed",
+      });
+      return false;
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
-    setError(null);
-    setSuccess(null);
+    if (!formData.name.trim()) {
+      setMessage({
+        type: "error",
+        text: "Please fill in the project type name",
+      });
+      return;
+    }
 
-    try {
-      if (!formData.name.trim()) {
-        setError("Please fill in the project type name");
-        return;
-      }
-
-      const payload = {
+    const success = await handleApiCall(async () => {
+      await createProjectType({
         name: formData.name.trim(),
         description: formData.description.trim(),
-      };
-
-      await createProjectType(payload);
-
-      setSuccess("Project type created successfully!");
-      setFormData({
-        name: "",
-        description: "",
       });
-      onProjectTypeCreated();
+    }, "Project type created successfully!");
 
+    if (success) {
+      setFormData({ name: "", description: "" });
+      onProjectTypeCreated();
       setTimeout(() => {
         setActiveTab("existing");
         fetchProjectTypes();
-      }, 2000);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to create project type"
-      );
-    } finally {
-      setSubmitting(false);
+      }, 1500);
     }
   };
 
-  const handleEditProjectType = async (projectTypeId: string) => {
-    setSubmitting(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      const projectTypeData = editFormData[projectTypeId];
-
-      if (!projectTypeData.name.trim()) {
-        setError("Please fill in the project type name");
-        return;
-      }
-
-      const payload = {
-        name: projectTypeData.name.trim(),
-        description: projectTypeData.description.trim(),
-      };
-
-      await updateProjectType(projectTypeId, payload);
-      setSuccess("Project type updated successfully!");
-      setEditingProjectType(null);
-      fetchProjectTypes();
-
-      setTimeout(() => {
-        setSuccess(null);
-      }, 3000);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to update project type"
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleDeleteProjectType = async (
-    projectTypeId: string,
-    projectTypeName: string
-  ) => {
-    setDeleteConfirm({
-      isOpen: true,
-      projectTypeId,
-      projectTypeName,
-    });
-    setMenuOpen(null);
-  };
-
-  const confirmDeleteProjectType = async () => {
-    if (!deleteConfirm.projectTypeId) return;
-
-    setError(null);
-    try {
-      await deleteProjectType(deleteConfirm.projectTypeId);
-      setProjectTypes(
-        projectTypes.filter(
-          (projectType) => projectType._id !== deleteConfirm.projectTypeId
-        )
-      );
-      setSuccess("Project type deleted successfully!");
-
-      setTimeout(() => {
-        setSuccess(null);
-      }, 3000);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to delete project type"
-      );
-    } finally {
-      setDeleteConfirm({
-        isOpen: false,
-        projectTypeId: null,
-        projectTypeName: "",
+  const handleEdit = async (id: string) => {
+    const typeData = editFormData[id];
+    if (!typeData?.name.trim()) {
+      setMessage({
+        type: "error",
+        text: "Please fill in the project type name",
       });
+      return;
     }
+
+    await handleApiCall(async () => {
+      await updateProjectType(id, {
+        name: typeData.name.trim(),
+        description: typeData.description.trim(),
+      });
+    }, "Project type updated successfully!");
+
+    setEditingId(null);
+    fetchProjectTypes();
   };
 
-  const toggleMenu = (projectTypeId: string) => {
-    setMenuOpen(menuOpen === projectTypeId ? null : projectTypeId);
-  };
-
-  const startEditing = (projectTypeId: string) => {
-    setEditingProjectType(projectTypeId);
+  const handleDelete = async (id: string, name: string) => {
+    setDeleteConfirm({ isOpen: true, id, name });
     setMenuOpen(null);
   };
 
-  const cancelEditing = () => {
-    setEditingProjectType(null);
-    // Reset form data for the project type being edited
-    if (editingProjectType) {
-      const projectType = projectTypes.find(
-        (pt) => pt._id === editingProjectType
+  const confirmDelete = async () => {
+    if (!deleteConfirm.id) return;
+
+    const success = await handleApiCall(async () => {
+      await deleteProjectType(deleteConfirm.id!);
+      setProjectTypes((types) =>
+        types.filter((type) => type._id !== deleteConfirm.id)
       );
-      if (projectType) {
-        setEditFormData((prev) => ({
-          ...prev,
-          [editingProjectType]: {
-            name: projectType.name,
-            description: projectType.description,
-          },
-        }));
-      }
+    }, "Project type deleted successfully!");
+
+    setDeleteConfirm({ isOpen: false, id: null, name: "" });
+  };
+
+  const resetEditData = (id: string) => {
+    const type = projectTypes.find((pt) => pt._id === id);
+    if (type) {
+      setEditFormData((prev) => ({
+        ...prev,
+        [id]: { name: type.name, description: type.description },
+      }));
     }
   };
 
   const handleClose = () => {
-    setFormData({
-      name: "",
-      description: "",
-    });
-    setError(null);
-    setSuccess(null);
+    setFormData({ name: "", description: "" });
+    setMessage(null);
     setActiveTab("existing");
     setMenuOpen(null);
-    setEditingProjectType(null);
+    setEditingId(null);
     onClose();
   };
 
   if (!isOpen) return null;
 
+  const tabs = [
+    {
+      key: "existing" as TabType,
+      label: "Existing Types",
+      icon: Folder,
+      count: projectTypes.length,
+    },
+    { key: "new" as TabType, label: "Add New", icon: FolderPlus },
+  ];
+
   return (
     <>
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-2xl shadow-sm border border-[#D9F3EE] overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col">
-          {/* Header */}
-          <div className="bg-gradient-to-br from-[#0E3554] to-[#1CC2B1] text-white p-6 flex-shrink-0">
+        <div className="bg-white rounded-xl shadow-sm border border-[#D9F3EE] overflow-hidden w-full max-w-2xl max-h-[85vh] flex flex-col">
+          {/* Header - Compact */}
+          <div className="bg-white border-b border-[#D9F3EE] p-4 flex-shrink-0">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center">
-                  <Folder className="w-6 h-6 text-[#0E3554]" />
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-[#EFFFFA] rounded-lg flex items-center justify-center">
+                  <Folder className="w-4 h-4 text-[#0E3554]" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold">Project Type Management</h2>
-                  <p className="text-teal-100 text-sm mt-1">
-                    Manage different types of projects
+                  <h2 className="text-lg font-bold text-[#0E3554]">
+                    Project Types
+                  </h2>
+                  <p className="text-slate-600 text-xs mt-0.5">
+                    Manage project types
                   </p>
                 </div>
               </div>
               <button
                 onClick={handleClose}
-                className="w-8 h-8 flex items-center justify-center text-teal-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
+                className="w-6 h-6 flex items-center justify-center text-slate-600 hover:text-[#0E3554] hover:bg-slate-100 rounded transition-colors"
                 disabled={submitting}
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* Tabs */}
+          {/* Tabs - Compact */}
           <div className="border-b border-[#D9F3EE] bg-white flex-shrink-0">
             <div className="flex">
-              <button
-                onClick={() => setActiveTab("existing")}
-                className={`flex-1 px-6 py-4 text-sm font-semibold border-b-2 transition-all duration-200 ${
-                  activeTab === "existing"
-                    ? "border-[#0E3554] text-[#0E3554] bg-[#EFFFFA]"
-                    : "border-transparent text-slate-500 hover:text-[#0E3554] hover:bg-[#EFFFFA]"
-                }`}
-              >
-                <div className="flex items-center gap-2 justify-center">
-                  <Folder className="w-4 h-4" />
-                  Existing Project Types ({projectTypes.length})
-                </div>
-              </button>
-              <button
-                onClick={() => setActiveTab("new")}
-                className={`flex-1 px-6 py-4 text-sm font-semibold border-b-2 transition-all duration-200 ${
-                  activeTab === "new"
-                    ? "border-[#0E3554] text-[#0E3554] bg-[#EFFFFA]"
-                    : "border-transparent text-slate-500 hover:text-[#0E3554] hover:bg-[#EFFFFA]"
-                }`}
-              >
-                <div className="flex items-center gap-2 justify-center">
-                  <FolderPlus className="w-4 h-4" />
-                  Add New Project Type
-                </div>
-              </button>
+              {tabs.map(({ key, label, icon: Icon, count }) => (
+                <button
+                  key={key}
+                  onClick={() => setActiveTab(key)}
+                  className={`flex-1 px-4 py-3 text-xs font-semibold border-b-2 transition-all duration-200 ${
+                    activeTab === key
+                      ? "border-[#0E3554] text-[#0E3554] bg-[#EFFFFA]"
+                      : "border-transparent text-slate-500 hover:text-[#0E3554] hover:bg-[#EFFFFA]"
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 justify-center">
+                    <Icon className="w-3.5 h-3.5" />
+                    {label} {count !== undefined && `(${count})`}
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="p-6">
-              {activeTab === "existing" ? (
-                // Existing Project Types Tab
-                <div>
-                  {error && (
-                    <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 mb-6">
-                      <div className="p-1 bg-red-100 rounded-lg">
-                        <AlertCircle className="w-4 h-4 text-red-600" />
-                      </div>
-                      <p className="text-red-700 text-sm flex-1 font-medium">
-                        {error}
-                      </p>
-                    </div>
-                  )}
-
-                  {success && (
-                    <div className="p-4 rounded-xl bg-[#E1F3F0] border border-[#1CC2B1] flex items-start gap-3 mb-6">
-                      <div className="p-1 bg-[#1CC2B1] rounded-lg">
-                        <CheckCircle className="w-4 h-4 text-white" />
-                      </div>
-                      <p className="text-[#1CC2B1] text-sm flex-1 font-medium">
-                        {success}
-                      </p>
-                    </div>
-                  )}
-
-                  {loading ? (
-                    <div className="text-center py-12 space-y-4">
-                      <div className="w-12 h-12 border-3 border-[#D9F3EE] border-t-[#1CC2B1] rounded-full animate-spin mx-auto"></div>
-                      <div className="space-y-2">
-                        <p className="text-[#0E3554] font-medium">
-                          Loading project types
-                        </p>
-                        <p className="text-slate-500 text-sm">
-                          Getting project type information...
-                        </p>
-                      </div>
-                    </div>
-                  ) : projectTypes.length === 0 ? (
-                    <div className="text-center py-12 space-y-4">
-                      <div className="w-16 h-16 bg-[#EFFFFA] rounded-2xl flex items-center justify-center mx-auto">
-                        <Folder className="w-8 h-8 text-[#0E3554]" />
-                      </div>
-                      <div className="space-y-2">
-                        <h3 className="text-lg font-semibold text-[#0E3554]">
-                          No project types found
-                        </h3>
-                        <p className="text-slate-600">
-                          Get started by adding your first project type
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setActiveTab("new")}
-                        className="px-6 py-3 bg-[#0E3554] text-white rounded-lg font-medium hover:bg-[#0A2A42] transition-colors flex items-center gap-2 mx-auto"
-                      >
-                        <FolderPlus className="w-4 h-4" />
-                        Add First Project Type
-                      </button>
-                    </div>
+          {/* Content - Compact */}
+          <div className="flex-1 overflow-y-auto min-h-0 p-4">
+            {/* Message Display - Compact */}
+            {message && (
+              <div
+                className={`p-3 rounded-lg border flex items-start gap-2 mb-4 text-sm ${
+                  message.type === "error"
+                    ? "bg-red-50 border-red-200"
+                    : "bg-[#E1F3F0] border-[#1CC2B1]"
+                }`}
+              >
+                <div
+                  className={`p-1 rounded ${
+                    message.type === "error" ? "bg-red-100" : "bg-[#1CC2B1]"
+                  }`}
+                >
+                  {message.type === "error" ? (
+                    <AlertCircle className="w-3.5 h-3.5 text-red-600" />
                   ) : (
-                    <div className="space-y-4">
-                      {projectTypes.map((projectType) => (
-                        <div
-                          key={projectType._id}
-                          className="bg-white border border-[#D9F3EE] rounded-2xl p-4 hover:border-[#1CC2B1] transition-all duration-300 group relative"
-                        >
-                          {editingProjectType === projectType._id ? (
-                            // Edit Mode
-                            <div className="space-y-4">
-                              <div className="flex items-center justify-between">
-                                <h4 className="font-semibold text-[#0E3554]">
-                                  Edit Project Type
-                                </h4>
-                              </div>
-
-                              <div className="space-y-4">
-                                <div className="space-y-2">
-                                  <label className="block text-sm font-medium text-[#0E3554]">
-                                    Name *
-                                  </label>
-                                  <input
-                                    type="text"
-                                    name="name"
-                                    value={
-                                      editFormData[projectType._id]?.name || ""
-                                    }
-                                    onChange={(e) =>
-                                      handleEditInputChange(projectType._id, e)
-                                    }
-                                    className="w-full px-3 py-2 border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1] text-[#0E3554]"
-                                    placeholder="Enter project type name"
-                                  />
-                                </div>
-                                <div className="space-y-2">
-                                  <label className="block text-sm font-medium text-[#0E3554]">
-                                    Description
-                                  </label>
-                                  <textarea
-                                    name="description"
-                                    value={
-                                      editFormData[projectType._id]
-                                        ?.description || ""
-                                    }
-                                    onChange={(e) =>
-                                      handleEditInputChange(projectType._id, e)
-                                    }
-                                    rows={3}
-                                    className="w-full px-3 py-2 border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1] resize-none text-[#0E3554]"
-                                    placeholder="Enter project type description"
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="flex justify-end gap-3 pt-4 border-t border-[#D9F3EE]">
-                                <button
-                                  onClick={cancelEditing}
-                                  disabled={submitting}
-                                  className="px-4 py-2 text-[#0E3554] hover:text-[#1CC2B1] font-medium disabled:opacity-50 transition-colors hover:bg-[#EFFFFA] rounded-lg flex items-center gap-2"
-                                >
-                                  <ArrowLeft className="w-4 h-4" />
-                                  Cancel
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    handleEditProjectType(projectType._id)
-                                  }
-                                  disabled={submitting}
-                                  className="px-4 py-2 bg-[#0E3554] text-white rounded-lg font-medium hover:bg-[#0A2A42] transition-colors disabled:opacity-50 flex items-center gap-2"
-                                >
-                                  <Save className="w-4 h-4" />
-                                  {submitting ? "Saving..." : "Save Changes"}
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            // View Mode
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4 flex-1">
-                                <div className="w-12 h-12 bg-[#E0FFFA] rounded-xl flex items-center justify-center text-[#0E3554]">
-                                  <Type className="w-6 h-6" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-[#0E3554] truncate">
-                                    {projectType.name}
-                                  </h4>
-                                  <p className="text-slate-600 text-sm mt-1 line-clamp-2">
-                                    {projectType.description ||
-                                      "No description provided"}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="relative">
-                                  <button
-                                    onClick={() => toggleMenu(projectType._id)}
-                                    className="p-2 text-slate-400 hover:text-[#0E3554] rounded-lg hover:bg-[#EFFFFA] transition-colors"
-                                  >
-                                    <MoreVertical className="w-4 h-4" />
-                                  </button>
-
-                                  {menuOpen === projectType._id && (
-                                    <div className="absolute right-0 top-10 bg-white border border-[#D9F3EE] rounded-xl shadow-lg z-10 min-w-36 overflow-hidden">
-                                      <button
-                                        onClick={() =>
-                                          startEditing(projectType._id)
-                                        }
-                                        className="w-full px-4 py-3 text-left text-sm text-[#0E3554] hover:bg-[#EFFFFA] flex items-center gap-2 transition-colors"
-                                      >
-                                        <Edit className="w-4 h-4" />
-                                        Edit
-                                      </button>
-                                      <button
-                                        onClick={() =>
-                                          handleDeleteProjectType(
-                                            projectType._id,
-                                            projectType.name
-                                          )
-                                        }
-                                        className="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                        Delete
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                    <CheckCircle className="w-3.5 h-3.5 text-white" />
                   )}
                 </div>
-              ) : (
-                // Add New Project Type Tab
-                <div>
-                  {error && (
-                    <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 mb-6">
-                      <div className="p-1 bg-red-100 rounded-lg">
-                        <AlertCircle className="w-4 h-4 text-red-600" />
-                      </div>
-                      <p className="text-red-700 text-sm flex-1 font-medium">
-                        {error}
-                      </p>
-                    </div>
-                  )}
+                <p
+                  className={`flex-1 font-medium ${
+                    message.type === "error" ? "text-red-700" : "text-[#1CC2B1]"
+                  }`}
+                >
+                  {message.text}
+                </p>
+              </div>
+            )}
 
-                  {success && (
-                    <div className="p-4 rounded-xl bg-[#E1F3F0] border border-[#1CC2B1] flex items-start gap-3 mb-6">
-                      <div className="p-1 bg-[#1CC2B1] rounded-lg">
-                        <CheckCircle className="w-4 h-4 text-white" />
-                      </div>
-                      <p className="text-[#1CC2B1] text-sm flex-1 font-medium">
-                        {success}
-                      </p>
-                    </div>
-                  )}
-
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Name */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-[#0E3554]">
-                        Project Type Name *
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          name="name"
-                          value={formData.name}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
-                            placeholder-slate-400 transition-all duration-200
-                            focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
-                            hover:border-[#0E3554] bg-white text-[#0E3554]
-                            disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
-                          placeholder="Enter project type name (e.g., Infrastructure, Construction)"
-                          required
-                          disabled={submitting}
-                        />
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                          <Type className="w-4 h-4 text-slate-400" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Description */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-[#0E3554]">
-                        Description
-                      </label>
-                      <div className="relative">
-                        <textarea
-                          name="description"
-                          value={formData.description}
-                          onChange={handleInputChange}
-                          rows={4}
-                          className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
-                            placeholder-slate-400 transition-all duration-200
-                            focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
-                            hover:border-[#0E3554] bg-white text-[#0E3554] resize-none
-                            disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
-                          placeholder="Enter project type description (e.g., Roads, bridges, construction projects)"
-                          disabled={submitting}
-                        />
-                        <div className="absolute left-4 top-4">
-                          <FileText className="w-4 h-4 text-slate-400" />
-                        </div>
-                      </div>
-                      <p className="text-slate-500 text-sm">
-                        Optional: Provide a brief description of what this
-                        project type includes
-                      </p>
-                    </div>
-                  </form>
-                </div>
-              )}
-            </div>
+            {activeTab === "existing" ? (
+              <ExistingTypesTab
+                loading={loading}
+                projectTypes={projectTypes}
+                editingId={editingId}
+                editFormData={editFormData}
+                submitting={submitting}
+                menuOpen={menuOpen}
+                onEditChange={handleEdit}
+                onDelete={handleDelete}
+                onMenuToggle={setMenuOpen}
+                onEditStart={setEditingId}
+                onEditCancel={() => {
+                  if (editingId) resetEditData(editingId);
+                  setEditingId(null);
+                }}
+                onEditInputChange={(id, e) => {
+                  const { name, value } = e.target;
+                  setEditFormData((prev) => ({
+                    ...prev,
+                    [id]: { ...prev[id], [name]: value },
+                  }));
+                }}
+                onAddNew={() => setActiveTab("new")}
+              />
+            ) : (
+              <NewTypeTab
+                formData={formData}
+                submitting={submitting}
+                onInputChange={(e) => {
+                  const { name, value } = e.target;
+                  setFormData((prev) => ({ ...prev, [name]: value }));
+                }}
+                onSubmit={handleSubmit}
+              />
+            )}
           </div>
 
-          {/* Footer */}
-          <div className="border-t border-[#D9F3EE] p-6 bg-white flex-shrink-0">
-            <div className="flex justify-end gap-3">
+          {/* Footer - Compact */}
+          <div className="border-t border-[#D9F3EE] p-4 bg-white flex-shrink-0">
+            <div className="flex justify-end gap-2">
               <button
                 onClick={handleClose}
                 disabled={submitting}
-                className="px-6 py-2.5 text-[#0E3554] hover:text-[#1CC2B1] font-medium disabled:opacity-50 transition-colors hover:bg-[#EFFFFA] rounded-lg"
+                className="px-4 py-2 text-sm text-[#0E3554] hover:text-[#1CC2B1] font-medium disabled:opacity-50 transition-colors hover:bg-[#EFFFFA] rounded"
               >
                 {activeTab === "existing" ? "Close" : "Cancel"}
               </button>
@@ -635,21 +345,17 @@ const ProjectTypeManagementModal: React.FC<ProjectTypeManagementModalProps> = ({
                 <button
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="px-6 py-2.5 rounded-lg font-medium
-                    bg-[#0E3554] hover:bg-[#0A2A42]
-                    transition-all duration-200
-                    disabled:opacity-70 disabled:cursor-not-allowed
-                    flex items-center justify-center gap-2 text-white"
+                  className="px-4 py-2 text-sm rounded font-medium bg-[#0E3554] hover:bg-[#0A2A42] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 text-white"
                 >
                   {submitting ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       <span>Creating...</span>
                     </>
                   ) : (
                     <>
-                      <FolderPlus className="w-4 h-4" />
-                      <span>Create Project Type</span>
+                      <FolderPlus className="w-3.5 h-3.5" />
+                      <span>Create</span>
                     </>
                   )}
                 </button>
@@ -659,24 +365,320 @@ const ProjectTypeManagementModal: React.FC<ProjectTypeManagementModalProps> = ({
         </div>
       </div>
 
-      {/* Confirmation Modal for Delete */}
+      {/* Confirmation Modal */}
       <ConfirmationModal
         isOpen={deleteConfirm.isOpen}
-        onClose={() =>
-          setDeleteConfirm({
-            isOpen: false,
-            projectTypeId: null,
-            projectTypeName: "",
-          })
-        }
-        onConfirm={confirmDeleteProjectType}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: null, name: "" })}
+        onConfirm={confirmDelete}
         title="Delete Project Type"
-        message={`Are you sure you want to delete "${deleteConfirm.projectTypeName}"? This action cannot be undone.`}
+        message={`Are you sure you want to delete "${deleteConfirm.name}"? This action cannot be undone.`}
         confirmText="Delete Project Type"
         variant="danger"
       />
     </>
   );
 };
+
+// Sub-components for better organization
+const ExistingTypesTab: React.FC<{
+  loading: boolean;
+  projectTypes: ProjectType[];
+  editingId: string | null;
+  editFormData: Record<string, { name: string; description: string }>;
+  submitting: boolean;
+  menuOpen: string | null;
+  onEditChange: (id: string) => void;
+  onDelete: (id: string, name: string) => void;
+  onMenuToggle: (id: string | null) => void;
+  onEditStart: (id: string) => void;
+  onEditCancel: () => void;
+  onEditInputChange: (
+    id: string,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => void;
+  onAddNew: () => void;
+}> = ({
+  loading,
+  projectTypes,
+  editingId,
+  editFormData,
+  submitting,
+  menuOpen,
+  onEditChange,
+  onDelete,
+  onMenuToggle,
+  onEditStart,
+  onEditCancel,
+  onEditInputChange,
+  onAddNew,
+}) => {
+  if (loading) {
+    return (
+      <div className="text-center py-8 space-y-3">
+        <div className="w-8 h-8 border-2 border-[#D9F3EE] border-t-[#1CC2B1] rounded-full animate-spin mx-auto"></div>
+        <div className="space-y-1">
+          <p className="text-[#0E3554] font-medium text-sm">Loading types</p>
+          <p className="text-slate-500 text-xs">Getting project types...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (projectTypes.length === 0) {
+    return (
+      <div className="text-center py-8 space-y-3">
+        <div className="w-12 h-12 bg-[#EFFFFA] rounded-lg flex items-center justify-center mx-auto">
+          <Folder className="w-6 h-6 text-[#0E3554]" />
+        </div>
+        <div className="space-y-1">
+          <h3 className="text-base font-semibold text-[#0E3554]">
+            No project types
+          </h3>
+          <p className="text-slate-600 text-sm">Add your first project type</p>
+        </div>
+        <button
+          onClick={onAddNew}
+          className="px-4 py-2 text-sm bg-[#0E3554] text-white rounded font-medium hover:bg-[#0A2A42] transition-colors flex items-center gap-1.5 mx-auto"
+        >
+          <FolderPlus className="w-3.5 h-3.5" />
+          Add First Type
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {projectTypes.map((type) => (
+        <div
+          key={type._id}
+          className="bg-white border border-[#D9F3EE] rounded-lg p-3 hover:border-[#1CC2B1] transition-all duration-200 group relative"
+        >
+          {editingId === type._id ? (
+            <EditForm
+              type={type}
+              data={editFormData[type._id]}
+              submitting={submitting}
+              onInputChange={(e) => onEditInputChange(type._id, e)}
+              onSave={() => onEditChange(type._id)}
+              onCancel={onEditCancel}
+            />
+          ) : (
+            <ViewMode
+              type={type}
+              menuOpen={menuOpen === type._id}
+              onMenuToggle={() =>
+                onMenuToggle(menuOpen === type._id ? null : type._id)
+              }
+              onEditStart={() => onEditStart(type._id)}
+              onDelete={() => onDelete(type._id, type.name)}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const EditForm: React.FC<{
+  type: ProjectType;
+  data: { name: string; description: string };
+  submitting: boolean;
+  onInputChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}> = ({ type, data, submitting, onInputChange, onSave, onCancel }) => (
+  <div className="space-y-3">
+    <h4 className="font-semibold text-[#0E3554] text-sm">Edit Project Type</h4>
+    <div className="space-y-3">
+      <FormField
+        label="Name *"
+        name="name"
+        value={data?.name || ""}
+        onChange={onInputChange}
+        type="text"
+        placeholder="Enter project type name"
+      />
+      <FormField
+        label="Description"
+        name="description"
+        value={data?.description || ""}
+        onChange={onInputChange}
+        type="textarea"
+        placeholder="Enter project type description"
+      />
+    </div>
+    <div className="flex justify-end gap-2 pt-3 border-t border-[#D9F3EE]">
+      <button
+        onClick={onCancel}
+        disabled={submitting}
+        className="px-3 py-1.5 text-xs text-[#0E3554] hover:text-[#1CC2B1] font-medium disabled:opacity-50 transition-colors hover:bg-[#EFFFFA] rounded flex items-center gap-1.5"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" />
+        Cancel
+      </button>
+      <button
+        onClick={onSave}
+        disabled={submitting}
+        className="px-3 py-1.5 text-xs bg-[#0E3554] text-white rounded font-medium hover:bg-[#0A2A42] transition-colors disabled:opacity-50 flex items-center gap-1.5"
+      >
+        <Save className="w-3.5 h-3.5" />
+        {submitting ? "Saving..." : "Save"}
+      </button>
+    </div>
+  </div>
+);
+
+const ViewMode: React.FC<{
+  type: ProjectType;
+  menuOpen: boolean;
+  onMenuToggle: () => void;
+  onEditStart: () => void;
+  onDelete: () => void;
+}> = ({ type, menuOpen, onMenuToggle, onEditStart, onDelete }) => (
+  <div className="flex items-center justify-between">
+    <div className="flex items-center gap-3 flex-1">
+      <div className="w-8 h-8 bg-[#E0FFFA] rounded flex items-center justify-center text-[#0E3554]">
+        <Type className="w-4 h-4" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h4 className="font-semibold text-[#0E3554] text-sm truncate">
+          {type.name}
+        </h4>
+        <p className="text-slate-600 text-xs mt-0.5 line-clamp-2">
+          {type.description || "No description provided"}
+        </p>
+      </div>
+    </div>
+    <div className="relative">
+      <button
+        onClick={onMenuToggle}
+        className="p-1.5 text-slate-400 hover:text-[#0E3554] rounded hover:bg-[#EFFFFA] transition-colors"
+      >
+        <MoreVertical className="w-3.5 h-3.5" />
+      </button>
+      {menuOpen && (
+        <div className="absolute right-0 top-8 bg-white border border-[#D9F3EE] rounded-lg shadow-lg z-10 min-w-32 overflow-hidden">
+          <button
+            onClick={onEditStart}
+            className="w-full px-3 py-2 text-left text-xs text-[#0E3554] hover:bg-[#EFFFFA] flex items-center gap-1.5 transition-colors"
+          >
+            <Edit className="w-3.5 h-3.5" />
+            Edit
+          </button>
+          <button
+            onClick={onDelete}
+            className="w-full px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 flex items-center gap-1.5 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Delete
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const NewTypeTab: React.FC<{
+  formData: { name: string; description: string };
+  submitting: boolean;
+  onInputChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => void;
+  onSubmit: (e: React.FormEvent) => void;
+}> = ({ formData, submitting, onInputChange, onSubmit }) => (
+  <form onSubmit={onSubmit} className="space-y-4">
+    <FormField
+      label="Project Type Name *"
+      name="name"
+      value={formData.name}
+      onChange={onInputChange}
+      type="text"
+      placeholder="Enter project type name"
+      icon={Type}
+      required
+      disabled={submitting}
+    />
+    <FormField
+      label="Description"
+      name="description"
+      value={formData.description}
+      onChange={onInputChange}
+      type="textarea"
+      placeholder="Enter project type description"
+      icon={FileText}
+      disabled={submitting}
+      helperText="Optional: Provide a brief description"
+    />
+  </form>
+);
+
+const FormField: React.FC<{
+  label: string;
+  name: string;
+  value: string;
+  onChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => void;
+  type: "text" | "textarea";
+  placeholder: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  required?: boolean;
+  disabled?: boolean;
+  helperText?: string;
+}> = ({
+  label,
+  name,
+  value,
+  onChange,
+  type,
+  placeholder,
+  icon: Icon,
+  required,
+  disabled,
+  helperText,
+}) => (
+  <div className="space-y-2">
+    <label className="block text-xs font-semibold text-[#0E3554]">
+      {label}
+    </label>
+    <div className="relative">
+      {type === "text" ? (
+        <input
+          type="text"
+          name={name}
+          value={value}
+          onChange={onChange}
+          className="w-full px-3 py-2 pl-10 text-sm border border-[#D9F3EE] rounded-lg placeholder-slate-400 transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1] hover:border-[#0E3554] bg-white text-[#0E3554] disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
+          placeholder={placeholder}
+          required={required}
+          disabled={disabled}
+        />
+      ) : (
+        <textarea
+          name={name}
+          value={value}
+          onChange={onChange}
+          rows={3}
+          className="w-full px-3 py-2 pl-10 text-sm border border-[#D9F3EE] rounded-lg placeholder-slate-400 transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1] hover:border-[#0E3554] bg-white text-[#0E3554] resize-none disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
+          placeholder={placeholder}
+          disabled={disabled}
+        />
+      )}
+      {Icon && (
+        <div
+          className={`absolute left-3 ${
+            type === "text" ? "top-1/2 -translate-y-1/2" : "top-2.5"
+          }`}
+        >
+          <Icon className="w-3.5 h-3.5 text-slate-400" />
+        </div>
+      )}
+    </div>
+    {helperText && <p className="text-slate-500 text-xs">{helperText}</p>}
+  </div>
+);
 
 export default ProjectTypeManagementModal;

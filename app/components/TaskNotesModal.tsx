@@ -1,14 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createNote } from "@/lib/api/tasks";
 import {
   X,
   MessageSquare,
   User,
   Calendar,
-  FileText,
   Send,
-  Clock,
   Users,
+  RefreshCw,
 } from "lucide-react";
 
 type TaskStatus = "todo" | "in_progress" | "done";
@@ -19,6 +18,7 @@ interface User {
   name: string;
   email: string;
   role?: string;
+  color?: string;
 }
 
 interface Note {
@@ -49,14 +49,39 @@ const TaskNotesModal = ({
   isOpen,
   onClose,
   onNoteAdded,
+  onRefresh,
+  currentUser,
 }: {
   task: Task;
   isOpen: boolean;
   onClose: () => void;
   onNoteAdded: (newNote: Note) => void;
+  onRefresh: () => void;
+  currentUser: User;
 }) => {
   const [newNote, setNewNote] = useState("");
   const [addingNote, setAddingNote] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-scroll to bottom when new notes are added
+  useEffect(() => {
+    scrollToBottom();
+  }, [task.notes]);
+
+  // Auto-focus textarea when modal opens
+  useEffect(() => {
+    if (isOpen && textareaRef.current) {
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
+    }
+  }, [isOpen]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const handleAddNote = async () => {
     if (!newNote.trim()) return;
@@ -66,6 +91,10 @@ const TaskNotesModal = ({
       const addedNote = await createNote(task._id, newNote);
       onNoteAdded(addedNote);
       setNewNote("");
+      // Refocus textarea after sending
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
     } catch (error) {
       console.error("Failed to add note:", error);
     } finally {
@@ -73,8 +102,18 @@ const TaskNotesModal = ({
     }
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await onRefresh();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
       handleAddNote();
     }
   };
@@ -89,177 +128,285 @@ const TaskNotesModal = ({
     return author.name;
   };
 
-  const getAuthorRole = (author: User | undefined) => {
-    if (!author || !author.role) return "Team Member";
-    return author.role;
+  const getUserAvatar = (author: User | undefined) => {
+    const initials = getAuthorInitial(author);
+    const backgroundColor = author?.color || "#EFFFFA";
+    const textColor = author?.color
+      ? getContrastColor(author.color)
+      : "#0E3554";
+
+    return (
+      <div
+        className="w-6 h-6 rounded-full flex items-center justify-center font-semibold text-xs flex-shrink-0 border border-white shadow-xs"
+        style={{
+          backgroundColor: backgroundColor,
+          color: textColor,
+        }}
+      >
+        {initials}
+      </div>
+    );
+  };
+
+  const getContrastColor = (hexColor: string) => {
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.5 ? "#000000" : "#FFFFFF";
+  };
+
+  const isCurrentUser = (author: User | undefined) => {
+    return author?._id === currentUser?._id;
+  };
+
+  const formatMessageTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+
+    if (isToday) {
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } else {
+      return date.toLocaleDateString([], { month: "short", day: "numeric" });
+    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-sm border border-[#D9F3EE] overflow-hidden w-full max-w-2xl max-h-[85vh] flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-br from-[#0E3554] to-[#1CC2B1] text-white p-6 flex-shrink-0">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 z-50">
+      <div className="bg-white rounded-lg shadow-sm border border-[#D9F3EE] overflow-hidden w-full max-w-2xl max-h-[85vh] flex flex-col">
+        {/* Header - Ultra Compact */}
+        <div className="bg-white border-b border-[#D9F3EE] p-3 flex-shrink-0">
           <div className="flex items-center justify-between">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center flex-shrink-0">
-                <MessageSquare className="w-6 h-6 text-[#0E3554]" />
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="w-7 h-7 bg-[#EFFFFA] rounded-lg flex items-center justify-center flex-shrink-0">
+                <MessageSquare className="w-3.5 h-3.5 text-[#0E3554]" />
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-xl font-bold text-white truncate">
+                <h2 className="text-base font-semibold text-[#0E3554] truncate">
                   {task.title}
                 </h2>
-                <div className="text-teal-100 text-sm mt-1 flex items-start gap-2">
-                  <FileText className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <p className="flex-1 min-w-0 line-clamp-2 leading-relaxed">
-                    {task.description}
-                  </p>
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center text-teal-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Task Info */}
-        <div className="border-b border-[#D9F3EE] p-4 bg-[#EFFFFA] flex-shrink-0">
-          <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
-            <span className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-[#D9F3EE]">
-              <User className="w-4 h-4" />
-              Created by {getAuthorName(task.createdBy)}
-            </span>
-            <span className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-[#D9F3EE]">
-              <Calendar className="w-4 h-4" />
-              Due: {new Date(task.dueDate).toLocaleDateString()}
-            </span>
-            <span className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-lg border border-[#D9F3EE]">
-              <Users className="w-4 h-4" />
-              {task.assignees?.length || 0} assignee(s)
-            </span>
-          </div>
-        </div>
-
-        {/* Notes List */}
-        <div className="flex-1 p-6 overflow-y-auto min-h-0">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-2 h-8 bg-[#0E3554] rounded-full"></div>
-            <h3 className="text-lg font-bold text-[#0E3554] flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-[#1CC2B1]" />
-              Notes ({task.notes?.length || 0})
-            </h3>
-          </div>
-
-          {!task.notes || task.notes.length === 0 ? (
-            <div className="text-center py-12 space-y-4">
-              <div className="w-16 h-16 bg-[#EFFFFA] rounded-2xl flex items-center justify-center mx-auto">
-                <MessageSquare className="w-8 h-8 text-slate-400" />
-              </div>
-              <div className="space-y-2">
-                <p className="text-[#0E3554] font-medium">No notes yet</p>
-                <p className="text-slate-500 text-sm">
-                  Be the first to add a note to this task
+                <p className="text-slate-500 text-xs truncate">
+                  {task.description}
                 </p>
               </div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {task.notes.map((note) => (
-                <div
-                  key={note._id}
-                  className="bg-white border border-[#D9F3EE] rounded-xl p-4 hover:border-[#1CC2B1] transition-colors"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-[#0E3554] rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                        {getAuthorInitial(note.author)}
-                      </div>
-                      <div>
-                        <span className="font-semibold text-[#0E3554] block">
-                          {getAuthorName(note.author)}
-                        </span>
-                        <span className="text-xs text-slate-500 flex items-center gap-1">
-                          <User className="w-3 h-3" />
-                          {getAuthorRole(note.author)}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-sm text-slate-500 flex items-center gap-1.5 bg-[#EFFFFA] px-2.5 py-1 rounded-lg flex-shrink-0">
-                      <Clock className="w-3 h-3" />
-                      {new Date(note.createdAt).toLocaleDateString()} at{" "}
-                      {new Date(note.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                  <p className="text-[#0E3554] leading-relaxed pl-11">
-                    {note.text}
-                  </p>
-                </div>
-              ))}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {/* <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-[#0E3554] hover:bg-slate-100 rounded transition-colors"
+                title="Refresh messages"
+              >
+                <RefreshCw
+                  className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`}
+                />
+              </button> */}
+              <button
+                onClick={onClose}
+                className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-[#0E3554] hover:bg-slate-100 rounded transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Add Note Form */}
-        <div className="border-t border-[#D9F3EE] p-6 bg-white flex-shrink-0">
-          <div className="space-y-4">
+        {/* Task Info - Ultra Compact */}
+        <div className="border-b border-[#D9F3EE] p-2 bg-[#EFFFFA] flex-shrink-0">
+          <div className="flex flex-wrap items-center gap-1 text-xs text-slate-600">
+            <span className="flex items-center gap-1 bg-white px-2 py-1 rounded border border-[#D9F3EE]">
+              <User className="w-3 h-3" />
+              <span>{getAuthorName(task.createdBy)}</span>
+            </span>
+            <span className="flex items-center gap-1 bg-white px-2 py-1 rounded border border-[#D9F3EE]">
+              <Calendar className="w-3 h-3" />
+              <span>{new Date(task.dueDate).toLocaleDateString()}</span>
+            </span>
+            <span className="flex items-center gap-1 bg-white px-2 py-1 rounded border border-[#D9F3EE]">
+              <Users className="w-3 h-3" />
+              <span>{task.assignees?.length || 0}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Chat Area */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Chat Header - Compact */}
+          <div className="border-b border-[#D9F3EE] p-3 bg-white flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-[#0E3554]">
+                  Discussion
+                </h3>
+                <span className="text-xs text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                  {task.notes?.length || 0}
+                </span>
+              </div>
+              {/* <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="text-xs text-slate-500 hover:text-[#0E3554] flex items-center gap-1 transition-colors px-2 py-1 hover:bg-slate-50 rounded"
+              >
+                <RefreshCw
+                  className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </button> */}
+            </div>
+          </div>
+
+          {/* Messages Container */}
+          <div className="flex-1 p-4 overflow-y-auto bg-slate-50">
+            {!task.notes || task.notes.length === 0 ? (
+              <div className="text-center py-8 space-y-3">
+                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto border border-[#D9F3EE]">
+                  <MessageSquare className="w-5 h-5 text-slate-400" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[#0E3554] font-medium text-sm">
+                    No messages yet
+                  </p>
+                  <p className="text-slate-500 text-xs">
+                    Start the conversation
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {task.notes.map((note, index) => {
+                  const isCurrentUserMessage = isCurrentUser(note.author);
+                  const showHeader =
+                    index === 0 ||
+                    task.notes[index - 1].author._id !== note.author._id ||
+                    new Date(note.createdAt).getTime() -
+                      new Date(task.notes[index - 1].createdAt).getTime() >
+                      300000; // 5 minutes
+
+                  return (
+                    <div
+                      key={note._id}
+                      className={`flex gap-2 group ${
+                        isCurrentUserMessage ? "justify-end" : "justify-start"
+                      }`}
+                    >
+                      {/* Avatar - Only show for others */}
+                      {!isCurrentUserMessage && (
+                        <div className="flex-shrink-0 mt-0.5">
+                          {getUserAvatar(note.author)}
+                        </div>
+                      )}
+
+                      {/* Message Content */}
+                      <div
+                        className={`flex flex-col ${
+                          isCurrentUserMessage ? "items-end" : "items-start"
+                        } max-w-[85%]`}
+                      >
+                        {/* Message Header */}
+                        {showHeader && !isCurrentUserMessage && (
+                          <div className="flex items-center gap-1.5 mb-0.5 px-1">
+                            <span className="font-medium text-[#0E3554] text-xs">
+                              {getAuthorName(note.author)}
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              {formatMessageTime(note.createdAt)}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Message Bubble */}
+                        <div className="flex gap-2 items-start">
+                          <div
+                            className={`relative rounded-xl p-2.5 ${
+                              isCurrentUserMessage
+                                ? "bg-[#0E3554] text-white rounded-br-sm"
+                                : "bg-white border border-[#D9F3EE] rounded-bl-sm"
+                            } group-hover:shadow-xs transition-all duration-150`}
+                          >
+                            <p className="text-xs leading-relaxed whitespace-pre-wrap">
+                              {note.text}
+                            </p>
+                          </div>
+
+                          {/* Timestamp for current user */}
+                          {isCurrentUserMessage && (
+                            <span className="text-[10px] text-slate-400 mt-0.5 flex-shrink-0">
+                              {formatMessageTime(note.createdAt)}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Header for current user */}
+                        {showHeader && isCurrentUserMessage && (
+                          <div className="flex items-center gap-1.5 mb-0.5 px-1 mt-0.5">
+                            <span className="font-medium text-[#0E3554] text-xs">
+                              You
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Avatar for current user */}
+                      {isCurrentUserMessage && (
+                        <div className="flex-shrink-0 mt-0.5">
+                          {getUserAvatar(note.author)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Message Input - Compact */}
+        <div className="border-t border-[#D9F3EE] p-3 bg-white flex-shrink-0">
+          <div className="space-y-2">
             <div className="relative">
               <textarea
+                ref={textareaRef}
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
                 onKeyDown={handleKeyPress}
-                placeholder="Type your note here... (Ctrl+Enter to send)"
-                className="w-full px-4 py-3 pl-12 pr-4 border border-[#D9F3EE] rounded-xl 
-                  placeholder-slate-400 transition-all duration-200
-                  focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                placeholder="Type a message... (Ctrl+Enter to send)"
+                className="w-full px-3 py-2 pl-3 pr-10 text-xs border border-[#D9F3EE] rounded-lg 
+                  placeholder-slate-400 transition-all duration-150
+                  focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
                   hover:border-[#0E3554] bg-white text-[#0E3554]
                   disabled:bg-[#EFFFFA] disabled:cursor-not-allowed resize-none"
-                rows={3}
+                rows={2}
               />
-              <div className="absolute left-4 top-4">
-                <MessageSquare className="w-4 h-4 text-slate-400" />
-              </div>
+              <button
+                onClick={handleAddNote}
+                disabled={!newNote.trim() || addingNote}
+                className="absolute right-2 bottom-2 w-6 h-6 flex items-center justify-center rounded
+                  bg-[#0E3554] hover:bg-[#0A2A42] disabled:bg-slate-300 disabled:cursor-not-allowed
+                  transition-all duration-150 text-white"
+                title="Send message (Ctrl+Enter)"
+              >
+                {addingNote ? (
+                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-3 h-3" />
+                )}
+              </button>
             </div>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <p className="text-sm text-slate-500 flex items-center gap-2 order-2 sm:order-1">
-                <span>Press Ctrl+Enter to send quickly</span>
-              </p>
-              <div className="flex items-center gap-3 order-1 sm:order-2 w-full sm:w-auto">
-                <button
-                  onClick={onClose}
-                  className="px-4 sm:px-6 py-2.5 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-colors hover:bg-[#EFFFFA] rounded-lg flex-1 sm:flex-none text-center"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAddNote}
-                  disabled={!newNote.trim() || addingNote}
-                  className="px-4 sm:px-6 py-2.5 rounded-lg font-medium
-                    bg-[#0E3554] hover:bg-[#0A2A42]
-                    transition-all duration-200
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                    flex items-center justify-center gap-2 text-white flex-1 sm:flex-none"
-                >
-                  {addingNote ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Adding...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      <span>Add Note</span>
-                    </>
-                  )}
-                </button>
-              </div>
+            <div className="flex justify-between items-center">
+              <p className="text-[10px] text-slate-400">Ctrl+Enter to send</p>
+              <button
+                onClick={onClose}
+                className="px-2.5 py-1 text-xs text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-colors hover:bg-[#EFFFFA] rounded"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

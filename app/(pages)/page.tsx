@@ -60,7 +60,7 @@ export default function Login() {
           <div className="flex items-center gap-4 mb-8">
             <img className="w-24" src="/logo.png" alt="site logo" />
             <div>
-              <h1 className="text-2xl font-bold">Project Management System</h1>
+              <h1 className="text-xl font-bold">Project Management System</h1>
               <p className="text-teal-100 mt-1">Enterprise Management System</p>
             </div>
           </div>
@@ -183,7 +183,7 @@ export default function Login() {
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 lg:p-8 border border-[#D9F3EE]">
+          <div className="bg-gray-100 rounded-2xl p-6 lg:p-8 border border-[#D9F3EE]">
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
                 <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3">
@@ -284,19 +284,21 @@ export default function Login() {
             </p>
           </div>
 
-          <footer className="mt-8 text-center space-y-3">
-            <p className="text-sm text-slate-600">
-              Don't have an account?{" "}
-              <a
-                href="/"
-                className="text-[#0E3554] font-semibold hover:underline"
-              >
-                Get started
-              </a>
-            </p>
-            <p className="text-xs text-slate-500">
-              Secure access to your workspace
-            </p>
+          <footer className="mt-auto p-4 border-t border-gray-200">
+            <div className="max-w-7xl mx-auto">
+              <p className="text-xs text-gray-500 text-center leading-relaxed">
+                Designed with ❤️ and crafted with care by Team{" "}
+                <a
+                  className="font-bold text-yellow-500 hover:text-yellow-600 transition-colors"
+                  href="https://smartitbox.in"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  SMART ITBOX
+                </a>{" "}
+                Your Business Automation Partner
+              </p>
+            </div>
           </footer>
         </div>
       </main>

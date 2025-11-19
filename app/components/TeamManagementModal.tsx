@@ -24,6 +24,7 @@ interface User {
   name: string;
   email: string;
   role: string;
+  color?: string;
 }
 
 interface TeamManagementModalProps {
@@ -322,7 +323,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
 
     return (
       <span
-        className={`px-3 py-1.5 rounded-lg text-xs font-medium ${config.color} flex items-center gap-1.5`}
+        className={`px-2 py-1 rounded text-xs font-medium ${config.color} flex items-center gap-1`}
       >
         <IconComponent className="w-3 h-3" />
         {config.label}
@@ -330,63 +331,100 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
     );
   };
 
+  // Function to get user avatar with color
+  const getUserAvatar = (user: User) => {
+    const initials = user.name.charAt(0).toUpperCase();
+
+    // Use the color from user data if available, otherwise fall back to default
+    const backgroundColor = user.color || "#EFFFFA";
+    const textColor = user.color ? getContrastColor(user.color) : "#0E3554";
+
+    return (
+      <div
+        className="w-8 h-8 rounded-lg flex items-center justify-center font-semibold text-xs"
+        style={{
+          backgroundColor: backgroundColor,
+          color: textColor,
+        }}
+      >
+        {initials}
+      </div>
+    );
+  };
+
+  // Helper function to determine text color based on background color
+  const getContrastColor = (hexColor: string) => {
+    // Convert hex to RGB
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+
+    // Calculate relative luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+    // Return black or white based on luminance
+    return luminance > 0.5 ? "#000000" : "#FFFFFF";
+  };
+
   if (!isOpen) return null;
 
   return (
     <>
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-2xl shadow-sm border border-[#D9F3EE] overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col">
-          {/* Header */}
-          <div className="bg-gradient-to-br from-[#0E3554] to-[#1CC2B1] text-white p-6 flex-shrink-0">
+        <div className="bg-white rounded-xl shadow-sm border border-[#D9F3EE] overflow-hidden w-full max-w-2xl max-h-[85vh] flex flex-col">
+          {/* Header - Compact */}
+          <div className="bg-white border-b border-[#D9F3EE] p-4 flex-shrink-0">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center">
-                  <Users className="w-6 h-6 text-[#0E3554]" />
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-[#EFFFFA] rounded-lg flex items-center justify-center">
+                  <Users className="w-4 h-4 text-[#0E3554]" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold">Team Management</h2>
-                  <p className="text-teal-100 text-sm mt-1">
-                    Manage team members and their access
+                  <h2 className="text-lg font-bold text-[#0E3554]">
+                    Team Management
+                  </h2>
+                  <p className="text-slate-600 text-xs mt-0.5">
+                    Manage team members and access
                   </p>
                 </div>
               </div>
               <button
                 onClick={handleClose}
-                className="w-8 h-8 flex items-center justify-center text-teal-100 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
+                className="w-6 h-6 flex items-center justify-center text-slate-600 hover:text-[#0E3554] hover:bg-slate-100 rounded transition-colors disabled:opacity-50"
                 disabled={submitting}
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* Tabs */}
+          {/* Tabs - Compact */}
           <div className="border-b border-[#D9F3EE] bg-white flex-shrink-0">
             <div className="flex">
               <button
                 onClick={() => setActiveTab("existing")}
-                className={`flex-1 px-6 py-4 text-sm font-semibold border-b-2 transition-all duration-200 ${
+                className={`flex-1 px-4 py-3 text-xs font-semibold border-b-2 transition-all duration-200 ${
                   activeTab === "existing"
                     ? "border-[#0E3554] text-[#0E3554] bg-[#EFFFFA]"
                     : "border-transparent text-slate-500 hover:text-[#0E3554] hover:bg-[#EFFFFA]"
                 }`}
               >
-                <div className="flex items-center gap-2 justify-center">
-                  <User className="w-4 h-4" />
+                <div className="flex items-center gap-1.5 justify-center">
+                  <User className="w-3.5 h-3.5" />
                   Team Members ({users.length})
                 </div>
               </button>
               <button
                 onClick={() => setActiveTab("new")}
-                className={`flex-1 px-6 py-4 text-sm font-semibold border-b-2 transition-all duration-200 ${
+                className={`flex-1 px-4 py-3 text-xs font-semibold border-b-2 transition-all duration-200 ${
                   activeTab === "new"
                     ? "border-[#0E3554] text-[#0E3554] bg-[#EFFFFA]"
                     : "border-transparent text-slate-500 hover:text-[#0E3554] hover:bg-[#EFFFFA]"
                 }`}
               >
-                <div className="flex items-center gap-2 justify-center">
-                  <UserPlus className="w-4 h-4" />
-                  Add Team Member
+                <div className="flex items-center gap-1.5 justify-center">
+                  <UserPlus className="w-3.5 h-3.5" />
+                  Add Member
                 </div>
               </button>
             </div>
@@ -394,77 +432,75 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="p-6">
+            <div className="p-4">
               {activeTab === "existing" ? (
                 // Existing Team Members Tab
                 <div>
                   {error && (
-                    <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 mb-6">
-                      <div className="p-1 bg-red-100 rounded-lg">
-                        <AlertCircle className="w-4 h-4 text-red-600" />
+                    <div className="p-3 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2 text-sm mb-4">
+                      <div className="p-1 bg-red-100 rounded">
+                        <AlertCircle className="w-3.5 h-3.5 text-red-600" />
                       </div>
-                      <p className="text-red-700 text-sm flex-1 font-medium">
-                        {error}
-                      </p>
+                      <p className="text-red-700 flex-1 font-medium">{error}</p>
                     </div>
                   )}
 
                   {success && (
-                    <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-3 mb-6">
-                      <div className="p-1 bg-emerald-100 rounded-lg">
-                        <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    <div className="p-3 rounded-lg bg-[#E1F3F0] border border-[#1CC2B1] flex items-start gap-2 text-sm mb-4">
+                      <div className="p-1 bg-[#1CC2B1] rounded">
+                        <CheckCircle className="w-3.5 h-3.5 text-white" />
                       </div>
-                      <p className="text-emerald-700 text-sm flex-1 font-medium">
+                      <p className="text-[#1CC2B1] flex-1 font-medium">
                         {success}
                       </p>
                     </div>
                   )}
 
                   {loading ? (
-                    <div className="text-center py-12 space-y-4">
-                      <div className="w-12 h-12 border-3 border-[#D9F3EE] border-t-[#1CC2B1] rounded-full animate-spin mx-auto"></div>
-                      <div className="space-y-2">
-                        <p className="text-[#0E3554] font-medium">
+                    <div className="text-center py-8 space-y-3">
+                      <div className="w-8 h-8 border-2 border-[#D9F3EE] border-t-[#1CC2B1] rounded-full animate-spin mx-auto"></div>
+                      <div className="space-y-1">
+                        <p className="text-[#0E3554] font-medium text-sm">
                           Loading team members
                         </p>
-                        <p className="text-slate-500 text-sm">
+                        <p className="text-slate-500 text-xs">
                           Getting team information...
                         </p>
                       </div>
                     </div>
                   ) : users.length === 0 ? (
-                    <div className="text-center py-12 space-y-4">
-                      <div className="w-16 h-16 bg-[#EFFFFA] rounded-2xl flex items-center justify-center mx-auto">
-                        <Users className="w-8 h-8 text-slate-400" />
+                    <div className="text-center py-8 space-y-3">
+                      <div className="w-12 h-12 bg-[#EFFFFA] rounded-lg flex items-center justify-center mx-auto">
+                        <Users className="w-6 h-6 text-slate-400" />
                       </div>
-                      <div className="space-y-2">
-                        <h3 className="text-lg font-semibold text-[#0E3554]">
-                          No team members found
+                      <div className="space-y-1">
+                        <h3 className="text-base font-semibold text-[#0E3554]">
+                          No team members
                         </h3>
-                        <p className="text-slate-600">
-                          Get started by adding team members to your projects
+                        <p className="text-slate-600 text-sm">
+                          Add team members to your projects
                         </p>
                       </div>
                       <button
                         onClick={() => setActiveTab("new")}
-                        className="px-6 py-3 bg-[#0E3554] text-white rounded-lg font-medium hover:bg-[#0A2A42] transition-colors flex items-center gap-2 mx-auto"
+                        className="px-4 py-2 text-sm bg-[#0E3554] text-white rounded font-medium hover:bg-[#0A2A42] transition-colors flex items-center gap-1.5 mx-auto"
                       >
-                        <UserPlus className="w-4 h-4" />
-                        Add First Team Member
+                        <UserPlus className="w-3.5 h-3.5" />
+                        Add First Member
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {users.map((user) => (
                         <div
                           key={user._id}
-                          className="bg-white border border-[#D9F3EE] rounded-2xl p-4 hover:border-[#1CC2B1] transition-all duration-300 group relative"
+                          className="bg-white border border-[#D9F3EE] rounded-lg p-3 hover:border-[#1CC2B1] transition-all duration-200 group relative"
                         >
                           {editingUser === user._id ? (
                             // Edit Mode
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                               <div className="flex items-center justify-between">
-                                <h4 className="font-semibold text-[#0E3554]">
+                                <h4 className="font-semibold text-[#0E3554] text-sm">
                                   Edit Team Member
                                 </h4>
                                 <div className="flex items-center gap-2">
@@ -472,9 +508,9 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                                 </div>
                               </div>
 
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <label className="block text-sm font-medium text-[#0E3554]">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                  <label className="block text-xs font-medium text-[#0E3554]">
                                     Name *
                                   </label>
                                   <input
@@ -484,12 +520,12 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                                     onChange={(e) =>
                                       handleEditInputChange(user._id, e)
                                     }
-                                    className="w-full px-3 py-2 border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]"
+                                    className="w-full px-3 py-2 text-sm border border-[#D9F3EE] rounded focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1] text-[#0E3554]"
                                     placeholder="Enter name"
                                   />
                                 </div>
-                                <div className="space-y-2">
-                                  <label className="block text-sm font-medium text-[#0E3554]">
+                                <div className="space-y-1.5">
+                                  <label className="block text-xs font-medium text-[#0E3554]">
                                     Email *
                                   </label>
                                   <input
@@ -499,15 +535,15 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                                     onChange={(e) =>
                                       handleEditInputChange(user._id, e)
                                     }
-                                    className="w-full px-3 py-2 border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]"
+                                    className="w-full px-3 py-2 text-sm border border-[#D9F3EE] rounded focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1] text-[#0E3554]"
                                     placeholder="Enter email"
                                   />
                                 </div>
                               </div>
 
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <label className="block text-sm font-medium text-[#0E3554]">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                  <label className="block text-xs font-medium text-[#0E3554]">
                                     New Password
                                   </label>
                                   <input
@@ -519,12 +555,12 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                                     onChange={(e) =>
                                       handleEditInputChange(user._id, e)
                                     }
-                                    className="w-full px-3 py-2 border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]"
+                                    className="w-full px-3 py-2 text-sm border border-[#D9F3EE] rounded focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1] text-[#0E3554]"
                                     placeholder="Leave blank to keep current"
                                   />
                                 </div>
-                                <div className="space-y-2">
-                                  <label className="block text-sm font-medium text-[#0E3554]">
+                                <div className="space-y-1.5">
+                                  <label className="block text-xs font-medium text-[#0E3554]">
                                     Confirm Password
                                   </label>
                                   <input
@@ -537,74 +573,72 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                                     onChange={(e) =>
                                       handleEditInputChange(user._id, e)
                                     }
-                                    className="w-full px-3 py-2 border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]"
+                                    className="w-full px-3 py-2 text-sm border border-[#D9F3EE] rounded focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1] text-[#0E3554]"
                                     placeholder="Confirm new password"
                                   />
                                 </div>
                               </div>
 
-                              <div className="flex justify-end gap-3 pt-4 border-t border-[#D9F3EE]">
+                              <div className="flex justify-end gap-2 pt-3 border-t border-[#D9F3EE]">
                                 <button
                                   onClick={cancelEditing}
                                   disabled={submitting}
-                                  className="px-4 py-2 text-[#0E3554] hover:text-[#1CC2B1] font-medium disabled:opacity-50 transition-colors hover:bg-[#EFFFFA] rounded-lg flex items-center gap-2"
+                                  className="px-3 py-1.5 text-xs text-[#0E3554] hover:text-[#1CC2B1] font-medium disabled:opacity-50 transition-colors hover:bg-[#EFFFFA] rounded flex items-center gap-1.5"
                                 >
-                                  <ArrowLeft className="w-4 h-4" />
+                                  <ArrowLeft className="w-3.5 h-3.5" />
                                   Cancel
                                 </button>
                                 <button
                                   onClick={() => handleEditUser(user._id)}
                                   disabled={submitting}
-                                  className="px-4 py-2 bg-[#0E3554] text-white rounded-lg font-medium hover:bg-[#0A2A42] transition-colors disabled:opacity-50 flex items-center gap-2"
+                                  className="px-3 py-1.5 text-xs bg-[#0E3554] text-white rounded font-medium hover:bg-[#0A2A42] transition-colors disabled:opacity-50 flex items-center gap-1.5"
                                 >
-                                  <Save className="w-4 h-4" />
-                                  {submitting ? "Saving..." : "Save Changes"}
+                                  <Save className="w-3.5 h-3.5" />
+                                  {submitting ? "Saving..." : "Save"}
                                 </button>
                               </div>
                             </div>
                           ) : (
                             // View Mode
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4 flex-1">
-                                <div className="w-12 h-12 bg-[#EFFFFA] rounded-xl flex items-center justify-center text-[#0E3554] font-semibold text-lg">
-                                  {user.name.charAt(0).toUpperCase()}
-                                </div>
+                              <div className="flex items-center gap-3 flex-1">
+                                {getUserAvatar(user)}
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-[#0E3554] truncate">
+                                  <h4 className="font-semibold text-[#0E3554] text-sm truncate">
                                     {user.name}
                                   </h4>
-                                  <p className="text-slate-600 text-sm truncate">
+                                  <p className="text-slate-600 text-xs truncate">
                                     {user.email}
                                   </p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2">
                                 {getRoleBadge(user.role)}
 
                                 <div className="relative">
                                   <button
                                     onClick={() => toggleMenu(user._id)}
-                                    className="p-2 text-slate-400 hover:text-[#0E3554] rounded-lg hover:bg-[#EFFFFA] transition-colors"
+                                    className="p-1.5 text-slate-400 hover:text-[#0E3554] rounded hover:bg-[#EFFFFA] transition-colors"
                                   >
-                                    <MoreVertical className="w-4 h-4" />
+                                    <MoreVertical className="w-3.5 h-3.5" />
                                   </button>
 
                                   {menuOpen === user._id && (
-                                    <div className="absolute right-0 top-10 bg-white border border-[#D9F3EE] rounded-xl shadow-lg z-10 min-w-36 overflow-hidden">
+                                    <div className="absolute right-0 top-8 bg-white border border-[#D9F3EE] rounded-lg shadow-lg z-10 min-w-32 overflow-hidden">
                                       <button
                                         onClick={() => startEditing(user._id)}
-                                        className="w-full px-4 py-3 text-left text-sm text-[#0E3554] hover:bg-[#EFFFFA] flex items-center gap-2 transition-colors"
+                                        className="w-full px-3 py-2 text-left text-xs text-[#0E3554] hover:bg-[#EFFFFA] flex items-center gap-1.5 transition-colors"
                                       >
-                                        <Edit className="w-4 h-4" />
+                                        <Edit className="w-3.5 h-3.5" />
                                         Edit
                                       </button>
                                       <button
                                         onClick={() =>
                                           handleDeleteUser(user._id, user.name)
                                         }
-                                        className="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                                        className="w-full px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 flex items-center gap-1.5 transition-colors"
                                       >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash2 className="w-3.5 h-3.5" />
                                         Delete
                                       </button>
                                     </div>
@@ -622,39 +656,37 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                 // Add New Team Member Tab
                 <div>
                   {error && (
-                    <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 mb-6">
-                      <div className="p-1 bg-red-100 rounded-lg">
-                        <AlertCircle className="w-4 h-4 text-red-600" />
+                    <div className="p-3 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2 text-sm mb-4">
+                      <div className="p-1 bg-red-100 rounded">
+                        <AlertCircle className="w-3.5 h-3.5 text-red-600" />
                       </div>
-                      <p className="text-red-700 text-sm flex-1 font-medium">
-                        {error}
-                      </p>
+                      <p className="text-red-700 flex-1 font-medium">{error}</p>
                     </div>
                   )}
 
                   {success && (
-                    <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-3 mb-6">
-                      <div className="p-1 bg-emerald-100 rounded-lg">
-                        <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    <div className="p-3 rounded-lg bg-[#E1F3F0] border border-[#1CC2B1] flex items-start gap-2 text-sm mb-4">
+                      <div className="p-1 bg-[#1CC2B1] rounded">
+                        <CheckCircle className="w-3.5 h-3.5 text-white" />
                       </div>
-                      <p className="text-emerald-700 text-sm flex-1 font-medium">
+                      <p className="text-[#1CC2B1] flex-1 font-medium">
                         {success}
                       </p>
                     </div>
                   )}
 
-                  <form onSubmit={handleSubmit} className="space-y-6">
+                  <form onSubmit={handleSubmit} className="space-y-4">
                     {/* User Type Information */}
-                    <div className="bg-[#E0FFFA] border border-[#D9F3EE] rounded-xl p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-[#E1F3F0] rounded-lg">
-                          <Users className="w-5 h-5 text-[#0E3554]" />
+                    <div className="bg-[#E0FFFA] border border-[#D9F3EE] rounded-lg p-3">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-[#E1F3F0] rounded">
+                          <Users className="w-4 h-4 text-[#0E3554]" />
                         </div>
                         <div>
-                          <div className="font-semibold text-[#0E3554]">
+                          <div className="font-semibold text-[#0E3554] text-sm">
                             Team Member
                           </div>
-                          <div className="text-sm text-[#0E3554]">
+                          <div className="text-xs text-[#0E3554]">
                             Can be assigned to tasks and projects
                           </div>
                         </div>
@@ -662,8 +694,8 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                     </div>
 
                     {/* Name */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-[#0E3554]">
+                    <div className="space-y-2">
+                      <label className="block text-xs font-semibold text-[#0E3554]">
                         Full Name *
                       </label>
                       <div className="relative">
@@ -672,24 +704,24 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                           name="name"
                           value={formData.name}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
+                          className="w-full px-3 py-2 pl-10 text-sm border border-[#D9F3EE] rounded-lg 
                             placeholder-slate-400 transition-all duration-200
-                            focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                            focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
                             hover:border-[#0E3554] bg-white text-[#0E3554]
                             disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
                           placeholder="Enter full name"
                           required
                           disabled={submitting}
                         />
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                          <User className="w-4 h-4 text-slate-400" />
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                          <User className="w-3.5 h-3.5 text-slate-400" />
                         </div>
                       </div>
                     </div>
 
                     {/* Email */}
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-[#0E3554]">
+                    <div className="space-y-2">
+                      <label className="block text-xs font-semibold text-[#0E3554]">
                         Email Address *
                       </label>
                       <div className="relative">
@@ -698,25 +730,25 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                           name="email"
                           value={formData.email}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
+                          className="w-full px-3 py-2 pl-10 text-sm border border-[#D9F3EE] rounded-lg 
                             placeholder-slate-400 transition-all duration-200
-                            focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                            focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
                             hover:border-[#0E3554] bg-white text-[#0E3554]
                             disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
                           placeholder="Enter email address"
                           required
                           disabled={submitting}
                         />
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                          <Mail className="w-4 h-4 text-slate-400" />
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                          <Mail className="w-3.5 h-3.5 text-slate-400" />
                         </div>
                       </div>
                     </div>
 
                     {/* Password */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-3">
-                        <label className="block text-sm font-semibold text-[#0E3554]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold text-[#0E3554]">
                           Password *
                         </label>
                         <div className="relative">
@@ -725,22 +757,22 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                             name="password"
                             value={formData.password}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
+                            className="w-full px-3 py-2 pl-10 text-sm border border-[#D9F3EE] rounded-lg 
                               transition-all duration-200
-                              focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                              focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
                               hover:border-[#0E3554] bg-white text-[#0E3554]
                               disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
                             placeholder="Enter password"
                             required
                             disabled={submitting}
                           />
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                            <Lock className="w-4 h-4 text-slate-400" />
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                            <Lock className="w-3.5 h-3.5 text-slate-400" />
                           </div>
                         </div>
                       </div>
-                      <div className="space-y-3">
-                        <label className="block text-sm font-semibold text-[#0E3554]">
+                      <div className="space-y-2">
+                        <label className="block text-xs font-semibold text-[#0E3554]">
                           Confirm Password *
                         </label>
                         <div className="relative">
@@ -749,17 +781,17 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                             name="confirmPassword"
                             value={formData.confirmPassword}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 pl-12 border border-[#D9F3EE] rounded-xl 
+                            className="w-full px-3 py-2 pl-10 text-sm border border-[#D9F3EE] rounded-lg 
                               transition-all duration-200
-                              focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                              focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
                               hover:border-[#0E3554] bg-white text-[#0E3554]
                               disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
                             placeholder="Confirm password"
                             required
                             disabled={submitting}
                           />
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                            <Lock className="w-4 h-4 text-slate-400" />
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                            <Lock className="w-3.5 h-3.5 text-slate-400" />
                           </div>
                         </div>
                       </div>
@@ -770,13 +802,13 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="border-t border-[#D9F3EE] p-6 bg-white flex-shrink-0">
-            <div className="flex justify-end gap-3">
+          {/* Footer - Compact */}
+          <div className="border-t border-[#D9F3EE] p-4 bg-white flex-shrink-0">
+            <div className="flex justify-end gap-2">
               <button
                 onClick={handleClose}
                 disabled={submitting}
-                className="px-6 py-2.5 text-[#0E3554] hover:text-[#1CC2B1] font-medium disabled:opacity-50 transition-colors hover:bg-[#EFFFFA] rounded-lg"
+                className="px-4 py-2 text-sm text-[#0E3554] hover:text-[#1CC2B1] font-medium disabled:opacity-50 transition-colors hover:bg-[#EFFFFA] rounded"
               >
                 {activeTab === "existing" ? "Close" : "Cancel"}
               </button>
@@ -784,21 +816,21 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                 <button
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="px-6 py-2.5 rounded-lg font-medium
+                  className="px-4 py-2 text-sm rounded font-medium
                     bg-[#0E3554] hover:bg-[#0A2A42]
                     transition-all duration-200
                     disabled:opacity-70 disabled:cursor-not-allowed
-                    flex items-center justify-center gap-2 text-white"
+                    flex items-center justify-center gap-1.5 text-white"
                 >
                   {submitting ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       <span>Creating...</span>
                     </>
                   ) : (
                     <>
-                      <UserPlus className="w-4 h-4" />
-                      <span>Create Team Member</span>
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>Create Member</span>
                     </>
                   )}
                 </button>

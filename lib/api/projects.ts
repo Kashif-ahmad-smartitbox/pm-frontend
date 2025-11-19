@@ -13,21 +13,26 @@ export interface ProjectsResponse {
   totalPages: number;
 }
 
-export function getProjects(
-  page: number = 1,
-  limit: number = 9,
-  search: string = ""
-): Promise<ProjectsResponse> {
-  const params = new URLSearchParams({
-    page: page.toString(),
-    limit: limit.toString(),
+export function getProjects(params: {
+  page: number;
+  limit: number;
+  search?: string;
+  status?: string;
+}): Promise<ProjectsResponse> {
+  const urlParams = new URLSearchParams({
+    page: params.page.toString(),
+    limit: params.limit.toString(),
   });
 
-  if (search) {
-    params.append("search", search);
+  if (params.search) {
+    urlParams.append("search", params.search);
   }
 
-  return request(`/api/projects?${params.toString()}`);
+  if (params.status && params.status !== "all") {
+    urlParams.append("status", params.status);
+  }
+
+  return request(`/api/projects?${urlParams.toString()}`);
 }
 
 export function getProjectData(id: string) {
