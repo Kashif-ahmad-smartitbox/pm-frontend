@@ -114,11 +114,6 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
         return;
       }
 
-      if (new Date(formData.dueDate) < new Date()) {
-        setError("Due date cannot be in the past");
-        return;
-      }
-
       const payload = {
         title: formData.title.trim(),
         description: formData.description.trim(),

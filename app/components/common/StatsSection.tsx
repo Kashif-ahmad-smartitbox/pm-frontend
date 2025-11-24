@@ -34,7 +34,6 @@ interface StatsSectionProps {
   activeFilter?: string;
 }
 
-// Constants for Projects - Keeping original colors
 const PROJECTS_STATS_CONFIG = [
   {
     id: "total",
@@ -74,7 +73,6 @@ const PROJECTS_STATS_CONFIG = [
   },
 ] as const;
 
-// Constants for Tasks - Keeping original colors
 const TASKS_STATS_CONFIG = [
   {
     id: "total",
@@ -82,7 +80,7 @@ const TASKS_STATS_CONFIG = [
     icon: FileText,
     color: "text-[#0E3554]",
     bgColor: "bg-[#E1F3F0]",
-    mainBgColor: "bg-[#1bc5b4]",
+    mainBgColor: "bg-[#FF6B6B]",
     filterValue: "all",
   },
   {
@@ -91,7 +89,7 @@ const TASKS_STATS_CONFIG = [
     icon: Clock,
     color: "text-[#0E3554]",
     bgColor: "bg-[#E0FFFA]",
-    mainBgColor: "bg-[#8CA9FF]",
+    mainBgColor: "bg-[#4ECDC4]",
     filterValue: "todo",
   },
   {
@@ -100,7 +98,7 @@ const TASKS_STATS_CONFIG = [
     icon: BarChart3,
     color: "text-[#1CC2B1]",
     bgColor: "bg-[#FFF4DD]",
-    mainBgColor: "bg-[#FFF2C6]",
+    mainBgColor: "bg-[#FFD166]",
     filterValue: "in_progress",
   },
   {
@@ -109,7 +107,7 @@ const TASKS_STATS_CONFIG = [
     icon: CheckCircle,
     color: "text-[#1CC2B1]",
     bgColor: "bg-[#E1F3F0]",
-    mainBgColor: "bg-[#8BAE66]",
+    mainBgColor: "bg-[#06D6A0]",
     filterValue: "done",
   },
 ] as const;
@@ -153,7 +151,7 @@ export default function StatsSection({
   };
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
       {config.map((stat) => {
         const IconComponent = stat.icon;
         const value = getValue(stat.id);
@@ -165,8 +163,10 @@ export default function StatsSection({
             key={stat.id}
             className={`${
               stat.mainBgColor
-            } rounded-xl p-4 border border-white/30 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden cursor-pointer ${
-              isActive ? "ring-2 ring-[#0E3554] ring-offset-2" : ""
+            } rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 border border-white/30 hover:shadow-lg sm:hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden cursor-pointer ${
+              isActive
+                ? "ring-1 sm:ring-2 ring-[#0E3554] ring-offset-1 sm:ring-offset-2"
+                : ""
             }`}
             onClick={() => handleCardClick(stat.filterValue)}
           >
@@ -176,26 +176,28 @@ export default function StatsSection({
             <div className="relative z-10">
               <div className="flex items-center justify-between">
                 {/* Icon and main content */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <div
-                    className={`w-10 h-10 rounded-lg ${stat.bgColor} flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-md border border-white/30`}
+                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-md sm:rounded-lg ${stat.bgColor} flex items-center justify-center group-hover:scale-105 sm:group-hover:scale-110 transition-all duration-300 shadow-sm sm:shadow-md border border-white/30`}
                   >
-                    <IconComponent className={`w-5 h-5 ${stat.color}`} />
+                    <IconComponent
+                      className={`w-4 h-4 sm:w-5 sm:h-5 ${stat.color}`}
+                    />
                   </div>
-                  <div>
-                    <div className="text-xs font-semibold text-[#0E3554]/80 uppercase tracking-wide">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] xs:text-xs font-semibold text-[#0E3554]/80 uppercase tracking-wide truncate">
                       {stat.label}
                     </div>
-                    <div className="text-xl font-bold text-[#0E3554] mt-0.5">
+                    <div className="text-lg sm:text-xl font-bold text-[#0E3554] mt-0.5 truncate">
                       {value}
                     </div>
                   </div>
                 </div>
 
-                {/* Compact percentage */}
-                <div className="text-right">
-                  <div className="w-10 h-10 bg-white/40 rounded-full flex items-center justify-center border border-white/50 shadow-md">
-                    <span className="text-sm font-bold text-[#0E3554]">
+                {/* Compact percentage - hidden on extra small screens */}
+                <div className="hidden xs:block text-right">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/40 rounded-full flex items-center justify-center border border-white/50 shadow-sm sm:shadow-md">
+                    <span className="text-xs sm:text-sm font-bold text-[#0E3554]">
                       {percentage}%
                     </span>
                   </div>
@@ -203,18 +205,18 @@ export default function StatsSection({
               </div>
 
               {/* Compact progress bar */}
-              <div className="mt-3">
+              <div className="mt-2 sm:mt-3">
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-xs font-medium text-[#0E3554]/70">
+                  <span className="text-[10px] xs:text-xs font-medium text-[#0E3554]/70">
                     Progress
                   </span>
-                  <span className="text-xs font-bold text-[#0E3554]">
+                  <span className="text-[10px] xs:text-xs font-bold text-[#0E3554]">
                     {percentage}%
                   </span>
                 </div>
-                <div className="w-full bg-white/30 rounded-full h-1.5 shadow-inner overflow-hidden">
+                <div className="w-full bg-white/30 rounded-full h-1 sm:h-1.5 shadow-inner overflow-hidden">
                   <div
-                    className={`h-1.5 rounded-full transition-all duration-700 ease-out bg-gradient-to-r from-[#0E3554] to-[#0E3554]/80 shadow-sm relative overflow-hidden`}
+                    className={`h-1 sm:h-1.5 rounded-full transition-all duration-700 ease-out bg-gradient-to-r from-[#0E3554] to-[#0E3554]/80 shadow-sm relative overflow-hidden`}
                     style={{ width: `${percentage}%` }}
                   >
                     {/* Shimmer effect */}
@@ -225,12 +227,12 @@ export default function StatsSection({
             </div>
 
             {/* Corner accents */}
-            <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-white/40 rounded-tr" />
-            <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-white/40 rounded-bl" />
+            <div className="absolute top-1 right-1 w-1.5 h-1.5 sm:top-1.5 sm:right-1.5 sm:w-2 sm:h-2 border-t border-r border-white/40 rounded-tr" />
+            <div className="absolute bottom-1 left-1 w-1.5 h-1.5 sm:bottom-1.5 sm:left-1.5 sm:w-2 sm:h-2 border-b border-l border-white/40 rounded-bl" />
 
             {/* Active indicator */}
             {isActive && (
-              <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#0E3554] rounded-full animate-pulse" />
+              <div className="absolute top-1 right-1 w-1.5 h-1.5 sm:top-1.5 sm:right-1.5 sm:w-1.5 sm:h-1.5 bg-[#0E3554] rounded-full animate-pulse" />
             )}
           </div>
         );

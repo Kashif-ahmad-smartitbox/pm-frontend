@@ -10,6 +10,7 @@ import {
   Play,
   CheckCircle2,
   Eye,
+  Clock,
 } from "lucide-react";
 import { TaskWithProjectDetails } from "@/types/task";
 import TaskStatusBadge from "./TaskStatusBadge";
@@ -25,6 +26,37 @@ interface TaskCardProps {
   ) => void;
 }
 
+// Helper function to check if task was created within last 24 hours
+const isNewTask = (createdAt: string): boolean => {
+  const createdDate = new Date(createdAt);
+  const now = new Date();
+  const diffInHours =
+    (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60);
+  return diffInHours <= 24;
+};
+
+// Format date to relative time or specific format
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInDays = Math.floor(
+    (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  if (diffInDays === 0) {
+    return "Today";
+  } else if (diffInDays === 1) {
+    return "Yesterday";
+  } else if (diffInDays < 7) {
+    return `${diffInDays}d ago`;
+  } else {
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  }
+};
+
 const TaskCard: React.FC<TaskCardProps> = ({
   task,
   onTaskClick,
@@ -37,6 +69,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   const isOverdue =
     new Date(task.dueDate) < new Date() && task.status !== "done";
+
+  const isNew = task.createdAt && isNewTask(task.createdAt);
 
   const StatusButton = ({ currentStatus, taskId, taskTitle }: any) => {
     if (currentStatus === "todo") {
@@ -75,17 +109,35 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   return (
     <div className="bg-white rounded-xl p-4 border border-[#E4F4F1] hover:border-[#1CC2B1] hover:shadow-md transition-all duration-200 group flex flex-col gap-3">
-      {/* Project Name TOP */}
-      <div className="flex items-center justify-between">
-        <div className="inline-flex items-center max-w-[75%]">
-          <span className="inline-block bg-[#F3FCF9] text-[#0E3554] text-[11px] px-2 py-1 rounded-md font-semibold leading-tight truncate">
-            {task.project.projectName}
-          </span>
+      {/* Project Name TOP - Fixed overflow */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="inline-flex items-center max-w-full bg-[#F3FCF9] text-[#0E3554] text-[11px] px-2 py-1 rounded-md font-semibold leading-tight">
+            <span className="truncate">{task.project.projectName}</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <TaskStatusBadge status={task.status} compact />
-          <PriorityBadge priority={task.priority} compact />
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* New Badge - Next to status */}
+          {isNew && (
+            <div className="bg-green-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full border border-white shadow-sm flex items-center gap-0.5 shrink-0">
+              <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
+              NEW
+            </div>
+          )}
+          <div className="flex items-center gap-1 shrink-0">
+            <TaskStatusBadge status={task.status} compact />
+            <PriorityBadge priority={task.priority} compact />
+          </div>
         </div>
+      </div>
+
+      {/* Created Date */}
+      <div className="flex items-center gap-1 text-xs text-slate-500 -mt-2">
+        <Clock className="w-3 h-3" />
+        <span>Created at: </span>
+        <span className="font-medium text-slate-700">
+          {task.createdAt ? formatDate(task.createdAt) : "N/A"}
+        </span>
       </div>
 
       {/* TITLE + DESCRIPTION in ONE line with TOOLTIP */}
@@ -152,9 +204,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
           <span>{task.notes ? task.notes.length : 0} notes</span>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <MapPin className="w-3 h-3" />
-          <span className="truncate max-w-24">{task.project.location}</span>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <MapPin className="w-3 h-3 shrink-0" />
+          <span className="truncate">{task.project.location}</span>
         </div>
       </div>
 

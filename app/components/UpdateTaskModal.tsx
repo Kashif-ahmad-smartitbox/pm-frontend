@@ -141,11 +141,6 @@ const UpdateTaskModal: React.FC<UpdateTaskModalProps> = ({
         return;
       }
 
-      if (new Date(formData.dueDate) < new Date()) {
-        setError("Due date cannot be in the past");
-        return;
-      }
-
       if (!task?._id) {
         setError("Invalid task data");
         return;

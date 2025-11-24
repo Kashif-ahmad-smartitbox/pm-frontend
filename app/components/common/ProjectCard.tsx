@@ -11,6 +11,7 @@ import {
   Calendar,
   Users,
   BarChart3,
+  Clock,
 } from "lucide-react";
 import { Project } from "@/types/project";
 import StatusBadge from "./StatusBadge";
@@ -66,6 +67,37 @@ const getColorClass = (colorValue?: string) => {
   return colorMap[colorValue] || "bg-slate-400";
 };
 
+// Helper function to check if project was created within last 24 hours
+const isNewProject = (createdAt: string): boolean => {
+  const createdDate = new Date(createdAt);
+  const now = new Date();
+  const diffInHours =
+    (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60);
+  return diffInHours <= 24;
+};
+
+// Format date to relative time or specific format
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInDays = Math.floor(
+    (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  if (diffInDays === 0) {
+    return "Today";
+  } else if (diffInDays === 1) {
+    return "Yesterday";
+  } else if (diffInDays < 7) {
+    return `${diffInDays}d ago`;
+  } else {
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  }
+};
+
 const ProjectCard: React.FC<ProjectCardProps> = ({
   project,
   onEdit,
@@ -78,29 +110,41 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
 }) => {
   const userColorClass = getColorClass(project.projectManager?.color);
   const isHexColor = project.projectManager?.color?.startsWith("#");
+  const isNew = project.createdAt && isNewProject(project.createdAt);
 
   return (
     <div
       onClick={onViewTasks}
-      className="bg-white rounded-xl p-3 border border-[#D9F3EE] hover:border-[#1CC2B1] hover:shadow-lg transition-all duration-300 group hover:scale-[1.02] cursor-pointer"
+      className="bg-white rounded-lg p-3 border border-[#D9F3EE] hover:border-[#1CC2B1] hover:shadow-md transition-all duration-200 group cursor-pointer"
     >
       {/* Header - Ultra Compact */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-start gap-2 flex-1 min-w-0">
-          <div className="w-7 h-7 bg-gradient-to-br from-[#EFFFFA] to-[#D9F3EE] rounded-lg flex items-center justify-center flex-shrink-0 border border-[#D9F3EE] group-hover:from-[#1CC2B1] group-hover:to-[#0E3554] group-hover:border-[#1CC2B1] transition-all duration-300">
-            <FolderOpen className="w-3.5 h-3.5 text-[#0E3554] group-hover:text-white transition-colors" />
+          <div className="w-8 h-8 bg-gradient-to-br from-[#EFFFFA] to-[#D9F3EE] rounded-lg flex items-center justify-center shrink-0 border border-[#D9F3EE] group-hover:from-[#1CC2B1] group-hover:to-[#0E3554] group-hover:border-[#1CC2B1] transition-all duration-200">
+            <FolderOpen className="w-4 h-4 text-[#0E3554] group-hover:text-white transition-colors" />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-bold text-[#0E3554] truncate leading-tight mb-0.5 group-hover:text-[#1CC2B1] transition-colors">
-              {project.projectName}
-            </h3>
-            <div className="flex items-center gap-1 text-xs text-slate-500">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-sm font-bold text-[#0E3554] truncate group-hover:text-[#1CC2B1] transition-colors">
+                {project.projectName}
+              </h3>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
               <MapPin className="w-3 h-3" />
               <span className="truncate">{project.location}</span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0">
+
+        <div className="flex items-center gap-1 shrink-0">
+          {/* New Badge - Next to status */}
+          {isNew && (
+            <div className="bg-green-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full border border-white shadow-sm flex items-center gap-0.5">
+              <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
+              NEW
+            </div>
+          )}
+
           <StatusBadge status={project.status} compact={true} />
 
           {showActions && (
@@ -110,13 +154,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
                   e.stopPropagation();
                   onToggleMenu();
                 }}
-                className="p-1 text-slate-400 hover:text-[#0E3554] hover:bg-[#EFFFFA] rounded-md transition-colors"
+                className="p-1 text-slate-400 hover:text-[#0E3554] hover:bg-[#EFFFFA] rounded transition-colors"
               >
-                <MoreVertical className="w-3 h-3" />
+                <MoreVertical className="w-3.5 h-3.5" />
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 top-7 bg-white rounded-lg shadow-lg border border-[#D9F3EE] py-1 z-10 min-w-28">
+                <div className="absolute right-0 top-6 bg-white rounded-lg shadow-lg border border-[#D9F3EE] py-1 z-10 min-w-28">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -144,10 +188,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         </div>
       </div>
 
+      {/* Created Date */}
+      <div className="flex items-center gap-1 text-xs text-slate-500 mb-2">
+        <Clock className="w-3 h-3" />
+        <span>Created at: </span>
+        <span className="font-medium text-slate-700">
+          {project.createdAt ? formatDate(project.createdAt) : "N/A"}
+        </span>
+      </div>
+
       {/* Task Stats - Compact */}
       {taskStats && (
-        <div className="flex items-center justify-between mb-3 px-1">
-          {/* Total Tasks */}
+        <div className="flex items-center justify-between mb-2 px-1">
           <div className="flex items-center gap-1.5">
             <div className="w-5 h-5 bg-[#EFFFFA] rounded flex items-center justify-center border border-[#D9F3EE]">
               <span className="text-[10px] font-bold text-[#0E3554]">
@@ -159,27 +211,38 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
             </span>
           </div>
 
-          {/* Status Breakdown */}
-          <div className="flex items-center gap-2">
-            {/* To Do */}
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-slate-300 rounded-full"></div>
+          {/* Progress Bar - Mini */}
+          <div className="flex-1 max-w-20">
+            <div className="w-full bg-slate-200 rounded-full h-1.5">
+              <div
+                className="bg-gradient-to-r from-[#1CC2B1] to-[#0E3554] h-1.5 rounded-full transition-all duration-300"
+                style={{
+                  width: `${
+                    taskStats.byStatus.done > 0
+                      ? (taskStats.byStatus.done / taskStats.total) * 100
+                      : 0
+                  }%`,
+                }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Status Dots */}
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-0.5">
+              <div className="w-1.5 h-1.5 bg-slate-400 rounded-full"></div>
               <span className="text-[10px] font-semibold text-slate-700">
                 {taskStats.byStatus.todo}
               </span>
             </div>
-
-            {/* In Progress */}
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-[#E6A93A] rounded-full"></div>
+            <div className="flex items-center gap-0.5">
+              <div className="w-1.5 h-1.5 bg-[#E6A93A] rounded-full"></div>
               <span className="text-[10px] font-semibold text-slate-700">
                 {taskStats.byStatus.in_progress}
               </span>
             </div>
-
-            {/* Done */}
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-[#1CC2B1] rounded-full"></div>
+            <div className="flex items-center gap-0.5">
+              <div className="w-1.5 h-1.5 bg-[#1CC2B1] rounded-full"></div>
               <span className="text-[10px] font-semibold text-slate-700">
                 {taskStats.byStatus.done}
               </span>
@@ -188,35 +251,34 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         </div>
       )}
 
-      {/* Project Details - Compact Layout */}
-      <div className="space-y-2">
-        {/* Manager and Type */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs text-slate-600">
-            <User className="w-3 h-3" />
-            <span className="font-medium truncate max-w-16">
-              {project.projectManager?.name?.split(" ")[0] || "N/A"}
-            </span>
-            {/* User Color Indicator */}
-            <span
-              className={`w-2 h-2 rounded-full ${userColorClass}`}
-              style={
-                isHexColor
-                  ? { backgroundColor: project.projectManager?.color }
-                  : {}
-              }
-            />
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-600">
-            <FolderOpen className="w-3 h-3" />
-            <span className="font-medium truncate max-w-16">
-              {project.projectType?.name || "N/A"}
-            </span>
-          </div>
+      {/* Project Details - Compact Grid */}
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        {/* Manager */}
+        <div className="flex items-center gap-1.5 text-slate-600 bg-slate-50 rounded-md px-2 py-1.5 border border-slate-100">
+          <User className="w-3 h-3" />
+          <span className="font-medium truncate">
+            {project.projectManager?.name?.split(" ")[0] || "N/A"}
+          </span>
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${userColorClass} shrink-0`}
+            style={
+              isHexColor
+                ? { backgroundColor: project.projectManager?.color }
+                : {}
+            }
+          />
+        </div>
+
+        {/* Project Type */}
+        <div className="flex items-center gap-1.5 text-slate-600 bg-slate-50 rounded-md px-2 py-1.5 border border-slate-100">
+          <FolderOpen className="w-3 h-3" />
+          <span className="font-medium truncate">
+            {project.projectType?.name || "N/A"}
+          </span>
         </div>
 
         {/* Timeline */}
-        <div className="flex items-center justify-between text-xs bg-slate-50 rounded-lg px-2 py-1.5 border border-slate-100">
+        <div className="col-span-2 flex items-center justify-between text-xs bg-[#EFFFFA] rounded-md px-2 py-1.5 border border-[#D9F3EE]">
           <div className="flex items-center gap-1 text-slate-600">
             <Calendar className="w-3 h-3" />
             <span className="font-medium">Start</span>
@@ -230,7 +292,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
               : "N/A"}
           </span>
 
-          <div className="w-px h-3 bg-slate-300 mx-1"></div>
+          <div className="w-px h-3 bg-[#D9F3EE] mx-1"></div>
 
           <div className="flex items-center gap-1 text-slate-600">
             <span className="font-medium">End</span>
@@ -244,16 +306,16 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
               : "N/A"}
           </span>
         </div>
+      </div>
 
-        {/* Quick Actions */}
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-1 text-slate-500">
-            <BarChart3 className="w-3 h-3" />
-            <span>Click to view tasks</span>
-          </div>
-          <div className="w-6 h-6 bg-[#EFFFFA] rounded-full flex items-center justify-center border border-[#D9F3EE] group-hover:bg-[#1CC2B1] group-hover:border-[#1CC2B1] transition-colors">
-            <Users className="w-3 h-3 text-[#0E3554] group-hover:text-white transition-colors" />
-          </div>
+      {/* Quick Actions Footer */}
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
+        <div className="flex items-center gap-1 text-slate-500">
+          <BarChart3 className="w-3 h-3" />
+          <span className="text-xs">View tasks</span>
+        </div>
+        <div className="w-5 h-5 bg-[#EFFFFA] rounded-full flex items-center justify-center border border-[#D9F3EE] group-hover:bg-[#1CC2B1] group-hover:border-[#1CC2B1] transition-colors">
+          <Users className="w-2.5 h-2.5 text-[#0E3554] group-hover:text-white transition-colors" />
         </div>
       </div>
     </div>
