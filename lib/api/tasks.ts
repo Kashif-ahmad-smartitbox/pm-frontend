@@ -4,6 +4,25 @@ export function getTasks(projectId: string) {
   return request(`/api/projects/${projectId}/tasks`);
 }
 
+export const getAllTasks = async (params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  priority?: string;
+  assignee?: string;
+}): Promise<{
+  count: number;
+  tasks: any[];
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}> => {
+  const queryParams = new URLSearchParams();
+
+  return request(`/api/tasks${queryParams}`);
+};
+
 export function getTask(taskId: string) {
   return request(`/api/tasks/${taskId}`);
 }

@@ -7,6 +7,7 @@ import EditProjectModal from "../EditProjectModal";
 import ConfirmationModal from "../ConfirmationModal";
 import UserManagementModal from "../UserManagementModal";
 import ProjectTypeManagementModal from "../ProjectTypeManagementModal";
+import AllTasksModal from "../AllTasksModal";
 
 type ProjectStatus = "planned" | "active" | "completed";
 
@@ -69,6 +70,22 @@ interface ProjectData {
   }>;
 }
 
+// Task Stats Interface
+interface TaskStats {
+  total: number;
+  byStatus: {
+    todo: number;
+    in_progress: number;
+    done: number;
+  };
+  byPriority: {
+    low: number;
+    medium: number;
+    high: number;
+    critical: number;
+  };
+}
+
 interface ModalsProps {
   selectedTask: Task | null;
   showNewProjectModal: boolean;
@@ -77,10 +94,13 @@ interface ModalsProps {
   showUserManagementModal: boolean;
   showProjectTypesModal: boolean;
   showUpdateTaskModal: boolean;
+  showAllTasksModal: boolean;
   editingTask: Task | null;
   editingProject: Project | null;
   deleteConfirm: DeleteConfirmState;
   selectedProject: ProjectData | null;
+  allTasks?: Task[];
+  taskStats?: TaskStats;
   onCloseModal: () => void;
   onNoteAdded: (note: Note) => void;
   onNewProjectCreated: () => void;
@@ -95,6 +115,7 @@ interface ModalsProps {
   onCloseUserManagementModal: () => void;
   onCloseProjectTypesModal: () => void;
   onCloseUpdateTaskModal: () => void;
+  onCloseAllTasksModal: () => void;
   onCloseDeleteConfirm: () => void;
   currentUser: User;
   onRefresh: () => void;
@@ -108,10 +129,13 @@ const Modals: React.FC<ModalsProps> = ({
   showUserManagementModal,
   showProjectTypesModal,
   showUpdateTaskModal,
+  showAllTasksModal,
   editingTask,
   editingProject,
   deleteConfirm,
   selectedProject,
+  allTasks = [],
+  taskStats,
   onCloseModal,
   onNoteAdded,
   onNewProjectCreated,
@@ -126,6 +150,7 @@ const Modals: React.FC<ModalsProps> = ({
   onCloseUserManagementModal,
   onCloseProjectTypesModal,
   onCloseUpdateTaskModal,
+  onCloseAllTasksModal,
   onCloseDeleteConfirm,
   currentUser,
   onRefresh,
@@ -180,6 +205,14 @@ const Modals: React.FC<ModalsProps> = ({
         isOpen={showProjectTypesModal}
         onClose={onCloseProjectTypesModal}
         onProjectTypeCreated={onProjectTypeCreated}
+      />
+
+      {/* All Tasks Modal */}
+      <AllTasksModal
+        isOpen={showAllTasksModal}
+        onClose={onCloseAllTasksModal}
+        allTasks={allTasks}
+        taskStats={taskStats}
       />
 
       <ConfirmationModal

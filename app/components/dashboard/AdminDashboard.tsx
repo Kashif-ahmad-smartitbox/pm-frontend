@@ -12,9 +12,10 @@ import {
   Grid3X3,
   List,
   ArrowLeft,
+  FileText,
 } from "lucide-react";
 
-import { deleteTask } from "@/lib/api/tasks";
+import { deleteTask, getAllTasks } from "@/lib/api/tasks";
 import { deleteProject, getProjectData, getProjects } from "@/lib/api/projects";
 
 import TaskGrid from "../common/TaskGrid";
@@ -130,6 +131,22 @@ interface DeleteConfirmState {
   name: string;
 }
 
+// Task Stats Interface
+interface TaskStats {
+  total: number;
+  byStatus: {
+    todo: number;
+    in_progress: number;
+    done: number;
+  };
+  byPriority: {
+    low: number;
+    medium: number;
+    high: number;
+    critical: number;
+  };
+}
+
 // Custom hook for debouncing
 const useDebounce = (value: string, delay: number) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -173,6 +190,24 @@ export default function AdminDashboard() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
+  // Task Stats State
+  const [taskStats, setTaskStats] = useState<TaskStats>({
+    total: 0,
+    byStatus: {
+      todo: 0,
+      in_progress: 0,
+      done: 0,
+    },
+    byPriority: {
+      low: 0,
+      medium: 0,
+      high: 0,
+      critical: 0,
+    },
+  });
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+
   // Modal states
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
@@ -180,6 +215,7 @@ export default function AdminDashboard() {
   const [showUserManagementModal, setShowUserManagementModal] = useState(false);
   const [showProjectTypesModal, setShowProjectTypesModal] = useState(false);
   const [showUpdateTaskModal, setShowUpdateTaskModal] = useState(false);
+  const [showAllTasksModal, setShowAllTasksModal] = useState(false);
 
   // UI states
   const [loading, setLoading] = useState(true);
@@ -244,11 +280,54 @@ export default function AdminDashboard() {
     activeStatus,
   ]);
 
+  const fetchAllTasks = useCallback(async () => {
+    try {
+      setLoadingTasks(true);
+      const data = await getAllTasks();
+
+      // Calculate task stats
+      const stats: TaskStats = {
+        total: data.count || 0,
+        byStatus: {
+          todo: 0,
+          in_progress: 0,
+          done: 0,
+        },
+        byPriority: {
+          low: 0,
+          medium: 0,
+          high: 0,
+          critical: 0,
+        },
+      };
+
+      data.tasks.forEach((task: Task) => {
+        // Count by status
+        if (task.status === "todo") stats.byStatus.todo++;
+        else if (task.status === "in_progress") stats.byStatus.in_progress++;
+        else if (task.status === "done") stats.byStatus.done++;
+
+        // Count by priority
+        if (task.priority === "low") stats.byPriority.low++;
+        else if (task.priority === "medium") stats.byPriority.medium++;
+        else if (task.priority === "high") stats.byPriority.high++;
+        else if (task.priority === "critical") stats.byPriority.critical++;
+      });
+
+      setTaskStats(stats);
+      setAllTasks(data.tasks || []);
+    } catch (err) {
+      console.error("Failed to fetch tasks:", err);
+    } finally {
+      setLoadingTasks(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchProjects();
-  }, [fetchProjects]);
+    fetchAllTasks();
+  }, [fetchProjects, fetchAllTasks]);
 
-  // Refresh handler for TaskNotesModal
   const handleRefresh = useCallback(async () => {
     if (selectedProject) {
       try {
@@ -265,7 +344,6 @@ export default function AdminDashboard() {
     }
   }, [selectedProject]);
 
-  // Event handlers
   const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
@@ -410,8 +488,12 @@ export default function AdminDashboard() {
   }, [fetchProjects]);
 
   const handleStatsCardClick = useCallback((status: string) => {
-    setActiveStatus(status as ProjectStatus | "all");
-    setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    if (status === "tasks") {
+      setShowAllTasksModal(true);
+    } else {
+      setActiveStatus(status as ProjectStatus | "all");
+      setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    }
   }, []);
 
   const handleClearFilter = useCallback(() => {
@@ -568,12 +650,22 @@ export default function AdminDashboard() {
       <main className="space-y-4">
         {/* Stats Section */}
         {!selectedProject && (
-          <StatsSection
-            stats={counts}
-            type="projects"
-            onStatsCardClick={handleStatsCardClick}
-            activeFilter={activeStatus}
-          />
+          <div className="space-y-4">
+            {/* Project Stats */}
+            <StatsSection
+              stats={counts}
+              type="projects"
+              onStatsCardClick={handleStatsCardClick}
+              activeFilter={activeStatus}
+            />
+
+            {/* Task Stats */}
+            <StatsSection
+              stats={taskStats}
+              type="tasks"
+              onStatsCardClick={() => handleStatsCardClick("tasks")}
+            />
+          </div>
         )}
 
         {/* Projects/Tasks Section */}
@@ -808,10 +900,13 @@ export default function AdminDashboard() {
         showUserManagementModal={showUserManagementModal}
         showProjectTypesModal={showProjectTypesModal}
         showUpdateTaskModal={showUpdateTaskModal}
+        showAllTasksModal={showAllTasksModal}
         editingTask={editingTask}
         editingProject={editingProject}
         deleteConfirm={deleteConfirm}
         selectedProject={selectedProject}
+        allTasks={allTasks}
+        taskStats={taskStats}
         onCloseModal={handleCloseModal}
         onNoteAdded={handleNoteAdded}
         onNewProjectCreated={handleNewProjectCreated}
@@ -832,6 +927,7 @@ export default function AdminDashboard() {
           setShowUpdateTaskModal(false);
           setEditingTask(null);
         }}
+        onCloseAllTasksModal={() => setShowAllTasksModal(false)}
         onCloseDeleteConfirm={() =>
           setDeleteConfirm({ type: null, id: null, name: "" })
         }
