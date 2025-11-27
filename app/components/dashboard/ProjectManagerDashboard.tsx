@@ -17,9 +17,11 @@ import {
   ChevronLeft,
   ChevronRight as ChevronRightIcon,
   Trash2,
+  FileText,
+  AlertTriangle,
 } from "lucide-react";
 
-import { deleteTask } from "@/lib/api/tasks";
+import { deleteTask, getAllTasks } from "@/lib/api/tasks";
 import { getProjectData, getProjects } from "@/lib/api/projects";
 
 import NewTaskModal from "../NewTaskModal";
@@ -38,8 +40,10 @@ import LoadingTasksState from "../common/LoadingTasksState";
 import ProjectCard from "@/components/common/ProjectCard";
 import ProjectListItem from "@/components/common/ProjectListItem";
 import { useAuth } from "@/app/context/AuthContext";
+import ActiveProjectFilterBadge from "../common/ActiveProjectFilterBadge";
+import AllTasksModal from "../AllTasksModal";
 
-type ProjectStatus = "planned" | "active" | "completed";
+type ProjectStatus = "planned" | "active" | "completed" | "overdue";
 
 interface User {
   _id: string;
@@ -108,6 +112,7 @@ interface ProjectsResponse {
     planned: number;
     active: number;
     completed: number;
+    overdueProjects: number;
   };
   page: number;
   limit: number;
@@ -132,6 +137,23 @@ interface DeleteConfirmState {
   type: "project" | "task" | null;
   id: string | null;
   name: string;
+}
+
+// Task Stats Interface
+interface TaskStats {
+  total: number;
+  byStatus: {
+    todo: number;
+    in_progress: number;
+    done: number;
+  };
+  byPriority: {
+    low: number;
+    medium: number;
+    high: number;
+    critical: number;
+  };
+  overdue: number;
 }
 
 // Custom hook for debouncing
@@ -159,52 +181,6 @@ const DEFAULT_TASK_FILTERS: TaskFilters = {
   priority: "all",
   assignee: "all",
   dueDate: "all",
-};
-
-// Active Filter Badge Component
-const ActiveProjectFilterBadge = ({
-  filter,
-  onClear,
-}: {
-  filter: ProjectStatus | "all";
-  onClear: () => void;
-}) => {
-  if (filter === "all") return null;
-
-  const PROJECT_STATUS_CONFIG = {
-    planned: {
-      label: "Planned",
-      color: "bg-slate-100 text-slate-700 border-slate-300",
-    },
-    active: {
-      label: "Active",
-      color: "bg-blue-50 text-blue-700 border-blue-200",
-    },
-    completed: {
-      label: "Completed",
-      color: "bg-green-50 text-green-700 border-green-200",
-    },
-  } as const;
-
-  const config = PROJECT_STATUS_CONFIG[filter];
-
-  return (
-    <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-1.5 border border-[#D9F3EE]">
-      <span className="text-xs text-slate-600">Filter:</span>
-      <span
-        className={`px-2 py-0.5 rounded text-xs font-medium ${config.color} border`}
-      >
-        {config.label}
-      </span>
-      <button
-        onClick={onClear}
-        className="text-slate-400 hover:text-red-500 transition-colors p-0.5"
-        title="Clear filter"
-      >
-        <Trash2 className="w-3 h-3" />
-      </button>
-    </div>
-  );
 };
 
 // Loading State Component
@@ -260,6 +236,7 @@ export default function ProjectManagerDashboard() {
     planned: 0,
     active: 0,
     completed: 0,
+    overdueProjects: 0,
   });
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(
     null
@@ -267,10 +244,30 @@ export default function ProjectManagerDashboard() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
+  // Task Stats State
+  const [taskStats, setTaskStats] = useState<TaskStats>({
+    total: 0,
+    byStatus: {
+      todo: 0,
+      in_progress: 0,
+      done: 0,
+    },
+    byPriority: {
+      low: 0,
+      medium: 0,
+      high: 0,
+      critical: 0,
+    },
+    overdue: 0,
+  });
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+
   // Modal states
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [showTeamManagementModal, setShowTeamManagementModal] = useState(false);
   const [showUpdateTaskModal, setShowUpdateTaskModal] = useState(false);
+  const [showAllTasksModal, setShowAllTasksModal] = useState(false);
 
   // UI states
   const [loading, setLoading] = useState(true);
@@ -308,14 +305,25 @@ export default function ProjectManagerDashboard() {
         page: pagination.currentPage,
         limit: pagination.itemsPerPage,
         search: debouncedSearchTerm || undefined,
-        status: activeStatus !== "all" ? activeStatus : undefined,
+        status:
+          activeStatus !== "all" && activeStatus !== "overdue"
+            ? activeStatus
+            : undefined,
       };
 
       const data: ProjectsResponse = await getProjects(queryParams);
 
+      console.log("data", data, activeStatus);
+
       setProjects(data.projects || []);
       setCounts(
-        data.counts || { total: 0, planned: 0, active: 0, completed: 0 }
+        data.counts || {
+          total: 0,
+          planned: 0,
+          active: 0,
+          completed: 0,
+          overdueProjects: 0,
+        }
       );
       setPagination((prev) => ({
         ...prev,
@@ -335,9 +343,60 @@ export default function ProjectManagerDashboard() {
     activeStatus,
   ]);
 
+  const fetchAllTasks = useCallback(async () => {
+    try {
+      setLoadingTasks(true);
+      const data = await getAllTasks();
+
+      const stats: TaskStats = {
+        total: data.count || 0,
+        byStatus: {
+          todo: 0,
+          in_progress: 0,
+          done: 0,
+        },
+        byPriority: {
+          low: 0,
+          medium: 0,
+          high: 0,
+          critical: 0,
+        },
+        overdue: 0,
+      };
+
+      const today = new Date();
+
+      data.tasks.forEach((task: Task) => {
+        if (task.status === "todo") stats.byStatus.todo++;
+        else if (task.status === "in_progress") stats.byStatus.in_progress++;
+        else if (task.status === "done") stats.byStatus.done++;
+
+        if (task.priority === "low") stats.byPriority.low++;
+        else if (task.priority === "medium") stats.byPriority.medium++;
+        else if (task.priority === "high") stats.byPriority.high++;
+        else if (task.priority === "critical") stats.byPriority.critical++;
+
+        if (task.status !== "done" && task.dueDate) {
+          const dueDate = new Date(task.dueDate);
+          if (dueDate < today) {
+            stats.overdue++;
+          }
+        }
+      });
+
+      setTaskStats(stats);
+      setAllTasks(data.tasks || []);
+    } catch (err) {
+      console.error("Failed to fetch tasks:", err);
+    } finally {
+      setLoadingTasks(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchProjects();
-  }, [fetchProjects]);
+    fetchAllTasks();
+  }, [fetchProjects, fetchAllTasks]);
 
   // Event handlers
   const handleSearch = useCallback((term: string) => {
@@ -415,6 +474,16 @@ export default function ProjectManagerDashboard() {
     setEditingTask(null);
   }, [selectedProject, editingTask, handleProjectClick]);
 
+  const handleTaskClickFromAllTasks = useCallback((task: Task) => {
+    setSelectedTask(task);
+    setShowAllTasksModal(false);
+  }, []);
+
+  const handleChatClickFromAllTasks = useCallback((task: Task) => {
+    setSelectedTask(task);
+    setShowAllTasksModal(false);
+  }, []);
+
   const handleNoteAdded = useCallback(
     (newNote: Note) => {
       if (selectedProject && selectedTask) {
@@ -440,8 +509,12 @@ export default function ProjectManagerDashboard() {
   }, [selectedProject, handleProjectClick]);
 
   const handleStatsCardClick = useCallback((status: string) => {
-    setActiveStatus(status as ProjectStatus | "all");
-    setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    if (status === "tasks") {
+      setShowAllTasksModal(true);
+    } else {
+      setActiveStatus(status as ProjectStatus | "all");
+      setPagination((prev) => ({ ...prev, currentPage: 1 }));
+    }
   }, []);
 
   const handleClearFilter = useCallback(() => {
@@ -490,13 +563,37 @@ export default function ProjectManagerDashboard() {
     [projects]
   );
 
-  const filteredProjects = useMemo(
-    () =>
-      activeStatus === "all"
-        ? projects
-        : projects.filter((project) => project.status === activeStatus),
-    [projects, activeStatus]
-  );
+  // Fixed filteredProjects logic to handle overdue projects
+  const filteredProjects = useMemo(() => {
+    if (activeStatus === "all") return projects;
+
+    if (activeStatus === "overdue") {
+      const today = new Date();
+      const overdueProjects = projects.filter((project) => {
+        const endDate = new Date(project.endDate);
+        // A project is overdue if:
+        // 1. The end date has passed
+        // 2. It's not completed
+        return endDate < today && project.status !== "completed";
+      });
+
+      console.log("Overdue projects calculation:", {
+        totalProjects: projects.length,
+        overdueCount: overdueProjects.length,
+        today: today.toISOString(),
+        projects: projects.map((p) => ({
+          name: p.projectName,
+          endDate: p.endDate,
+          status: p.status,
+          isOverdue: new Date(p.endDate) < today && p.status !== "completed",
+        })),
+      });
+
+      return overdueProjects;
+    }
+
+    return projects.filter((project) => project.status === activeStatus);
+  }, [projects, activeStatus]);
 
   const getFilteredTasks = useCallback(
     (tasks: Task[]) => {
@@ -613,12 +710,36 @@ export default function ProjectManagerDashboard() {
       <main className="space-y-4">
         {/* Stats Section */}
         {!selectedProject && (
-          <StatsSection
-            stats={counts}
-            type="projects"
-            onStatsCardClick={handleStatsCardClick}
-            activeFilter={activeStatus}
-          />
+          <div className="space-y-4">
+            <StatsSection
+              stats={counts}
+              type="projects"
+              onStatsCardClick={handleStatsCardClick}
+              activeFilter={activeStatus}
+            />
+
+            {/* Divider */}
+            <div className="relative">
+              <div
+                className="absolute inset-0 flex items-center"
+                aria-hidden="true"
+              >
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="bg-white px-2 text-xs text-gray-500">
+                  Overview
+                </span>
+              </div>
+            </div>
+
+            {/* Task Stats */}
+            <StatsSection
+              stats={taskStats}
+              type="tasks"
+              onStatsCardClick={() => handleStatsCardClick("tasks")}
+            />
+          </div>
         )}
 
         {/* Projects/Tasks Section */}
@@ -847,6 +968,9 @@ export default function ProjectManagerDashboard() {
         editingTask={editingTask}
         deleteConfirm={deleteConfirm}
         selectedProject={selectedProject}
+        allTasks={allTasks}
+        taskStats={taskStats}
+        showAllTasksModal={showAllTasksModal}
         onCloseModal={handleCloseModal}
         onNoteAdded={handleNoteAdded}
         onNewTaskCreated={handleNewTaskCreated}
@@ -858,17 +982,19 @@ export default function ProjectManagerDashboard() {
           setShowUpdateTaskModal(false);
           setEditingTask(null);
         }}
+        onCloseAllTasksModal={() => setShowAllTasksModal(false)}
         onCloseDeleteConfirm={() =>
           setDeleteConfirm({ type: null, id: null, name: "" })
         }
         currentUser={currentUser as User}
         onRefresh={handleRefresh}
+        onTaskClick={handleTaskClickFromAllTasks}
+        onChatClick={handleChatClickFromAllTasks}
       />
     </div>
   );
 }
 
-// Extracted Pagination Component for better organization
 interface PaginationProps {
   pagination: PaginationState;
   onPageChange: (page: number) => void;
@@ -943,15 +1069,17 @@ const Pagination: React.FC<PaginationProps> = ({
   );
 };
 
-// Extracted Modals Component to reduce main component size
 interface ModalsProps {
   selectedTask: Task | null;
   showNewTaskModal: boolean;
   showTeamManagementModal: boolean;
   showUpdateTaskModal: boolean;
+  showAllTasksModal: boolean;
   editingTask: Task | null;
   deleteConfirm: DeleteConfirmState;
   selectedProject: ProjectData | null;
+  allTasks: Task[];
+  taskStats: TaskStats;
   onCloseModal: () => void;
   onNoteAdded: (note: Note) => void;
   onNewTaskCreated: () => void;
@@ -959,10 +1087,14 @@ interface ModalsProps {
   onConfirmDelete: () => void;
   onCloseNewTaskModal: () => void;
   onCloseTeamManagementModal: () => void;
+  onCloseAllTasksModal: () => void;
   onCloseUpdateTaskModal: () => void;
   onCloseDeleteConfirm: () => void;
   currentUser: User;
   onRefresh: () => void;
+  // Add these new props for task interactions
+  onTaskClick?: (task: Task) => void;
+  onChatClick?: (task: Task) => void;
 }
 
 const Modals: React.FC<ModalsProps> = ({
@@ -970,6 +1102,9 @@ const Modals: React.FC<ModalsProps> = ({
   showNewTaskModal,
   showTeamManagementModal,
   showUpdateTaskModal,
+  showAllTasksModal,
+  allTasks = [],
+  taskStats,
   editingTask,
   deleteConfirm,
   selectedProject,
@@ -980,11 +1115,28 @@ const Modals: React.FC<ModalsProps> = ({
   onConfirmDelete,
   onCloseNewTaskModal,
   onCloseTeamManagementModal,
+  onCloseAllTasksModal,
   onCloseUpdateTaskModal,
   onCloseDeleteConfirm,
   currentUser,
   onRefresh,
+  onTaskClick,
+  onChatClick,
 }) => {
+  const handleTaskClick = (task: Task) => {
+    if (onTaskClick) {
+      onTaskClick(task);
+    }
+    onCloseAllTasksModal();
+  };
+
+  const handleChatClick = (task: Task) => {
+    if (onChatClick) {
+      onChatClick(task);
+    }
+    onCloseAllTasksModal();
+  };
+
   return (
     <>
       {selectedTask && (
@@ -1016,6 +1168,15 @@ const Modals: React.FC<ModalsProps> = ({
         isOpen={showTeamManagementModal}
         onClose={onCloseTeamManagementModal}
         onUserCreated={() => {}}
+      />
+
+      <AllTasksModal
+        isOpen={showAllTasksModal}
+        onClose={onCloseAllTasksModal}
+        allTasks={allTasks}
+        taskStats={taskStats}
+        onTaskClick={handleTaskClick}
+        onChatClick={handleChatClick}
       />
 
       <ConfirmationModal

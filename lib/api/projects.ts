@@ -7,6 +7,7 @@ export interface ProjectsResponse {
     planned: number;
     active: number;
     completed: number;
+    overdueProjects: number;
   };
   page: number;
   limit: number;

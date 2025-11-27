@@ -2,13 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  getUsers,
-  createManagers,
-  createTeam,
-  deleteUser,
-  updateUser,
-} from "@/lib/api/users";
-import {
   X,
   UserPlus,
   Building,
@@ -28,8 +21,17 @@ import {
   ClipboardList,
   Briefcase,
   Calculator,
+  Palette,
+  RefreshCw,
 } from "lucide-react";
 import ConfirmationModal from "./ConfirmationModal";
+import {
+  createManagers,
+  createTeam,
+  deleteUser,
+  getUsers,
+  updateUser,
+} from "@/lib/api/users";
 
 interface User {
   _id: string;
@@ -45,6 +47,200 @@ interface UserManagementModalProps {
   onUserCreated: () => void;
 }
 
+// Color palette for user avatars
+const COLOR_PALETTE = [
+  "#FF6B6B",
+  "#4ECDC4",
+  "#45B7D1",
+  "#96CEB4",
+  "#FFEAA7",
+  "#DDA0DD",
+  "#98D8C8",
+  "#F7DC6F",
+  "#BB8FCE",
+  "#85C1E9",
+  "#F8C471",
+  "#82E0AA",
+  "#F1948A",
+  "#85C1E9",
+  "#D7BDE2",
+  "#F9E79F",
+  "#A9DFBF",
+  "#F5B7B1",
+  "#AED6F1",
+  "#E8DAEF",
+];
+
+// Helper function to generate unique color based on email
+const generateUniqueColor = (
+  email: string,
+  existingColors: string[]
+): string => {
+  // Simple hash function to generate consistent color from email
+  let hash = 0;
+  for (let i = 0; i < email.length; i++) {
+    hash = email.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  // Use hash to pick from predefined palette
+  const colorIndex = Math.abs(hash) % COLOR_PALETTE.length;
+  let selectedColor = COLOR_PALETTE[colorIndex];
+
+  // If color is already used, find the next available one
+  let attempts = 0;
+  while (
+    existingColors.includes(selectedColor) &&
+    attempts < COLOR_PALETTE.length
+  ) {
+    const nextIndex = (colorIndex + attempts + 1) % COLOR_PALETTE.length;
+    selectedColor = COLOR_PALETTE[nextIndex];
+    attempts++;
+  }
+
+  return selectedColor;
+};
+
+// Helper function to get contrast color for text
+const getContrastColor = (hexColor: string): string => {
+  // Convert hex to RGB
+  const r = parseInt(hexColor.slice(1, 3), 16);
+  const g = parseInt(hexColor.slice(3, 5), 16);
+  const b = parseInt(hexColor.slice(5, 7), 16);
+
+  // Calculate relative luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? "#000000" : "#FFFFFF";
+};
+
+// Color Picker Component
+const ColorPicker: React.FC<{
+  selectedColor: string;
+  onColorChange: (color: string) => void;
+  usedColors: string[];
+}> = ({ selectedColor, onColorChange, usedColors }) => {
+  const [showPicker, setShowPicker] = useState(false);
+
+  const handleColorSelect = (color: string) => {
+    onColorChange(color);
+    setShowPicker(false);
+  };
+
+  const generateRandomColor = () => {
+    const letters = "0123456789ABCDEF";
+    let color = "#";
+    for (let i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+
+    // Ensure the color is not already used
+    let attempts = 0;
+    while (usedColors.includes(color) && attempts < 10) {
+      color = "#";
+      for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+      }
+      attempts++;
+    }
+
+    handleColorSelect(color);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setShowPicker(!showPicker)}
+        className="flex items-center gap-2 px-3 py-2 border border-[#D9F3EE] rounded-lg hover:border-[#1CC2B1] transition-colors"
+      >
+        <div
+          className="w-6 h-6 rounded border border-slate-200"
+          style={{ backgroundColor: selectedColor }}
+        />
+        <span className="text-sm text-[#0E3554] font-medium">
+          {selectedColor}
+        </span>
+        <Palette className="w-4 h-4 text-slate-400" />
+      </button>
+
+      {showPicker && (
+        <div className="absolute top-full left-0 mt-2 bg-white border border-[#D9F3EE] rounded-lg shadow-lg p-4 z-50 min-w-64">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-semibold text-[#0E3554]">
+              Choose Color
+            </h4>
+            <button
+              onClick={generateRandomColor}
+              className="p-1 text-slate-400 hover:text-[#1CC2B1] transition-colors"
+              title="Generate random color"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Predefined Color Palette */}
+          <div className="grid grid-cols-5 gap-2 mb-3">
+            {COLOR_PALETTE.map((color) => (
+              <button
+                key={color}
+                onClick={() => handleColorSelect(color)}
+                className={`w-8 h-8 rounded border-2 transition-all ${
+                  selectedColor === color
+                    ? "border-[#0E3554] scale-110"
+                    : "border-slate-200 hover:scale-105"
+                } ${usedColors.includes(color) ? "opacity-50" : ""}`}
+                style={{ backgroundColor: color }}
+                title={
+                  usedColors.includes(color) ? "Color already used" : color
+                }
+                disabled={usedColors.includes(color)}
+              />
+            ))}
+          </div>
+
+          {/* Custom Color Input */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-[#0E3554]">
+              Custom Color
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={selectedColor}
+                onChange={(e) => onColorChange(e.target.value)}
+                className="w-10 h-10 rounded border border-[#D9F3EE] cursor-pointer"
+              />
+              <input
+                type="text"
+                value={selectedColor}
+                onChange={(e) => onColorChange(e.target.value)}
+                placeholder="#000000"
+                className="flex-1 px-3 py-2 text-sm border border-[#D9F3EE] rounded focus:outline-none focus:ring-1 focus:ring-[#1CC2B1]"
+                pattern="^#[0-9A-Fa-f]{6}$"
+                maxLength={7}
+              />
+            </div>
+          </div>
+
+          {/* Used Colors Warning */}
+          {usedColors.length > 0 && (
+            <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+              <p>Some colors are already used by other users</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Overlay to close picker */}
+      {showPicker && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setShowPicker(false)}
+        />
+      )}
+    </div>
+  );
+};
+
 const UserManagementModal: React.FC<UserManagementModalProps> = ({
   isOpen,
   onClose,
@@ -58,6 +254,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     email: "",
     password: "",
     confirmPassword: "",
+    color: COLOR_PALETTE[0], // Default color
   });
   const [editFormData, setEditFormData] = useState<{
     [key: string]: {
@@ -65,6 +262,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       email: string;
       password: string;
       confirmPassword: string;
+      color: string;
     };
   }>({});
   const [editingUser, setEditingUser] = useState<string | null>(null);
@@ -121,6 +319,11 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     },
   ];
 
+  // Get used colors from existing users
+  const usedColors = users
+    .map((user) => user.color)
+    .filter(Boolean) as string[];
+
   useEffect(() => {
     if (isOpen && activeTab === "existing") {
       fetchUsers();
@@ -141,6 +344,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           email: user.email,
           password: "",
           confirmPassword: "",
+          color: user.color || COLOR_PALETTE[0],
         };
       });
       setEditFormData(editData);
@@ -166,6 +370,13 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     }
   };
 
+  const handleColorChange = (color: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      color,
+    }));
+  };
+
   const handleEditInputChange = (
     userId: string,
     e: React.ChangeEvent<HTMLInputElement>
@@ -176,6 +387,16 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       [userId]: {
         ...prev[userId],
         [name]: value,
+      },
+    }));
+  };
+
+  const handleEditColorChange = (userId: string, color: string) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      [userId]: {
+        ...prev[userId],
+        color,
       },
     }));
   };
@@ -206,11 +427,20 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         return;
       }
 
+      // Validate color format
+      if (!/^#[0-9A-Fa-f]{6}$/.test(formData.color)) {
+        setError(
+          "Invalid color format. Please use a valid hex color (#RRGGBB)"
+        );
+        return;
+      }
+
       const payload = {
         name: formData.name.trim(),
         email: formData.email.trim(),
         password: formData.password,
         role: userType,
+        color: formData.color,
       };
 
       // Use appropriate API based on role
@@ -228,6 +458,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         email: "",
         password: "",
         confirmPassword: "",
+        color: COLOR_PALETTE[0], // Reset to default color
       });
       onUserCreated();
 
@@ -265,9 +496,18 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         return;
       }
 
+      // Validate color format
+      if (!/^#[0-9A-Fa-f]{6}$/.test(userData.color)) {
+        setError(
+          "Invalid color format. Please use a valid hex color (#RRGGBB)"
+        );
+        return;
+      }
+
       const payload: any = {
         name: userData.name.trim(),
         email: userData.email.trim(),
+        color: userData.color,
       };
 
       // Only include password if it's provided
@@ -336,6 +576,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
             email: user.email,
             password: "",
             confirmPassword: "",
+            color: user.color || COLOR_PALETTE[0],
           },
         }));
       }
@@ -348,6 +589,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       email: "",
       password: "",
       confirmPassword: "",
+      color: COLOR_PALETTE[0],
     });
     setUserType("team_member");
     setError(null);
@@ -357,6 +599,17 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     setEditingUser(null);
     onClose();
   };
+
+  // Auto-generate color when email changes
+  useEffect(() => {
+    if (formData.email && activeTab === "new") {
+      const generatedColor = generateUniqueColor(formData.email, usedColors);
+      setFormData((prev) => ({
+        ...prev,
+        color: generatedColor,
+      }));
+    }
+  }, [formData.email, activeTab, usedColors]);
 
   const getRoleBadge = (role: string) => {
     const roleConfig: {
@@ -420,36 +673,20 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   // Function to get user avatar with color
   const getUserAvatar = (user: User) => {
     const initials = user.name.charAt(0).toUpperCase();
-
-    // Use the color from user data if available, otherwise fall back to default
-    const backgroundColor = user.color || "#EFFFFA";
-    const textColor = user.color ? getContrastColor(user.color) : "#0E3554";
+    const backgroundColor = user.color || COLOR_PALETTE[0];
+    const textColor = getContrastColor(backgroundColor);
 
     return (
       <div
-        className="w-8 h-8 rounded flex items-center justify-center font-semibold text-xs"
+        className="w-8 h-8 rounded flex items-center justify-center font-semibold text-xs border border-slate-200"
         style={{
-          backgroundColor: backgroundColor,
+          backgroundColor,
           color: textColor,
         }}
       >
         {initials}
       </div>
     );
-  };
-
-  // Helper function to determine text color based on background color
-  const getContrastColor = (hexColor: string) => {
-    // Convert hex to RGB
-    const r = parseInt(hexColor.slice(1, 3), 16);
-    const g = parseInt(hexColor.slice(3, 5), 16);
-    const b = parseInt(hexColor.slice(5, 7), 16);
-
-    // Calculate relative luminance
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-    // Return black or white based on luminance
-    return luminance > 0.5 ? "#000000" : "#FFFFFF";
   };
 
   if (!isOpen) return null;
@@ -665,6 +902,25 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                                 </div>
                               </div>
 
+                              {/* Color Picker in Edit Mode */}
+                              <div className="space-y-1.5">
+                                <label className="block text-xs font-medium text-[#0E3554]">
+                                  Avatar Color
+                                </label>
+                                <ColorPicker
+                                  selectedColor={
+                                    editFormData[user._id]?.color ||
+                                    COLOR_PALETTE[0]
+                                  }
+                                  onColorChange={(color) =>
+                                    handleEditColorChange(user._id, color)
+                                  }
+                                  usedColors={usedColors.filter(
+                                    (color) => color !== user.color
+                                  )}
+                                />
+                              </div>
+
                               <div className="flex justify-end gap-2 pt-3 border-t border-[#D9F3EE]">
                                 <button
                                   onClick={cancelEditing}
@@ -854,6 +1110,21 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                           <Mail className="w-3.5 h-3.5 text-slate-400" />
                         </div>
                       </div>
+                    </div>
+
+                    {/* Color Picker */}
+                    <div className="space-y-2">
+                      <label className="block text-xs font-semibold text-[#0E3554]">
+                        Avatar Color
+                      </label>
+                      <ColorPicker
+                        selectedColor={formData.color}
+                        onColorChange={handleColorChange}
+                        usedColors={usedColors}
+                      />
+                      <p className="text-xs text-slate-500">
+                        Color will be used for user's avatar and identification
+                      </p>
                     </div>
 
                     {/* Password */}

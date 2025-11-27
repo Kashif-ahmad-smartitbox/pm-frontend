@@ -3,19 +3,18 @@
 import React, { useState, useMemo } from "react";
 import {
   X,
-  Calendar,
-  User as UserIcon,
-  Flag,
+  BarChart3,
+  Filter,
+  Search,
   FileText,
   CheckCircle,
   Clock,
   PlayCircle,
-  BarChart3,
-  Filter,
-  Search,
-  FolderOpen,
+  AlertTriangle,
+  Menu,
 } from "lucide-react";
-import { Task, User } from "./common/TaskCard2";
+import { Task } from "./common/TaskCard2";
+import ModalTaskGrid from "./ModalTaskGrid";
 
 // Task Stats Interface
 interface TaskStats {
@@ -31,6 +30,7 @@ interface TaskStats {
     high: number;
     critical: number;
   };
+  overdue: number;
 }
 
 interface AllTasksModalProps {
@@ -38,6 +38,8 @@ interface AllTasksModalProps {
   onClose: () => void;
   allTasks: Task[];
   taskStats?: TaskStats;
+  onTaskClick?: (task: Task) => void;
+  onChatClick?: (task: Task) => void;
 }
 
 // Helper function to get status badge styles
@@ -104,17 +106,28 @@ const getStatusDisplayText = (status: string) => {
   }
 };
 
+// Helper function to check if task is overdue
+const isTaskOverdue = (task: Task): boolean => {
+  if (task.status === "done") return false;
+  const today = new Date();
+  const dueDate = new Date(task.dueDate);
+  return dueDate < today;
+};
+
 const AllTasksModal: React.FC<AllTasksModalProps> = ({
   isOpen,
   onClose,
   allTasks = [],
   taskStats,
+  onTaskClick,
+  onChatClick,
 }) => {
   const [activeFilter, setActiveFilter] = useState<{
-    type: "status" | "priority" | "all";
+    type: "status" | "priority" | "overdue" | "all";
     value: string;
   }>({ type: "all", value: "all" });
   const [searchTerm, setSearchTerm] = useState("");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Filter tasks based on active filter and search
   const filteredTasks = useMemo(() => {
@@ -128,7 +141,7 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
           task.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           // @ts-ignore
           task.project?.projectName
-            .toLowerCase()
+            ?.toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
           task.assignees.some((assignee) =>
             assignee.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -136,7 +149,7 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
       );
     }
 
-    // Apply status/priority filter
+    // Apply status/priority/overdue filter
     if (activeFilter.type !== "all" && activeFilter.value !== "all") {
       if (activeFilter.type === "status") {
         filtered = filtered.filter(
@@ -146,41 +159,52 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
         filtered = filtered.filter(
           (task) => task.priority === activeFilter.value
         );
+      } else if (activeFilter.type === "overdue") {
+        filtered = filtered.filter((task) => isTaskOverdue(task));
       }
     }
 
     return filtered;
   }, [allTasks, activeFilter, searchTerm]);
 
-  const handleFilterClick = (type: "status" | "priority", value: string) => {
+  const handleFilterClick = (
+    type: "status" | "priority" | "overdue",
+    value: string
+  ) => {
     if (activeFilter.type === type && activeFilter.value === value) {
       setActiveFilter({ type: "all", value: "all" });
     } else {
       setActiveFilter({ type, value });
     }
+    // Close mobile menu on filter selection
+    setIsMobileMenuOpen(false);
   };
 
   const handleClearFilters = () => {
     setActiveFilter({ type: "all", value: "all" });
     setSearchTerm("");
+    setIsMobileMenuOpen(false);
   };
 
   const hasActiveFilters = activeFilter.type !== "all" || searchTerm.trim();
 
+  // Calculate overdue tasks count
+  const overdueTasksCount = allTasks.filter(isTaskOverdue).length;
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl shadow-sm border border-[#D9F3EE] w-full max-w-6xl h-[85vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className="bg-white rounded-xl shadow-sm border border-[#D9F3EE] w-full max-w-6xl h-[90vh] sm:h-[85vh] flex flex-col">
         {/* Header - Fixed */}
-        <div className="border-b border-[#D9F3EE] p-4 shrink-0">
+        <div className="border-b border-[#D9F3EE] p-3 sm:p-4 shrink-0">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-[#EFFFFA] rounded-lg flex items-center justify-center">
-                <FileText className="w-4 h-4 text-[#0E3554]" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#EFFFFA] rounded-lg flex items-center justify-center flex-shrink-0">
+                <FileText className="w-3 h-3 sm:w-4 sm:h-4 text-[#0E3554]" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-[#0E3554]">
+                <h2 className="text-base sm:text-lg font-bold text-[#0E3554]">
                   All Tasks Overview
                 </h2>
                 <p className="text-slate-600 text-xs mt-0.5">
@@ -189,105 +213,203 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
                 </p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="w-6 h-6 flex items-center justify-center text-slate-600 hover:text-[#0E3554] hover:bg-slate-100 rounded transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
+
+            <div className="flex items-center gap-2">
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="sm:hidden w-8 h-8 flex items-center justify-center text-slate-600 hover:text-[#0E3554] hover:bg-slate-100 rounded transition-colors"
+              >
+                <Menu className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={onClose}
+                className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center text-slate-600 hover:text-[#0E3554] hover:bg-slate-100 rounded transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Task Stats Summary with Filter Cards - Fixed */}
+        {/* Task Stats Summary with Filter Cards - Fixed */}
         {taskStats && (
-          <div className="p-4 bg-linear-to-br from-gray-50 to-white border-b border-[#D9F3EE] shrink-0">
-            <div className="grid grid-cols-4 gap-3 mb-4">
-              {/* Total Tasks Card */}
-              <div
-                className={`bg-white rounded-lg p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
-                  activeFilter.type === "all"
-                    ? "border-[#1CC2B1] ring-1 ring-[#1CC2B1]"
-                    : "border-[#D9F3EE] hover:border-[#0E3554]"
-                }`}
-                onClick={() => setActiveFilter({ type: "all", value: "all" })}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="text-xl font-bold text-[#0E3554]">
-                    {taskStats.total}
-                  </div>
-                  <BarChart3 className="w-4 h-4 text-[#1CC2B1]" />
-                </div>
-                <div className="text-xs text-gray-600 font-medium mt-1">
-                  Total Tasks
+          <div className="p-3 sm:p-4 bg-linear-to-br from-gray-50 to-white border-b border-[#D9F3EE] shrink-0">
+            {/* Mobile Filter Menu */}
+            {isMobileMenuOpen && (
+              <div className="sm:hidden mb-4 p-3 bg-white border border-[#D9F3EE] rounded-lg shadow-sm">
+                <div className="space-y-2">
+                  <button
+                    onClick={() =>
+                      setActiveFilter({ type: "all", value: "all" })
+                    }
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      activeFilter.type === "all"
+                        ? "bg-[#0E3554] text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    All Tasks ({taskStats.total})
+                  </button>
+                  <button
+                    onClick={() => handleFilterClick("status", "todo")}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      activeFilter.type === "status" &&
+                      activeFilter.value === "todo"
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    To Do ({taskStats.byStatus.todo})
+                  </button>
+                  <button
+                    onClick={() => handleFilterClick("status", "in_progress")}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      activeFilter.type === "status" &&
+                      activeFilter.value === "in_progress"
+                        ? "bg-amber-500 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    In Progress ({taskStats.byStatus.in_progress})
+                  </button>
+                  <button
+                    onClick={() => handleFilterClick("status", "done")}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      activeFilter.type === "status" &&
+                      activeFilter.value === "done"
+                        ? "bg-emerald-500 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    Completed ({taskStats.byStatus.done})
+                  </button>
+                  <button
+                    onClick={() => handleFilterClick("overdue", "overdue")}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      activeFilter.type === "overdue"
+                        ? "bg-red-500 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    Overdue ({taskStats.overdue || overdueTasksCount})
+                  </button>
                 </div>
               </div>
+            )}
 
-              {/* To Do Card */}
-              <div
-                className={`bg-white rounded-lg p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
-                  activeFilter.type === "status" &&
-                  activeFilter.value === "todo"
-                    ? "border-blue-500 ring-1 ring-blue-500"
-                    : "border-[#D9F3EE] hover:border-blue-500"
-                }`}
-                onClick={() => handleFilterClick("status", "todo")}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="text-xl font-bold text-blue-600">
-                    {taskStats.byStatus.todo}
+            {/* Desktop Stats Grid - Hidden on mobile when menu is open */}
+            {!isMobileMenuOpen && (
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 mb-4">
+                {/* Total Tasks Card */}
+                <div
+                  className={`bg-white rounded-lg p-2 sm:p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
+                    activeFilter.type === "all"
+                      ? "border-[#1CC2B1] ring-1 ring-[#1CC2B1]"
+                      : "border-[#D9F3EE] hover:border-[#0E3554]"
+                  }`}
+                  onClick={() => setActiveFilter({ type: "all", value: "all" })}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-lg sm:text-xl font-bold text-[#0E3554]">
+                      {taskStats.total}
+                    </div>
+                    <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 text-[#1CC2B1]" />
                   </div>
-                  <Clock className="w-4 h-4 text-blue-400" />
+                  <div className="text-xs text-gray-600 font-medium mt-1">
+                    Total Tasks
+                  </div>
                 </div>
-                <div className="text-xs text-gray-600 font-medium mt-1">
-                  To Do
-                </div>
-              </div>
 
-              {/* In Progress Card */}
-              <div
-                className={`bg-white rounded-lg p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
-                  activeFilter.type === "status" &&
-                  activeFilter.value === "in_progress"
-                    ? "border-amber-500 ring-1 ring-amber-500"
-                    : "border-[#D9F3EE] hover:border-amber-500"
-                }`}
-                onClick={() => handleFilterClick("status", "in_progress")}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="text-xl font-bold text-amber-600">
-                    {taskStats.byStatus.in_progress}
+                {/* To Do Card */}
+                <div
+                  className={`bg-white rounded-lg p-2 sm:p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
+                    activeFilter.type === "status" &&
+                    activeFilter.value === "todo"
+                      ? "border-blue-500 ring-1 ring-blue-500"
+                      : "border-[#D9F3EE] hover:border-blue-500"
+                  }`}
+                  onClick={() => handleFilterClick("status", "todo")}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-lg sm:text-xl font-bold text-blue-600">
+                      {taskStats.byStatus.todo}
+                    </div>
+                    <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
                   </div>
-                  <PlayCircle className="w-4 h-4 text-amber-400" />
+                  <div className="text-xs text-gray-600 font-medium mt-1">
+                    To Do
+                  </div>
                 </div>
-                <div className="text-xs text-gray-600 font-medium mt-1">
-                  In Progress
-                </div>
-              </div>
 
-              {/* Completed Card */}
-              <div
-                className={`rounded-lg p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
-                  activeFilter.type === "status" &&
-                  activeFilter.value === "done"
-                    ? "border-emerald-500 ring-1 ring-emerald-500"
-                    : "border-[#D9F3EE] hover:border-emerald-500"
-                }`}
-                onClick={() => handleFilterClick("status", "done")}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="text-xl font-bold text-emerald-600">
-                    {taskStats.byStatus.done}
+                {/* In Progress Card */}
+                <div
+                  className={`bg-white rounded-lg p-2 sm:p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
+                    activeFilter.type === "status" &&
+                    activeFilter.value === "in_progress"
+                      ? "border-amber-500 ring-1 ring-amber-500"
+                      : "border-[#D9F3EE] hover:border-amber-500"
+                  }`}
+                  onClick={() => handleFilterClick("status", "in_progress")}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-lg sm:text-xl font-bold text-amber-600">
+                      {taskStats.byStatus.in_progress}
+                    </div>
+                    <PlayCircle className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400" />
                   </div>
-                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                  <div className="text-xs text-gray-600 font-medium mt-1">
+                    In Progress
+                  </div>
                 </div>
-                <div className="text-xs text-gray-600 font-medium mt-1">
-                  Completed
+
+                {/* Completed Card */}
+                <div
+                  className={`rounded-lg p-2 sm:p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
+                    activeFilter.type === "status" &&
+                    activeFilter.value === "done"
+                      ? "border-emerald-500 ring-1 ring-emerald-500"
+                      : "border-[#D9F3EE] hover:border-emerald-500"
+                  }`}
+                  onClick={() => handleFilterClick("status", "done")}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-lg sm:text-xl font-bold text-emerald-600">
+                      {taskStats.byStatus.done}
+                    </div>
+                    <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
+                  </div>
+                  <div className="text-xs text-gray-600 font-medium mt-1">
+                    Completed
+                  </div>
+                </div>
+
+                {/* Overdue Card */}
+                <div
+                  className={`rounded-lg p-2 sm:p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
+                    activeFilter.type === "overdue"
+                      ? "border-red-500 ring-1 ring-red-500"
+                      : "border-[#D9F3EE] hover:border-red-500"
+                  }`}
+                  onClick={() => handleFilterClick("overdue", "overdue")}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-lg sm:text-xl font-bold text-red-600">
+                      {taskStats.overdue || overdueTasksCount}
+                    </div>
+                    <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4 text-red-400" />
+                  </div>
+                  <div className="text-xs text-gray-600 font-medium mt-1">
+                    Overdue
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Search and Filter Controls */}
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
               {/* Search */}
               <div className="flex-1 relative">
                 <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -297,9 +419,9 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 text-sm border border-[#D9F3EE] rounded-lg 
-                    placeholder-slate-400 transition-all duration-200
-                    focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
-                    hover:border-[#0E3554] bg-white text-[#0E3554]"
+            placeholder-slate-400 transition-all duration-200
+            focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+            hover:border-[#0E3554] bg-white text-[#0E3554]"
                 />
               </div>
 
@@ -308,8 +430,8 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
                 <button
                   onClick={handleClearFilters}
                   className="px-3 py-2 text-sm text-slate-600 hover:text-[#0E3554] font-medium 
-                    transition-colors hover:bg-[#EFFFFA] rounded-lg border border-[#D9F3EE] 
-                    flex items-center gap-1.5"
+            transition-colors hover:bg-[#EFFFFA] rounded-lg border border-[#D9F3EE] 
+            flex items-center gap-1.5 justify-center"
                 >
                   <X className="w-3.5 h-3.5" />
                   Clear
@@ -323,11 +445,15 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
                 <Filter className="w-3.5 h-3.5 text-slate-400" />
                 <span className="text-xs text-slate-600">Filtered by:</span>
                 <span
-                  className={`px-2 py-1 rounded text-xs font-medium border ${getStatusBadgeStyles(
-                    activeFilter.value
-                  )}`}
+                  className={`px-2 py-1 rounded text-xs font-medium border ${
+                    activeFilter.type === "overdue"
+                      ? "bg-red-50 text-red-700 border-red-200"
+                      : getStatusBadgeStyles(activeFilter.value)
+                  }`}
                 >
-                  {getStatusDisplayText(activeFilter.value)}
+                  {activeFilter.type === "overdue"
+                    ? "Overdue Tasks"
+                    : getStatusDisplayText(activeFilter.value)}
                 </span>
               </div>
             )}
@@ -337,138 +463,20 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
         {/* Tasks List - Scrollable Area */}
         <div className="flex-1 overflow-hidden min-h-0">
           <div className="h-full overflow-y-auto">
-            <div className="p-4">
-              {filteredTasks.length > 0 ? (
-                <div className="grid gap-3">
-                  {filteredTasks.map((task) => {
-                    const StatusIcon = getStatusIcon(task.status);
-                    return (
-                      <div
-                        key={task._id}
-                        className="border border-[#D9F3EE] rounded-lg p-4 
-                          hover:shadow-md transition-all duration-200 
-                          hover:border-[#1CC2B1]/30 group"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          {/* Task Content */}
-                          <div className="flex-1 min-w-0">
-                            {/* Header with status and priority */}
-                            <div className="flex items-center gap-2 mb-3">
-                              <div
-                                className={`p-1.5 rounded-lg ${getStatusBadgeStyles(
-                                  task.status
-                                )}`}
-                              >
-                                <StatusIcon className="w-3.5 h-3.5" />
-                              </div>
-                              <h3 className="font-semibold text-[#0E3554] text-sm leading-tight flex-1">
-                                {task.title}
-                              </h3>
-                              <div
-                                className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityBadgeStyles(
-                                  task.priority
-                                )}`}
-                              >
-                                <Flag className="w-3 h-3 inline mr-1" />
-                                {task.priority.charAt(0).toUpperCase() +
-                                  task.priority.slice(1)}
-                              </div>
-                            </div>
-
-                            {/* Description */}
-                            {task.description && (
-                              <p className="text-xs text-slate-600 mb-3 leading-relaxed line-clamp-2">
-                                {task.description}
-                              </p>
-                            )}
-
-                            {/* Meta Information */}
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-4 text-xs text-slate-500">
-                                {/* Project */}
-                                <div className="flex items-center gap-1.5">
-                                  <FolderOpen className="w-3.5 h-3.5 text-[#1CC2B1]" />
-                                  <span className="font-medium text-[#0E3554]">
-                                    {/* @ts-ignore */}
-                                    {task.project?.projectName}
-                                  </span>
-                                </div>
-
-                                {/* Due Date */}
-                                <div className="flex items-center gap-1.5">
-                                  <Calendar className="w-3.5 h-3.5 text-[#1CC2B1]" />
-                                  <span>Due: {formatDate(task.dueDate)}</span>
-                                </div>
-
-                                {/* Assignees */}
-                                <div className="flex items-center gap-1.5">
-                                  <UserIcon className="w-3.5 h-3.5 text-[#1CC2B1]" />
-                                  <div className="flex items-center gap-1">
-                                    {task.assignees
-                                      .slice(0, 2)
-                                      .map((assignee) => (
-                                        <span
-                                          key={assignee._id}
-                                          className="text-xs bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200"
-                                        >
-                                          {assignee.name.split(" ")[0]}
-                                        </span>
-                                      ))}
-                                    {task.assignees.length > 2 && (
-                                      <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">
-                                        +{task.assignees.length - 2}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Notes count */}
-                              {task.notes && task.notes.length > 0 && (
-                                <div className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
-                                  {task.notes.length} note
-                                  {task.notes.length !== 1 ? "s" : ""}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <FileText className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    No tasks found
-                  </h3>
-                  <p className="text-gray-500 text-sm max-w-sm mx-auto">
-                    {hasActiveFilters
-                      ? "No tasks match your current filters. Try adjusting your search or filters."
-                      : "There are currently no tasks across all projects."}
-                  </p>
-                  {hasActiveFilters && (
-                    <button
-                      onClick={handleClearFilters}
-                      className="mt-4 px-4 py-2 text-sm text-[#0E3554] hover:text-[#1CC2B1] font-medium 
-                        transition-colors hover:bg-[#EFFFFA] rounded-lg border border-[#D9F3EE]"
-                    >
-                      Clear all filters
-                    </button>
-                  )}
-                </div>
-              )}
+            <div className="p-2 sm:p-4">
+              <ModalTaskGrid
+                tasks={filteredTasks}
+                onTaskClick={onTaskClick}
+                onChatClick={onChatClick}
+              />
             </div>
           </div>
         </div>
 
         {/* Footer - Fixed */}
-        <div className="border-t border-[#D9F3EE] p-4 shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-slate-600">
+        <div className="border-t border-[#D9F3EE] p-3 sm:p-4 shrink-0">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4">
+            <div className="text-sm text-slate-600 text-center sm:text-left">
               Showing{" "}
               <span className="font-semibold text-[#0E3554]">
                 {filteredTasks.length}
@@ -491,7 +499,7 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
             </div>
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm rounded font-medium
+              className="w-full sm:w-auto px-4 py-2 text-sm rounded font-medium
                 bg-[#0E3554] hover:bg-[#0A2A42]
                 transition-all duration-200
                 flex items-center justify-center gap-1.5 text-white"

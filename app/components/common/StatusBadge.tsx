@@ -22,10 +22,16 @@ const STATUS_CONFIG = {
     icon: CheckCircle,
     iconColor: "text-[#1CC2B1]",
   },
+  overdue: {
+    label: "Overdue",
+    color: "bg-[#E1F3F0] text-[#1CC2B1]",
+    icon: CheckCircle,
+    iconColor: "text-[#1CC2B1]",
+  },
 } as const;
 
 interface StatusBadgeProps {
-  status: "planned" | "active" | "completed";
+  status: "planned" | "active" | "completed" | "overdue";
   compact?: boolean;
 }
 

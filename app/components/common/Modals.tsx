@@ -9,7 +9,7 @@ import UserManagementModal from "../UserManagementModal";
 import ProjectTypeManagementModal from "../ProjectTypeManagementModal";
 import AllTasksModal from "../AllTasksModal";
 
-type ProjectStatus = "planned" | "active" | "completed";
+type ProjectStatus = "planned" | "active" | "completed" | "overdue";
 
 interface DeleteConfirmState {
   type: "project" | "task" | null;
@@ -84,6 +84,7 @@ interface TaskStats {
     high: number;
     critical: number;
   };
+  overdue: number;
 }
 
 interface ModalsProps {
@@ -119,6 +120,9 @@ interface ModalsProps {
   onCloseDeleteConfirm: () => void;
   currentUser: User;
   onRefresh: () => void;
+  // Add these new props for task interactions
+  onTaskClick?: (task: Task) => void;
+  onChatClick?: (task: Task) => void;
 }
 
 const Modals: React.FC<ModalsProps> = ({
@@ -154,7 +158,28 @@ const Modals: React.FC<ModalsProps> = ({
   onCloseDeleteConfirm,
   currentUser,
   onRefresh,
+  // Add handlers for task interactions
+  onTaskClick,
+  onChatClick,
 }) => {
+  // Handle task click from AllTasksModal
+  const handleTaskClick = (task: Task) => {
+    if (onTaskClick) {
+      onTaskClick(task);
+    }
+    // Close the All Tasks modal when a task is clicked
+    onCloseAllTasksModal();
+  };
+
+  // Handle chat click from AllTasksModal
+  const handleChatClick = (task: Task) => {
+    if (onChatClick) {
+      onChatClick(task);
+    }
+    // Close the All Tasks modal when chat is clicked
+    onCloseAllTasksModal();
+  };
+
   return (
     <>
       {selectedTask && (
@@ -207,12 +232,14 @@ const Modals: React.FC<ModalsProps> = ({
         onProjectTypeCreated={onProjectTypeCreated}
       />
 
-      {/* All Tasks Modal */}
+      {/* All Tasks Modal with chat functionality */}
       <AllTasksModal
         isOpen={showAllTasksModal}
         onClose={onCloseAllTasksModal}
         allTasks={allTasks}
         taskStats={taskStats}
+        onTaskClick={handleTaskClick}
+        onChatClick={handleChatClick}
       />
 
       <ConfirmationModal

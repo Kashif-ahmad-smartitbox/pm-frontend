@@ -17,7 +17,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-type ProjectStatus = "planned" | "active" | "completed";
+type ProjectStatus = "planned" | "active" | "completed" | "overdue";
 
 interface User {
   _id: string;
@@ -206,6 +206,12 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
       iconColor: "text-[#E6A93A]",
     },
     completed: {
+      label: "Completed",
+      color: "bg-[#E1F3F0] text-[#1CC2B1]",
+      icon: CheckCircle,
+      iconColor: "text-[#1CC2B1]",
+    },
+    overdue: {
       label: "Completed",
       color: "bg-[#E1F3F0] text-[#1CC2B1]",
       icon: CheckCircle,

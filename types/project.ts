@@ -1,4 +1,4 @@
-export type ProjectStatus = "planned" | "active" | "completed"; 
+export type ProjectStatus = "planned" | "active" | "completed" | "overdue";
 
 export interface User {
   _id: string;
@@ -23,6 +23,7 @@ export interface Project {
   location: string;
   projectManager: User;
   projectType: ProjectType;
+  projectOverdue?: boolean;
   startDate: string;
   endDate: string;
   createdBy: string;

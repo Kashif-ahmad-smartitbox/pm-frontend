@@ -9,6 +9,7 @@ import {
   ChevronRight as ChevronRightIcon,
   AlertCircle,
   Trash2,
+  AlertTriangle,
 } from "lucide-react";
 
 import TaskCard from "@/components/common/TaskCard";
@@ -89,6 +90,19 @@ interface PaginationState {
   totalItems: number;
   itemsPerPage: number;
 }
+
+// Helper function to check if task is overdue
+const isTaskOverdue = (task: TaskWithProjectDetails): boolean => {
+  if (task.status === "done") return false;
+  const today = new Date();
+  const dueDate = new Date(task.dueDate);
+  return dueDate < today;
+};
+
+// Helper function to calculate overdue tasks
+const calculateOverdueTasks = (tasks: TaskWithProjectDetails[]): number => {
+  return tasks.filter(isTaskOverdue).length;
+};
 
 // Constants
 const DEFAULT_PAGINATION: PaginationState = {
@@ -254,7 +268,7 @@ const ActiveTaskFilterBadge = ({
   filter,
   onClear,
 }: {
-  filter: TaskStatus | "all";
+  filter: TaskStatus | "all" | "overdue";
   onClear: () => void;
 }) => {
   if (filter === "all") return null;
@@ -272,6 +286,10 @@ const ActiveTaskFilterBadge = ({
       label: "Done",
       color: "bg-green-50 text-green-700 border-green-200",
     },
+    overdue: {
+      label: "Overdue",
+      color: "bg-red-50 text-red-700 border-red-200",
+    },
   } as const;
 
   const config = TASK_STATUS_CONFIG[filter];
@@ -280,8 +298,9 @@ const ActiveTaskFilterBadge = ({
     <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-1.5 border border-[#D9F3EE]">
       <span className="text-xs text-slate-600">Filter:</span>
       <span
-        className={`px-2 py-0.5 rounded text-xs font-medium ${config.color} border`}
+        className={`px-2 py-0.5 rounded text-xs font-medium ${config.color} border flex items-center gap-1`}
       >
+        {filter === "overdue" && <AlertTriangle className="w-3 h-3" />}
         {config.label}
       </span>
       <button
@@ -318,7 +337,9 @@ export default function TeamMemberDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
-  const [activeStatus, setActiveStatus] = useState<TaskStatus | "all">("all");
+  const [activeStatus, setActiveStatus] = useState<
+    TaskStatus | "all" | "overdue"
+  >("all");
 
   // Confirmation modal state
   const [confirmationModal, setConfirmationModal] = useState<{
@@ -353,7 +374,7 @@ export default function TeamMemberDashboard() {
         queryParams.search = debouncedSearchTerm;
       }
 
-      if (activeStatus !== "all") {
+      if (activeStatus !== "all" && activeStatus !== "overdue") {
         queryParams.status = activeStatus;
       }
 
@@ -363,30 +384,37 @@ export default function TeamMemberDashboard() {
         debouncedSearchTerm
       );
 
-      // Filter tasks on client side based on activeStatus
+      // Filter tasks based on activeStatus
       let filteredTasks = data.tasks || [];
-      if (activeStatus !== "all") {
+      if (activeStatus !== "all" && activeStatus !== "overdue") {
         filteredTasks = filteredTasks.filter(
           (task) => task.status === activeStatus
         );
+      } else if (activeStatus === "overdue") {
+        filteredTasks = filteredTasks.filter(isTaskOverdue);
       }
 
+      // Calculate overdue count from all tasks
+      const overdueCount = calculateOverdueTasks(data.tasks || []);
+
       setTasks(filteredTasks);
-      setStats(
-        data.stats || {
-          total: 0,
-          byStatus: { todo: 0, in_progress: 0, done: 0 },
-          byPriority: { low: 0, medium: 0, high: 0, critical: 0 },
-          overdue: 0,
-        }
-      );
+      setStats({
+        total: data.total || 0,
+        byStatus: data.stats?.byStatus || { todo: 0, in_progress: 0, done: 0 },
+        byPriority: data.stats?.byPriority || {
+          low: 0,
+          medium: 0,
+          high: 0,
+          critical: 0,
+        },
+        overdue: overdueCount,
+      });
 
       setPagination((prev) => ({
         ...prev,
         currentPage: data.page || 1,
         totalPages: data.totalPages || 1,
-        totalItems:
-          activeStatus === "all" ? data.total || 0 : filteredTasks.length,
+        totalItems: filteredTasks.length,
       }));
     } catch (err) {
       console.error("Fetch tasks error:", err);
@@ -416,7 +444,7 @@ export default function TeamMemberDashboard() {
   }, []);
 
   const handleStatsCardClick = useCallback((status: string) => {
-    setActiveStatus(status as TaskStatus | "all");
+    setActiveStatus(status as TaskStatus | "all" | "overdue");
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
   }, []);
 
@@ -516,13 +544,17 @@ export default function TeamMemberDashboard() {
   }, [fetchTasks]);
 
   // Computed values
-  const filteredTasks = useMemo(
-    () =>
-      activeStatus === "all"
-        ? tasks
-        : tasks.filter((task) => task.status === activeStatus),
-    [tasks, activeStatus]
-  );
+  const filteredTasks = useMemo(() => {
+    let filtered = tasks;
+
+    if (activeStatus === "overdue") {
+      filtered = filtered.filter(isTaskOverdue);
+    } else if (activeStatus !== "all") {
+      filtered = filtered.filter((task) => task.status === activeStatus);
+    }
+
+    return filtered;
+  }, [tasks, activeStatus]);
 
   const getConfirmationMessage = useCallback(() => {
     const { newStatus, taskTitle } = confirmationModal;
@@ -547,6 +579,11 @@ export default function TeamMemberDashboard() {
 
     return "Update Status";
   }, [confirmationModal]);
+
+  // Calculate current overdue count for display
+  const currentOverdueCount = useMemo(() => {
+    return calculateOverdueTasks(tasks);
+  }, [tasks]);
 
   // Render states
   if (loading) return <LoadingState />;
@@ -581,10 +618,17 @@ export default function TeamMemberDashboard() {
                   </div>
                   <h2 className="text-lg font-semibold text-[#0E3554] truncate">
                     My Tasks ({pagination.totalItems})
+                    {activeStatus === "overdue" && (
+                      <span className="ml-2 text-red-600 text-sm font-normal">
+                        ({currentOverdueCount} overdue)
+                      </span>
+                    )}
                   </h2>
                 </div>
                 <p className="text-slate-500 text-xs ml-7">
-                  Tasks assigned to you across all projects
+                  {activeStatus === "overdue"
+                    ? "Tasks that are past their due date and need immediate attention"
+                    : "Tasks assigned to you across all projects"}
                 </p>
               </div>
 
@@ -618,7 +662,27 @@ export default function TeamMemberDashboard() {
             {loading ? (
               <LoadingTasksState />
             ) : filteredTasks.length === 0 ? (
-              <EmptyTasksState />
+              <div className="text-center py-8">
+                <div className="w-12 h-12 bg-[#EFFFFA] rounded-xl flex items-center justify-center mx-auto mb-3">
+                  {activeStatus === "overdue" ? (
+                    <AlertTriangle className="w-5 h-5 text-slate-400" />
+                  ) : (
+                    <FileText className="w-5 h-5 text-slate-400" />
+                  )}
+                </div>
+                <h3 className="text-sm font-semibold text-[#0E3554] mb-1">
+                  {activeStatus === "overdue"
+                    ? "No overdue tasks"
+                    : "No tasks found"}
+                </h3>
+                <p className="text-slate-600 text-xs">
+                  {activeStatus === "overdue"
+                    ? "Great! You don't have any overdue tasks."
+                    : activeStatus !== "all"
+                    ? `No tasks found with status "${activeStatus}"`
+                    : "You don't have any tasks assigned to you yet."}
+                </p>
+              </div>
             ) : (
               <>
                 {/* 4-column grid layout */}

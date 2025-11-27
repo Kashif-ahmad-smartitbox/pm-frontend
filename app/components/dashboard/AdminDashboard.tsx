@@ -13,6 +13,7 @@ import {
   List,
   ArrowLeft,
   FileText,
+  AlertTriangle,
 } from "lucide-react";
 
 import { deleteTask, getAllTasks } from "@/lib/api/tasks";
@@ -35,7 +36,7 @@ import LoadingState from "../common/LoadingState";
 import ErrorState from "../common/ErrorState";
 import { useAuth } from "@/app/context/AuthContext";
 
-type ProjectStatus = "planned" | "active" | "completed";
+type ProjectStatus = "planned" | "active" | "completed" | "overdue";
 
 interface User {
   _id: string;
@@ -105,6 +106,7 @@ interface ProjectsResponse {
     planned: number;
     active: number;
     completed: number;
+    overdueProjects: number;
   };
   page: number;
   limit: number;
@@ -145,6 +147,7 @@ interface TaskStats {
     high: number;
     critical: number;
   };
+  overdue: number;
 }
 
 // Custom hook for debouncing
@@ -182,6 +185,7 @@ export default function AdminDashboard() {
     planned: 0,
     active: 0,
     completed: 0,
+    overdueProjects: 0,
   });
   const [selectedProject, setSelectedProject] = useState<ProjectData | null>(
     null
@@ -204,6 +208,7 @@ export default function AdminDashboard() {
       high: 0,
       critical: 0,
     },
+    overdue: 0,
   });
   const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [loadingTasks, setLoadingTasks] = useState(false);
@@ -253,14 +258,25 @@ export default function AdminDashboard() {
         page: pagination.currentPage,
         limit: pagination.itemsPerPage,
         search: debouncedSearchTerm || undefined,
-        status: activeStatus !== "all" ? activeStatus : undefined,
+        status:
+          activeStatus !== "all" && activeStatus !== "overdue"
+            ? activeStatus
+            : undefined,
       };
 
       const data: ProjectsResponse = await getProjects(queryParams);
 
+      console.log("data", data, activeStatus);
+
       setProjects(data.projects || []);
       setCounts(
-        data.counts || { total: 0, planned: 0, active: 0, completed: 0 }
+        data.counts || {
+          total: 0,
+          planned: 0,
+          active: 0,
+          completed: 0,
+          overdueProjects: 0,
+        }
       );
       setPagination((prev) => ({
         ...prev,
@@ -285,7 +301,6 @@ export default function AdminDashboard() {
       setLoadingTasks(true);
       const data = await getAllTasks();
 
-      // Calculate task stats
       const stats: TaskStats = {
         total: data.count || 0,
         byStatus: {
@@ -299,19 +314,27 @@ export default function AdminDashboard() {
           high: 0,
           critical: 0,
         },
+        overdue: 0,
       };
 
+      const today = new Date();
+
       data.tasks.forEach((task: Task) => {
-        // Count by status
         if (task.status === "todo") stats.byStatus.todo++;
         else if (task.status === "in_progress") stats.byStatus.in_progress++;
         else if (task.status === "done") stats.byStatus.done++;
 
-        // Count by priority
         if (task.priority === "low") stats.byPriority.low++;
         else if (task.priority === "medium") stats.byPriority.medium++;
         else if (task.priority === "high") stats.byPriority.high++;
         else if (task.priority === "critical") stats.byPriority.critical++;
+
+        if (task.status !== "done" && task.dueDate) {
+          const dueDate = new Date(task.dueDate);
+          if (dueDate < today) {
+            stats.overdue++;
+          }
+        }
       });
 
       setTaskStats(stats);
@@ -538,13 +561,37 @@ export default function AdminDashboard() {
     [projects]
   );
 
-  const filteredProjects = useMemo(
-    () =>
-      activeStatus === "all"
-        ? projects
-        : projects.filter((project) => project.status === activeStatus),
-    [projects, activeStatus]
-  );
+  // Fixed filteredProjects logic to handle overdue projects
+  const filteredProjects = useMemo(() => {
+    if (activeStatus === "all") return projects;
+
+    if (activeStatus === "overdue") {
+      const today = new Date();
+      const overdueProjects = projects.filter((project) => {
+        const endDate = new Date(project.endDate);
+        // A project is overdue if:
+        // 1. The end date has passed
+        // 2. It's not completed
+        return endDate < today && project.status !== "completed";
+      });
+
+      console.log("Overdue projects calculation:", {
+        totalProjects: projects.length,
+        overdueCount: overdueProjects.length,
+        today: today.toISOString(),
+        projects: projects.map((p) => ({
+          name: p.projectName,
+          endDate: p.endDate,
+          status: p.status,
+          isOverdue: new Date(p.endDate) < today && p.status !== "completed",
+        })),
+      });
+
+      return overdueProjects;
+    }
+
+    return projects.filter((project) => project.status === activeStatus);
+  }, [projects, activeStatus]);
 
   const getFilteredTasks = useCallback(
     (tasks: Task[]) => {
@@ -651,7 +698,6 @@ export default function AdminDashboard() {
         {/* Stats Section */}
         {!selectedProject && (
           <div className="space-y-4">
-            {/* Project Stats */}
             <StatsSection
               stats={counts}
               type="projects"
@@ -673,7 +719,6 @@ export default function AdminDashboard() {
                 </span>
               </div>
             </div>
-
             {/* Task Stats */}
             <StatsSection
               stats={taskStats}
@@ -948,6 +993,12 @@ export default function AdminDashboard() {
         }
         currentUser={currentUser as User}
         onRefresh={handleRefresh}
+        onTaskClick={(task) => {
+          setSelectedTask(task);
+        }}
+        onChatClick={(task) => {
+          setSelectedTask(task);
+        }}
       />
     </div>
   );

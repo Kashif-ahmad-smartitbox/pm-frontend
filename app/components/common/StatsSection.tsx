@@ -8,6 +8,7 @@ import {
   TrendingUp,
   FileText,
   BarChart3,
+  AlertTriangle,
 } from "lucide-react";
 
 // Types
@@ -16,6 +17,7 @@ interface ProjectStatsData {
   planned: number;
   active: number;
   completed: number;
+  overdueProjects: number;
 }
 
 interface TaskStatsData {
@@ -25,6 +27,7 @@ interface TaskStatsData {
     in_progress: number;
     done: number;
   };
+  overdue: number;
 }
 
 interface StatsSectionProps {
@@ -71,6 +74,15 @@ const PROJECTS_STATS_CONFIG = [
     mainBgColor: "bg-[#8BAE66]",
     filterValue: "completed",
   },
+  {
+    id: "overdueProjects",
+    label: "Overdue",
+    icon: AlertTriangle,
+    color: "text-[#DC2626]",
+    bgColor: "bg-[#FEE2E2]",
+    mainBgColor: "bg-[#EF4444]",
+    filterValue: "overdue",
+  },
 ] as const;
 
 const TASKS_STATS_CONFIG = [
@@ -110,6 +122,15 @@ const TASKS_STATS_CONFIG = [
     mainBgColor: "bg-[#06D6A0]",
     filterValue: "done",
   },
+  {
+    id: "overdue",
+    label: "Overdue",
+    icon: AlertTriangle,
+    color: "text-[#DC2626]",
+    bgColor: "bg-[#FEE2E2]",
+    mainBgColor: "bg-[#EF4444]",
+    filterValue: "overdue",
+  },
 ] as const;
 
 export default function StatsSection({
@@ -130,6 +151,8 @@ export default function StatsSection({
       const taskStats = stats as TaskStatsData;
       if (statId === "total") {
         return taskStats.total || 0;
+      } else if (statId === "overdue") {
+        return taskStats.overdue || 0;
       } else {
         return (
           taskStats.byStatus[statId as keyof typeof taskStats.byStatus] || 0
@@ -151,7 +174,7 @@ export default function StatsSection({
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
       {config.map((stat) => {
         const IconComponent = stat.icon;
         const value = getValue(stat.id);
