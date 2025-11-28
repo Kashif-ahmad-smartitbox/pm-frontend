@@ -538,11 +538,6 @@ export default function TeamMemberDashboard() {
     [selectedTask, tasks]
   );
 
-  // Refresh handler for TaskNotesModal
-  const handleRefresh = useCallback(() => {
-    fetchTasks();
-  }, [fetchTasks]);
-
   // Computed values
   const filteredTasks = useMemo(() => {
     let filtered = tasks;
@@ -716,7 +711,6 @@ export default function TeamMemberDashboard() {
           isOpen={!!selectedTask}
           onClose={handleCloseModal}
           onNoteAdded={handleNoteAdded}
-          onRefresh={handleRefresh}
           currentUser={user as User}
         />
       )}

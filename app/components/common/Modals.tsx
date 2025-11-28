@@ -119,8 +119,6 @@ interface ModalsProps {
   onCloseAllTasksModal: () => void;
   onCloseDeleteConfirm: () => void;
   currentUser: User;
-  onRefresh: () => void;
-  // Add these new props for task interactions
   onTaskClick?: (task: Task) => void;
   onChatClick?: (task: Task) => void;
 }
@@ -157,26 +155,20 @@ const Modals: React.FC<ModalsProps> = ({
   onCloseAllTasksModal,
   onCloseDeleteConfirm,
   currentUser,
-  onRefresh,
-  // Add handlers for task interactions
   onTaskClick,
   onChatClick,
 }) => {
-  // Handle task click from AllTasksModal
   const handleTaskClick = (task: Task) => {
     if (onTaskClick) {
       onTaskClick(task);
     }
-    // Close the All Tasks modal when a task is clicked
     onCloseAllTasksModal();
   };
 
-  // Handle chat click from AllTasksModal
   const handleChatClick = (task: Task) => {
     if (onChatClick) {
       onChatClick(task);
     }
-    // Close the All Tasks modal when chat is clicked
     onCloseAllTasksModal();
   };
 
@@ -188,7 +180,6 @@ const Modals: React.FC<ModalsProps> = ({
           isOpen={!!selectedTask}
           onClose={onCloseModal}
           onNoteAdded={onNoteAdded}
-          onRefresh={onRefresh}
           currentUser={currentUser}
         />
       )}

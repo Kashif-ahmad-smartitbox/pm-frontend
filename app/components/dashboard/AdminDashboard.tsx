@@ -351,22 +351,6 @@ export default function AdminDashboard() {
     fetchAllTasks();
   }, [fetchProjects, fetchAllTasks]);
 
-  const handleRefresh = useCallback(async () => {
-    if (selectedProject) {
-      try {
-        setLoadingProject(true);
-        const projectData = await getProjectData(selectedProject.project._id);
-        setSelectedProject(projectData);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to refresh project data"
-        );
-      } finally {
-        setLoadingProject(false);
-      }
-    }
-  }, [selectedProject]);
-
   const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
@@ -992,7 +976,6 @@ export default function AdminDashboard() {
           setDeleteConfirm({ type: null, id: null, name: "" })
         }
         currentUser={currentUser as User}
-        onRefresh={handleRefresh}
         onTaskClick={(task) => {
           setSelectedTask(task);
         }}

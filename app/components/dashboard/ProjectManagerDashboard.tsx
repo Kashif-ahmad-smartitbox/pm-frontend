@@ -424,12 +424,6 @@ export default function ProjectManagerDashboard() {
     }
   }, []);
 
-  const handleRefresh = useCallback(() => {
-    if (selectedProject) {
-      handleProjectClick(selectedProject.project._id);
-    }
-  }, [selectedProject, handleProjectClick]);
-
   const handleTaskClick = useCallback(
     (task: Task) => setSelectedTask(task),
     []
@@ -987,7 +981,6 @@ export default function ProjectManagerDashboard() {
           setDeleteConfirm({ type: null, id: null, name: "" })
         }
         currentUser={currentUser as User}
-        onRefresh={handleRefresh}
         onTaskClick={handleTaskClickFromAllTasks}
         onChatClick={handleChatClickFromAllTasks}
       />
@@ -1091,8 +1084,6 @@ interface ModalsProps {
   onCloseUpdateTaskModal: () => void;
   onCloseDeleteConfirm: () => void;
   currentUser: User;
-  onRefresh: () => void;
-  // Add these new props for task interactions
   onTaskClick?: (task: Task) => void;
   onChatClick?: (task: Task) => void;
 }
@@ -1119,7 +1110,6 @@ const Modals: React.FC<ModalsProps> = ({
   onCloseUpdateTaskModal,
   onCloseDeleteConfirm,
   currentUser,
-  onRefresh,
   onTaskClick,
   onChatClick,
 }) => {
@@ -1145,7 +1135,6 @@ const Modals: React.FC<ModalsProps> = ({
           isOpen={!!selectedTask}
           onClose={onCloseModal}
           onNoteAdded={onNoteAdded}
-          onRefresh={onRefresh}
           currentUser={currentUser}
         />
       )}
