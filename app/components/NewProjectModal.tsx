@@ -339,7 +339,6 @@ const NewProjectModal = ({
                         disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
                       required
                       disabled={submitting}
-                      min={new Date().toISOString().split("T")[0]}
                     />
                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
                       <Calendar className="w-3.5 h-3.5 text-slate-400" />
@@ -363,10 +362,7 @@ const NewProjectModal = ({
                         disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
                       required
                       disabled={submitting}
-                      min={
-                        formData.startDate ||
-                        new Date().toISOString().split("T")[0]
-                      }
+                      min={formData.startDate}
                     />
                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
                       <Calendar className="w-3.5 h-3.5 text-slate-400" />

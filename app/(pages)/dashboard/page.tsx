@@ -19,10 +19,10 @@ interface User {
 
 // Loading Component
 const DashboardLoading = () => (
-  <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+  <div className="min-h-screen bg-white flex items-center justify-center p-4">
     <div className="text-center space-y-6">
       <div className="relative">
-        <div className="w-20 h-20 border-4 border-[#D9F3EE] border-t-[#1CC2B1] rounded-full animate-spin mx-auto"></div>
+        <div className="w-20 h-20 border-4 border-[#D9F3EE] border-t-white rounded-full animate-spin mx-auto"></div>
         <div className="absolute inset-0 flex items-center justify-center">
           <Loader2 className="w-8 h-8 text-[#1CC2B1] animate-pulse" />
         </div>

@@ -466,7 +466,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           className={`col-span-2 flex items-center justify-between text-xs rounded-md px-2 py-1.5 border ${
             overdue
               ? "bg-red-100 border-red-200 text-red-800"
-              : "bg-[#EFFFFA] border-[#D9F3EE] text-slate-600"
+              : "bg-[#e0e0e0] border-[#D9F3EE] text-slate-600"
           }`}
         >
           <div className="flex items-center gap-1">

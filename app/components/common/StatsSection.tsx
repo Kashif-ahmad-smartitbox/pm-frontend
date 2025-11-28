@@ -44,7 +44,7 @@ const PROJECTS_STATS_CONFIG = [
     icon: FolderOpen,
     color: "text-[#0E3554]",
     bgColor: "bg-[#E1F3F0]",
-    mainBgColor: "bg-[#1bc5b4]",
+    mainBgColor: "bg-[#e0e0e0]",
     filterValue: "all",
   },
   {
@@ -92,7 +92,7 @@ const TASKS_STATS_CONFIG = [
     icon: FileText,
     color: "text-[#0E3554]",
     bgColor: "bg-[#E1F3F0]",
-    mainBgColor: "bg-[#FF6B6B]",
+    mainBgColor: "bg-[#ffffff]",
     filterValue: "all",
   },
   {
@@ -101,7 +101,7 @@ const TASKS_STATS_CONFIG = [
     icon: Clock,
     color: "text-[#0E3554]",
     bgColor: "bg-[#E0FFFA]",
-    mainBgColor: "bg-[#4ECDC4]",
+    mainBgColor: "bg-[#ffffff]",
     filterValue: "todo",
   },
   {
@@ -110,7 +110,7 @@ const TASKS_STATS_CONFIG = [
     icon: BarChart3,
     color: "text-[#1CC2B1]",
     bgColor: "bg-[#FFF4DD]",
-    mainBgColor: "bg-[#FFD166]",
+    mainBgColor: "bg-[#ffffff]",
     filterValue: "in_progress",
   },
   {
@@ -119,7 +119,7 @@ const TASKS_STATS_CONFIG = [
     icon: CheckCircle,
     color: "text-[#1CC2B1]",
     bgColor: "bg-[#E1F3F0]",
-    mainBgColor: "bg-[#06D6A0]",
+    mainBgColor: "bg-[#ffffff]",
     filterValue: "done",
   },
   {
@@ -128,7 +128,7 @@ const TASKS_STATS_CONFIG = [
     icon: AlertTriangle,
     color: "text-[#DC2626]",
     bgColor: "bg-[#FEE2E2]",
-    mainBgColor: "bg-[#EF4444]",
+    mainBgColor: "bg-[#ffffff]",
     filterValue: "overdue",
   },
 ] as const;
@@ -239,7 +239,7 @@ export default function StatsSection({
                 </div>
                 <div className="w-full bg-white/30 rounded-full h-1 sm:h-1.5 shadow-inner overflow-hidden">
                   <div
-                    className={`h-1 sm:h-1.5 rounded-full transition-all duration-700 ease-out bg-gradient-to-r from-[#0E3554] to-[#0E3554]/80 shadow-sm relative overflow-hidden`}
+                    className={`h-1 sm:h-1.5 rounded-full transition-all duration-700 ease-out bg-[#13d116] shadow-sm relative overflow-hidden`}
                     style={{ width: `${percentage}%` }}
                   >
                     {/* Shimmer effect */}

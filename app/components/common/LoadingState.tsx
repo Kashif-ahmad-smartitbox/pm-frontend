@@ -1,5 +1,5 @@
 const LoadingState = () => (
-  <div className="min-h-screen bg-[#EFFFFA] flex items-center justify-center p-6">
+  <div className="min-h-screen bg-white flex items-center justify-center p-6">
     <div className="text-center space-y-3">
       <div className="w-10 h-10 border-3 border-[#D9F3EE] border-t-[#1CC2B1] rounded-full animate-spin mx-auto"></div>
       <div className="space-y-1">

@@ -278,6 +278,10 @@ export default function CommonHeader({
             </div>
           </div>
 
+          <span className="font-bold text-xl text-[#0E3554]">
+            TnA Dashboard
+          </span>
+
           {/* Desktop Actions */}
           <div className="hidden sm:flex items-center gap-1">
             {showProjectTypes && (

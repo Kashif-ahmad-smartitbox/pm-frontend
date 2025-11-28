@@ -495,16 +495,16 @@ const MobileHeader = ({
       {showDetails && (
         <div className="mt-3 pt-3 border-t border-[#D9F3EE]">
           <div className="flex flex-wrap gap-2 text-xs">
-            <div className="flex items-center gap-1 bg-[#EFFFFA] px-2 py-1 rounded border border-[#D9F3EE]">
+            <div className="flex items-center gap-1 bg-[#f3f3f3] px-2 py-1 rounded border border-[#D9F3EE]">
               <User className="w-3 h-3 text-[#1CC2B1]" />
               <span className="text-[#0E3554]">{task?.createdBy?.name}</span>
             </div>
-            <div className="flex items-center gap-1 bg-[#EFFFFA] px-2 py-1 rounded border border-[#D9F3EE]">
+            <div className="flex items-center gap-1 bg-[#f3f3f3] px-2 py-1 rounded border border-[#D9F3EE]">
               <span className="text-[#0E3554]">
                 {task?.assignees?.length} members
               </span>
             </div>
-            <div className="flex items-center gap-1 bg-[#EFFFFA] px-2 py-1 rounded border border-[#D9F3EE]">
+            <div className="flex items-center gap-1 bg-[#f3f3f3] px-2 py-1 rounded border border-[#D9F3EE]">
               <div
                 className={`w-2 h-2 rounded-full ${
                   task?.status === "done"
@@ -519,7 +519,7 @@ const MobileHeader = ({
               </span>
             </div>
             {task?.priority && (
-              <div className="flex items-center gap-1 bg-[#EFFFFA] px-2 py-1 rounded border border-[#D9F3EE]">
+              <div className="flex items-center gap-1 bg-[#f3f3f3] px-2 py-1 rounded border border-[#D9F3EE]">
                 <div
                   className={`w-2 h-2 rounded-full ${
                     task?.priority === "critical"
@@ -596,19 +596,19 @@ const DesktopHeader = ({
     </div>
 
     <div className="flex items-center gap-3 text-sm text-[#0E3554] flex-wrap mt-4">
-      <div className="flex items-center gap-2 bg-[#EFFFFA] px-3 py-2 rounded-lg border border-[#D9F3EE]">
+      <div className="flex items-center gap-2 bg-[#f3f3f3] px-3 py-2 rounded-lg border border-[#D9F3EE]">
         <User className="w-4 h-4 text-[#1CC2B1]" />
         <span className="font-medium text-[#0E3554]">
           {task?.createdBy?.name}
         </span>
       </div>
-      <div className="flex items-center gap-2 bg-[#EFFFFA] px-3 py-2 rounded-lg border border-[#D9F3EE]">
+      <div className="flex items-center gap-2 bg-[#f3f3f3] px-3 py-2 rounded-lg border border-[#D9F3EE]">
         <User className="w-4 h-4 text-[#1CC2B1]" />
         <span className="text-[#0E3554]">
           {task?.assignees?.length} team members
         </span>
       </div>
-      <div className="flex items-center gap-2 bg-[#EFFFFA] px-3 py-2 rounded-lg border border-[#D9F3EE]">
+      <div className="flex items-center gap-2 bg-[#f3f3f3] px-3 py-2 rounded-lg border border-[#D9F3EE]">
         <div
           className={`w-2 h-2 rounded-full ${
             task?.status === "done"
@@ -623,7 +623,7 @@ const DesktopHeader = ({
         </span>
       </div>
       {task?.priority && (
-        <div className="flex items-center gap-2 bg-[#EFFFFA] px-3 py-2 rounded-lg border border-[#D9F3EE]">
+        <div className="flex items-center gap-2 bg-[#f3f3f3] px-3 py-2 rounded-lg border border-[#D9F3EE]">
           <div
             className={`w-2 h-2 rounded-full ${
               task?.priority === "critical"
@@ -1003,8 +1003,8 @@ const TaskNotesModal = ({
                             <div
                               className={`relative rounded-2xl p-3 md:p-4 transition-all duration-200 group-hover:shadow-sm flex-1 ${
                                 isCurrentUserMessage
-                                  ? "bg-[#0E3554] text-white rounded-br-md border border-[#0A2A42]"
-                                  : "bg-[#EFFFFA] border border-[#D9F3EE] rounded-bl-md"
+                                  ? "bg-[#86c785] text-white rounded-br-md"
+                                  : "bg-[#fbf5ad] border border-[#D9F3EE] rounded-bl-md"
                               }`}
                             >
                               {note.text && (
