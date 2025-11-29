@@ -15,6 +15,11 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Allow reset-password route without authentication
+  if (currentPath === "/reset-password") {
+    return NextResponse.next();
+  }
+
   if (authToken && currentPath === "/") {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }

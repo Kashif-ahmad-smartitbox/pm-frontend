@@ -18,6 +18,7 @@ import {
   ArrowLeft,
   Palette,
   RefreshCw,
+  Phone,
 } from "lucide-react";
 import ConfirmationModal from "./ConfirmationModal";
 
@@ -27,6 +28,7 @@ interface User {
   email: string;
   role: string;
   color?: string;
+  phoneNumber?: string;
 }
 
 interface TeamManagementModalProps {
@@ -239,6 +241,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phoneNumber: "",
     password: "",
     confirmPassword: "",
     color: COLOR_PALETTE[0], // Default color
@@ -247,6 +250,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
     [key: string]: {
       name: string;
       email: string;
+      phoneNumber: string;
       password: string;
       confirmPassword: string;
       color: string;
@@ -290,6 +294,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
         editData[user._id] = {
           name: user.name,
           email: user.email,
+          phoneNumber: user.phoneNumber || "",
           password: "",
           confirmPassword: "",
           color: user.color || COLOR_PALETTE[0],
@@ -382,6 +387,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
       const payload = {
         name: formData.name.trim(),
         email: formData.email.trim(),
+        phoneNumber: formData.phoneNumber.trim() || undefined,
         password: formData.password,
         color: formData.color,
       };
@@ -392,6 +398,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
       setFormData({
         name: "",
         email: "",
+        phoneNumber: "",
         password: "",
         confirmPassword: "",
         color: COLOR_PALETTE[0], // Reset to default color
@@ -445,6 +452,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
       const payload: any = {
         name: userData.name.trim(),
         email: userData.email.trim(),
+        phoneNumber: userData.phoneNumber?.trim() || null,
         color: userData.color,
       };
 
@@ -516,6 +524,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
           [editingUser]: {
             name: user.name,
             email: user.email,
+            phoneNumber: user.phoneNumber || "",
             password: "",
             confirmPassword: "",
             color: user.color || COLOR_PALETTE[0],
@@ -529,6 +538,7 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
     setFormData({
       name: "",
       email: "",
+      phoneNumber: "",
       password: "",
       confirmPassword: "",
       color: COLOR_PALETTE[0],
@@ -778,6 +788,27 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                                 </div>
                               </div>
 
+                              <div className="space-y-1.5">
+                                <label className="block text-xs font-medium text-[#0E3554]">
+                                  Phone Number
+                                </label>
+                                <div className="relative">
+                                  <input
+                                    type="tel"
+                                    name="phoneNumber"
+                                    value={editFormData[user._id]?.phoneNumber || ""}
+                                    onChange={(e) =>
+                                      handleEditInputChange(user._id, e)
+                                    }
+                                    className="w-full px-3 py-2 pl-10 text-sm border border-[#D9F3EE] rounded focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1] text-[#0E3554]"
+                                    placeholder="Enter phone number"
+                                  />
+                                  <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                                    <Phone className="w-3.5 h-3.5 text-slate-400" />
+                                  </div>
+                                </div>
+                              </div>
+
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div className="space-y-1.5">
                                   <label className="block text-xs font-medium text-[#0E3554]">
@@ -999,6 +1030,34 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                           <Mail className="w-3.5 h-3.5 text-slate-400" />
                         </div>
                       </div>
+                    </div>
+
+                    {/* Phone Number */}
+                    <div className="space-y-2">
+                      <label className="block text-xs font-semibold text-[#0E3554]">
+                        Phone Number
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="tel"
+                          name="phoneNumber"
+                          value={formData.phoneNumber}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 pl-10 text-sm border border-[#D9F3EE] rounded-lg 
+                            placeholder-slate-400 transition-all duration-200
+                            focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                            hover:border-[#0E3554] bg-white text-[#0E3554]
+                            disabled:bg-[#EFFFFA] disabled:cursor-not-allowed"
+                          placeholder="Enter phone number (for WhatsApp)"
+                          disabled={submitting}
+                        />
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                          <Phone className="w-3.5 h-3.5 text-slate-400" />
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        Phone number will be used for WhatsApp notifications
+                      </p>
                     </div>
 
                     {/* Color Picker */}

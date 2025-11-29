@@ -18,3 +18,17 @@ export function getCurrentUser() {
     method: "GET",
   });
 }
+
+export function forgotPassword(email: string) {
+  return request("/api/auth/forgot-password", {
+    method: "POST",
+    body: { email },
+  });
+}
+
+export function resetPassword(token: string, password: string) {
+  return request("/api/auth/reset-password", {
+    method: "POST",
+    body: { token, password },
+  });
+}
