@@ -14,6 +14,24 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Project Management System",
   description: "Project Management System",
+  icons: {
+    icon: [
+      {
+        url: "/logo.png",
+        sizes: "any",
+      },
+      {
+        url: "/logo.png",
+        type: "image/png",
+      },
+    ],
+    apple: [
+      {
+        url: "/logo.png",
+        type: "image/png",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
