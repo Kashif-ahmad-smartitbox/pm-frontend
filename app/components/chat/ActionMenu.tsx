@@ -80,7 +80,7 @@ const ActionMenu = ({
         ref={menuRef}
         className="fixed md:absolute bottom-0 left-0 right-0 md:bottom-full md:left-0 md:right-auto md:mb-2 bg-white rounded-t-2xl md:rounded-2xl shadow-2xl border border-gray-200 p-3 z-50 md:min-w-[200px]"
       >
-        <div className="grid grid-cols-4 md:grid-cols-1 gap-2 md:gap-1">
+        <div className="grid grid-cols-4 md:grid-cols-1 gap-1 md:gap-1">
           {actions.map((action, index) => (
             <button
               key={action.label}
@@ -88,7 +88,7 @@ const ActionMenu = ({
                 action.onClick();
                 onClose();
               }}
-              className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 ${action.bgColor} animate-in slide-in-from-bottom-4 md:slide-in-from-right-4 w-full`}
+              className={`flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 p-2 md:p-3 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95 ${action.bgColor} animate-in slide-in-from-bottom-4 md:slide-in-from-right-4 w-full`}
               style={{
                 animationDelay: `${index * 50}ms`,
                 animationFillMode: "both",
@@ -97,8 +97,11 @@ const ActionMenu = ({
               <action.icon
                 className={`w-5 h-5 md:w-4 md:h-4 flex-shrink-0 ${action.color}`}
               />
-              <span className="text-sm font-medium text-gray-700 md:block hidden">
+              <span className="text-xs md:text-sm font-medium text-gray-700 md:block hidden">
                 {action.label}
+              </span>
+              <span className="text-[10px] md:hidden text-gray-600 mt-0.5">
+                {action.label.split(" ")[1] || action.label}
               </span>
             </button>
           ))}

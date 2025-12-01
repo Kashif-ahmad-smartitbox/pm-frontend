@@ -4,10 +4,6 @@ import {
   X,
   MessageSquare,
   Send,
-  User,
-  Paperclip,
-  MapPin,
-  RefreshCw,
   Navigation,
   Image as ImageIcon,
   FileText,
@@ -17,6 +13,7 @@ import {
   Mic,
   VideoIcon,
   Plus,
+  MapPin,
 } from "lucide-react";
 import {
   DesktopHeader,
@@ -98,7 +95,7 @@ export interface RecordingStateData {
 // Constants
 export const MAX_FILE_SIZE = 10 * 1024 * 1024;
 export const POLLING_INTERVAL = 10000;
-export const MAX_RECORDING_DURATION = 300000; // 5 minutes
+export const MAX_RECORDING_DURATION = 3000;
 
 const FILE_ICONS = {
   image: ImageIcon,
@@ -146,29 +143,30 @@ const useAutoResizeTextarea = (value: string) => {
 const useNotesPolling = (taskId: string | undefined, isOpen: boolean) => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchNotes = useCallback(async () => {
     if (!taskId || !isOpen) return;
 
-    setLoading(true);
-    setError(null);
     try {
       const response = await getNotes(taskId);
       const notesData = (response as any)?.notes ?? [];
       setNotes(notesData);
+      setError(null);
     } catch (err) {
       console.error("Failed to fetch notes:", err);
       setError("Failed to load messages");
-    } finally {
-      setLoading(false);
     }
   }, [taskId, isOpen]);
 
   useEffect(() => {
     if (isOpen && taskId) {
-      fetchNotes();
+      setLoading(true);
+      fetchNotes().finally(() => setLoading(false));
+
+      // Start polling
       pollingRef.current = setInterval(fetchNotes, POLLING_INTERVAL);
     }
 
@@ -181,10 +179,31 @@ const useNotesPolling = (taskId: string | undefined, isOpen: boolean) => {
   }, [isOpen, taskId, fetchNotes]);
 
   const manualRefresh = useCallback(async () => {
-    await fetchNotes();
-  }, [fetchNotes]);
+    if (!taskId || !isOpen) return;
 
-  return { notes, loading, error, manualRefresh };
+    setRefreshing(true);
+    await fetchNotes();
+    setRefreshing(false);
+  }, [taskId, isOpen, fetchNotes]);
+
+  return {
+    notes,
+    loading,
+    refreshing,
+    error,
+    manualRefresh,
+    stopPolling: () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    },
+    startPolling: () => {
+      if (!pollingRef.current && taskId && isOpen) {
+        pollingRef.current = setInterval(fetchNotes, POLLING_INTERVAL);
+      }
+    },
+  };
 };
 
 const useMediaRecorder = () => {
@@ -204,9 +223,7 @@ const useMediaRecorder = () => {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Cleanup function - FIXED: No dependencies
   const cleanup = useCallback(() => {
-    console.log("Cleaning up recording...");
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -222,22 +239,18 @@ const useMediaRecorder = () => {
 
     recorderRef.current = null;
     startTimeRef.current = 0;
-  }, []); // No dependencies
+  }, []);
 
-  // Stop recording - FIXED: No dependencies on recording state
   const stopRecording = useCallback(() => {
-    console.log("Stopping recording...");
     if (recorderRef.current) {
       recorderRef.current.stop();
     }
     cleanup();
   }, [cleanup]);
 
-  // Start recording - COMPLETELY REWRITTEN
   const startRecording = useCallback(
     async (type: "audio" | "video") => {
       try {
-        console.log("Starting recording...");
         const constraints =
           type === "video" ? { video: true, audio: true } : { audio: true };
 
@@ -245,7 +258,6 @@ const useMediaRecorder = () => {
         const recorder = new MediaRecorder(stream);
         const chunks: Blob[] = [];
 
-        // Store references
         streamRef.current = stream;
         recorderRef.current = recorder;
 
@@ -256,7 +268,6 @@ const useMediaRecorder = () => {
         };
 
         recorder.onstop = () => {
-          console.log("Recording stopped, creating blob...");
           const blob = new Blob(chunks, {
             type: type === "video" ? "video/mp4" : "audio/wav",
           });
@@ -271,14 +282,9 @@ const useMediaRecorder = () => {
           }));
         };
 
-        // Start the recorder
         recorder.start(1000);
-        console.log("Recorder started");
-
-        // Set start time
         startTimeRef.current = Date.now();
 
-        // Set recording state first
         setRecording({
           state: "recording",
           type,
@@ -290,19 +296,10 @@ const useMediaRecorder = () => {
           blob: null,
         });
 
-        // Start timer for duration - FIXED: Use refs instead of state
         timerRef.current = setInterval(() => {
           const currentTime = Date.now();
           const elapsed = currentTime - startTimeRef.current;
 
-          console.log("Duration update:", {
-            currentTime,
-            startTime: startTimeRef.current,
-            elapsed,
-            formatted: formatDuration(elapsed),
-          });
-
-          // Update duration in state - this should trigger re-render
           setRecording((prev) => {
             if (prev.state === "recording") {
               return { ...prev, duration: elapsed };
@@ -310,9 +307,7 @@ const useMediaRecorder = () => {
             return prev;
           });
 
-          // Auto-stop after max duration
           if (elapsed >= MAX_RECORDING_DURATION) {
-            console.log("Max duration reached, stopping recording");
             stopRecording();
           }
         }, 100);
@@ -322,24 +317,20 @@ const useMediaRecorder = () => {
         cleanup();
       }
     },
-    [cleanup, stopRecording] // Add stopRecording to dependencies
+    [cleanup, stopRecording]
   );
 
-  // Cancel recording - FIXED
   const cancelRecording = useCallback(() => {
-    console.log("Canceling recording...");
     if (recorderRef.current) {
       recorderRef.current.stop();
     }
 
-    // Clean up everything
     cleanup();
 
     if (recording.url) {
       URL.revokeObjectURL(recording.url);
     }
 
-    // Completely reset state
     setRecording({
       state: "idle",
       type: null,
@@ -352,26 +343,21 @@ const useMediaRecorder = () => {
     });
   }, [cleanup, recording.url]);
 
-  // Get recording file
   const getRecordingFile = useCallback(() => {
     if (!recording.blob) {
-      console.log("No recording blob available");
       return null;
     }
 
     const fileExtension = recording.type === "video" ? "mp4" : "wav";
     const fileName = `recording-${new Date().toISOString()}.${fileExtension}`;
 
-    console.log("Creating recording file:", fileName);
     return new File([recording.blob], fileName, {
       type: recording.blob.type,
     });
   }, [recording.blob, recording.type]);
 
-  // Effect for cleanup on unmount
   useEffect(() => {
     return () => {
-      console.log("useMediaRecorder unmounting");
       cleanup();
       if (recording.url) {
         URL.revokeObjectURL(recording.url);
@@ -456,7 +442,6 @@ export const formatMessageTime = (dateString: string) => {
 };
 
 export const formatDuration = (milliseconds: number): string => {
-  // Ensure we have a valid number
   if (isNaN(milliseconds) || milliseconds < 0) {
     return "00:00";
   }
@@ -515,17 +500,28 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   });
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [showVideoRecording, setShowVideoRecording] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [isNearBottom, setIsNearBottom] = useState(true);
+  const [userHasScrolled, setUserHasScrolled] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useAutoResizeTextarea(newNote);
+  const lastNoteCountRef = useRef<number>(0);
+  const isInitialMountRef = useRef(true);
 
   const [videoModalKey, setVideoModalKey] = useState(0);
 
-  const { notes, loading, error, manualRefresh } = useNotesPolling(
-    task?._id,
-    isOpen
-  );
+  const {
+    notes,
+    loading,
+    refreshing,
+    error,
+    manualRefresh,
+    stopPolling,
+    startPolling,
+  } = useNotesPolling(task?._id, isOpen);
 
   const {
     recording,
@@ -535,19 +531,81 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
     getRecordingFile,
   } = useMediaRecorder();
 
-  // Custom hooks
   useModal(isOpen, onClose);
 
-  // Effects
-  useEffect(() => {
-    scrollToBottom();
-  }, [notes]);
-
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (isNearBottom && !userHasScrolled) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      setShowScrollButton(false);
+    }
+  }, [isNearBottom, userHasScrolled]);
+
+  const handleScroll = useCallback(() => {
+    if (!messagesContainerRef.current) return;
+
+    const element = messagesContainerRef.current;
+    const { scrollTop, scrollHeight, clientHeight } = element;
+
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    const nearBottom = distanceFromBottom < 100;
+
+    setIsNearBottom(nearBottom);
+    setShowScrollButton(!nearBottom && distanceFromBottom > 100);
+
+    // If user scrolls up more than 200px from bottom, mark as user has scrolled
+    if (distanceFromBottom > 200) {
+      setUserHasScrolled(true);
+    }
+
+    // If user scrolls back to near bottom, reset the flag
+    if (nearBottom) {
+      setUserHasScrolled(false);
+    }
   }, []);
 
-  // Handle recording completion
+  // Only scroll to bottom when:
+  // 1. It's the initial load (notes change from 0 to some)
+  // 2. New messages arrive from current user
+  // 3. User sends a new message
+  useEffect(() => {
+    if (isInitialMountRef.current) {
+      // First load - always scroll to bottom
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+      isInitialMountRef.current = false;
+      return;
+    }
+
+    // Check if new messages were added (not just a refresh)
+    const currentNoteCount = notes.length;
+    const hasNewMessages = currentNoteCount > lastNoteCountRef.current;
+
+    if (hasNewMessages) {
+      // Check if the latest message is from current user
+      const latestNote = notes[notes.length - 1];
+      const isCurrentUserMessage = latestNote?.author?._id === currentUser?._id;
+
+      if (isCurrentUserMessage) {
+        // If current user sent a message, scroll to bottom
+        scrollToBottom();
+      } else if (isNearBottom) {
+        // If other user sent a message and we're near bottom, scroll
+        scrollToBottom();
+      }
+    }
+
+    lastNoteCountRef.current = currentNoteCount;
+  }, [notes, currentUser, scrollToBottom, isNearBottom]);
+
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+      const element = messagesContainerRef.current;
+      element.addEventListener("scroll", handleScroll);
+      return () => element.removeEventListener("scroll", handleScroll);
+    }
+  }, [handleScroll]);
+
   useEffect(() => {
     if (
       recording.state === "stopped" &&
@@ -561,14 +619,12 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
     }
   }, [recording.state, recording.url, recording.type, getRecordingFile]);
 
-  // Close action menu when recording starts
   useEffect(() => {
     if (recording.state === "recording") {
       setShowActionMenu(false);
     }
   }, [recording.state]);
 
-  // Event handlers
   const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -711,12 +767,22 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
         onNoteAdded(newCreatedNote);
       }
 
-      // Reset form
       setNewNote("");
       setSelectedFiles([]);
       setLocation({});
 
+      // Stop polling temporarily while adding note
+      stopPolling();
       await manualRefresh();
+      // Restart polling after successful note addition
+      startPolling();
+
+      // When user sends a message, scroll to bottom
+      setUserHasScrolled(false);
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        setShowScrollButton(false);
+      }, 100);
 
       setTimeout(() => {
         textareaRef.current?.focus();
@@ -778,10 +844,23 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
     window.open(`https://maps.google.com/?q=${lat},${lng}`, "_blank");
   };
 
+  const handleScrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setShowScrollButton(false);
+    setIsNearBottom(true);
+    setUserHasScrolled(false);
+  };
+
+  const handleManualRefresh = async () => {
+    // Stop polling temporarily to avoid conflicts
+    stopPolling();
+    await manualRefresh();
+    // Restart polling after manual refresh
+    startPolling();
+  };
+
   if (!isOpen) return null;
 
-  const isMobile =
-    typeof window !== "undefined" ? window.innerWidth < 768 : false;
   const notesCount = notes?.length ?? 0;
 
   return (
@@ -789,199 +868,496 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
       {/* Main Modal - Full Screen */}
       <div className="fixed inset-0 bg-white flex flex-col z-50 safe-area">
         {/* Responsive Header */}
-        {isMobile ? (
+        <div className="md:hidden">
           <MobileHeader
             task={task}
             onClose={onClose}
-            onRefresh={manualRefresh}
-            loading={loading}
+            onRefresh={handleManualRefresh}
+            loading={refreshing}
             notesCount={notesCount}
           />
-        ) : (
+        </div>
+        <div className="hidden md:block">
           <DesktopHeader
             task={task}
             onClose={onClose}
-            onRefresh={manualRefresh}
-            loading={loading}
+            onRefresh={handleManualRefresh}
+            loading={refreshing}
             notesCount={notesCount}
           />
-        )}
+        </div>
 
         {/* Chat Area */}
         <div className="flex-1 flex flex-col min-h-0 bg-gray-50/50">
           {/* Error Display */}
           {error && (
             <div className="flex items-center justify-between p-3 bg-red-50 border-b border-red-200 text-red-700 text-sm">
-              <span>{error}</span>
+              <span className="text-xs md:text-sm">{error}</span>
               <button
-                onClick={manualRefresh}
-                className="text-red-800 font-medium underline"
+                onClick={handleManualRefresh}
+                className="text-red-800 font-medium underline text-xs md:text-sm"
               >
                 Retry
               </button>
             </div>
           )}
 
-          {/* Messages Container */}
-          <div className="flex-1 p-4 md:p-6 overflow-y-auto safe-area-bottom">
-            {!notes || notes.length === 0 ? (
-              <div className="text-center py-8 md:py-16 space-y-4 md:space-y-6">
-                <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl flex items-center justify-center mx-auto border border-gray-200 shadow-sm">
-                  <MessageSquare className="w-8 h-8 md:w-10 md:h-10 text-gray-400" />
-                </div>
-                <div className="space-y-2 md:space-y-3">
-                  <p className="text-gray-900 font-semibold text-lg md:text-xl">
-                    No messages yet
-                  </p>
-                  <p className="text-gray-500 text-sm max-w-md mx-auto leading-relaxed px-4">
-                    Start the conversation by sending the first message.
-                  </p>
-                </div>
+          {/* Initial Loading State */}
+          {loading && !refreshing && notes.length === 0 && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-8 h-8 border-2 border-[#0E3554] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                <p className="text-gray-600 text-sm">Loading messages...</p>
               </div>
-            ) : (
-              <div className="space-y-4 md:space-y-6">
-                {notes.map((note, index) => {
-                  const isCurrentUserMessage = isCurrentUser(note.author);
-                  const prev = notes[index - 1];
-                  const showHeader =
-                    index === 0 ||
-                    !prev ||
-                    prev.author._id !== note.author._id ||
-                    new Date(note.createdAt).getTime() -
-                      new Date(prev.createdAt).getTime() >
-                      300000;
+            </div>
+          )}
 
-                  return (
-                    <div
-                      key={note._id}
-                      className={`flex gap-3 group ${
-                        isCurrentUserMessage ? "justify-end" : "justify-start"
-                      }`}
-                    >
-                      {!isCurrentUserMessage && (
-                        <div className="flex-shrink-0">
-                          {getUserAvatar(note.author)}
-                        </div>
-                      )}
+          {/* Messages Container */}
+          {(!loading || notes.length > 0) && (
+            <div
+              ref={messagesContainerRef}
+              className="flex-1 p-3 md:p-6 overflow-y-auto safe-area-bottom relative"
+            >
+              {!notes || notes.length === 0 ? (
+                <div className="text-center py-8 md:py-16 space-y-4 md:space-y-6">
+                  <div className="w-12 h-12 md:w-20 md:h-20 bg-white rounded-xl md:rounded-2xl flex items-center justify-center mx-auto border border-gray-200 shadow-sm">
+                    <MessageSquare className="w-6 h-6 md:w-10 md:h-10 text-gray-400" />
+                  </div>
+                  <div className="space-y-2 md:space-y-3">
+                    <p className="text-gray-900 font-semibold text-base md:text-xl">
+                      No messages yet
+                    </p>
+                    <p className="text-gray-500 text-xs md:text-sm max-w-md mx-auto leading-relaxed px-4">
+                      Start the conversation by sending the first message.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 md:space-y-6">
+                  {notes.map((note, index) => {
+                    const isCurrentUserMessage = isCurrentUser(note.author);
+                    const prev = notes[index - 1];
+                    const showHeader =
+                      index === 0 ||
+                      !prev ||
+                      prev.author._id !== note.author._id ||
+                      new Date(note.createdAt).getTime() -
+                        new Date(prev.createdAt).getTime() >
+                        300000;
 
+                    return (
                       <div
-                        className={`flex flex-col ${
-                          isCurrentUserMessage ? "items-end" : "items-start"
-                        } max-w-[85%] md:max-w-[75%]`}
+                        key={note._id}
+                        className={`flex gap-2 md:gap-3 group ${
+                          isCurrentUserMessage ? "justify-end" : "justify-start"
+                        }`}
                       >
-                        {showHeader && !isCurrentUserMessage && (
-                          <div className="flex items-center gap-2 mb-1 px-1">
-                            <span className="font-semibold text-gray-900 text-sm">
-                              {note.author?.name ?? "Unknown"}
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              {formatMessageTime(note.createdAt)}
-                            </span>
+                        {!isCurrentUserMessage && (
+                          <div className="flex-shrink-0 self-start">
+                            {getUserAvatar(note.author)}
                           </div>
                         )}
 
-                        <div className="flex gap-2 items-start w-full">
-                          {isCurrentUserMessage && (
-                            <span className="text-xs text-gray-400 mt-2 flex-shrink-0 min-w-[50px] md:min-w-[60px] text-right">
-                              {formatMessageTime(note.createdAt)}
-                            </span>
+                        <div
+                          className={`flex flex-col ${
+                            isCurrentUserMessage ? "items-end" : "items-start"
+                          } max-w-[85%] md:max-w-[75%]`}
+                        >
+                          {showHeader && !isCurrentUserMessage && (
+                            <div className="flex items-center gap-1 md:gap-2 mb-1 px-1">
+                              <span className="font-semibold text-gray-900 text-xs md:text-sm">
+                                {note.author?.name ?? "Unknown"}
+                              </span>
+                              <span className="text-xs text-gray-400 hidden md:inline">
+                                {formatMessageTime(note.createdAt)}
+                              </span>
+                            </div>
                           )}
 
-                          <div
-                            className={`relative rounded-2xl p-3 md:p-4 transition-all duration-200 flex-1 ${
-                              isCurrentUserMessage
-                                ? "bg-[#86c785] text-white rounded-br-md"
-                                : "bg-[#fbf5ad] border border-gray-200 rounded-bl-md"
-                            }`}
-                          >
-                            {note.text && (
-                              <p className="text-sm leading-relaxed whitespace-pre-wrap mb-2 md:mb-3">
-                                {note.text}
-                              </p>
+                          <div className="flex gap-1 md:gap-2 items-start w-full">
+                            {isCurrentUserMessage && (
+                              <span className="text-xs text-gray-400 mt-1 md:mt-2 flex-shrink-0 min-w-[45px] md:min-w-[60px] text-right hidden md:block">
+                                {formatMessageTime(note.createdAt)}
+                              </span>
                             )}
 
-                            {/* Attachments would go here */}
-                            {note.attachments &&
-                              note.attachments.length > 0 && (
-                                <div className="space-y-2">
-                                  {note.attachments.map((attachment, i) => (
-                                    <div
-                                      key={i}
-                                      className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 ${
-                                        isCurrentUserMessage
-                                          ? "bg-blue-50 border-blue-200"
-                                          : "bg-gray-50 border-gray-200"
-                                      }`}
-                                    >
-                                      <FileIcon className="w-5 h-5 text-gray-500" />
-                                      <div className="flex-1 min-w-0">
-                                        <a
-                                          href={attachment.url}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="text-sm font-medium text-gray-900 hover:text-blue-600 truncate flex items-center gap-1"
-                                        >
-                                          {attachment.fileName || "Attachment"}
-                                        </a>
-                                        <div className="text-xs text-gray-500 mt-1">
-                                          {formatFileSize(attachment.size || 0)}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
+                            <div
+                              className={`relative rounded-xl md:rounded-2xl p-3 md:p-4 transition-all duration-200 flex-1 ${
+                                isCurrentUserMessage
+                                  ? "bg-[#86c785] text-white rounded-br-md"
+                                  : "bg-[#fbf5ad] border border-gray-200 rounded-bl-md"
+                              }`}
+                            >
+                              {note.text && (
+                                <p className="text-sm leading-relaxed whitespace-pre-wrap mb-2 md:mb-3 break-words">
+                                  {note.text}
+                                </p>
                               )}
 
-                            {/* Location */}
-                            {note.location && (
-                              <div className="mt-2 pt-2 border-t border-white/20">
-                                <button
-                                  onClick={() =>
-                                    openLocationInMaps(
-                                      note.location!.lat,
-                                      note.location!.lng
-                                    )
-                                  }
-                                  className="flex items-center gap-2 text-xs hover:opacity-80 transition-opacity w-full text-left"
-                                >
-                                  <MapPin className="w-3 h-3 flex-shrink-0" />
-                                  <span className="truncate flex-1">
-                                    {note.location.address ||
-                                      `Location: ${note.location.lat.toFixed(
-                                        4
-                                      )}, ${note.location.lng.toFixed(4)}`}
-                                  </span>
-                                  <Navigation className="w-3 h-3 flex-shrink-0" />
-                                </button>
-                              </div>
+                              {note.attachments &&
+                                note.attachments.length > 0 && (
+                                  <div className="space-y-2 md:space-y-3">
+                                    {note.attachments.map((attachment, i) => {
+                                      const mime =
+                                        attachment.fileType ||
+                                        attachment.mimeType ||
+                                        "";
+                                      const extension = attachment.fileName
+                                        ?.split(".")
+                                        .pop()
+                                        ?.toLowerCase();
+                                      const resourceType =
+                                        attachment.resourceType;
+
+                                      // PDF detection – must not be treated as image
+                                      const isPdf =
+                                        mime === "application/pdf" ||
+                                        extension === "pdf";
+
+                                      // AUDIO detection – supports mp3, wav, aac, m4a, ogg, flac, opus, etc.
+                                      const audioExtensions = [
+                                        "mp3",
+                                        "wav",
+                                        "aac",
+                                        "m4a",
+                                        "ogg",
+                                        "oga",
+                                        "flac",
+                                        "opus",
+                                      ];
+
+                                      const isAudio =
+                                        mime.startsWith("audio/") ||
+                                        audioExtensions.includes(
+                                          extension || ""
+                                        ) ||
+                                        resourceType === "audio";
+
+                                      // VIDEO – only when it's not audio
+                                      const isVideo =
+                                        !isAudio &&
+                                        (isVideoFile(mime) ||
+                                          resourceType === "video");
+
+                                      // IMAGE – ignore PDFs completely
+                                      const isImage =
+                                        !isPdf &&
+                                        (isImageFile(mime) ||
+                                          resourceType === "image" ||
+                                          [
+                                            "jpg",
+                                            "jpeg",
+                                            "png",
+                                            "gif",
+                                            "webp",
+                                            "bmp",
+                                            "svg",
+                                          ].includes(extension || ""));
+
+                                      const IconComponent = getFileIcon(mime);
+                                      const displayType =
+                                        getFileTypeDisplay(mime) ||
+                                        (extension
+                                          ? extension.toUpperCase()
+                                          : "File");
+
+                                      // IMAGE – clean preview, no GUID name
+                                      if (isImage) {
+                                        return (
+                                          <div
+                                            key={i}
+                                            className="rounded-lg overflow-hidden"
+                                          >
+                                            <button
+                                              onClick={() =>
+                                                openMediaPreview(
+                                                  attachment.url,
+                                                  attachment.fileName,
+                                                  mime
+                                                )
+                                              }
+                                              className="w-full text-left"
+                                            >
+                                              <div className="relative group">
+                                                <img
+                                                  src={attachment.url}
+                                                  alt="Image"
+                                                  className="w-full h-auto max-h-52 md:max-h-72 object-cover rounded-lg"
+                                                  loading="lazy"
+                                                />
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg" />
+                                                <div className="absolute bottom-1.5 right-1.5 bg-black/70 text-white text-[10px] md:text-xs px-1.5 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                                                  Tap to view
+                                                </div>
+                                              </div>
+                                            </button>
+                                            {attachment.size && (
+                                              <div className="text-[10px] md:text-xs text-gray-500 mt-0.5 text-center">
+                                                {formatFileSize(
+                                                  attachment.size
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      }
+
+                                      // VIDEO – card with inline player
+                                      if (isVideo) {
+                                        return (
+                                          <div
+                                            key={i}
+                                            className={`rounded-xl border p-2.5 md:p-3 space-y-1.5 transition-all duration-200 ${
+                                              isCurrentUserMessage
+                                                ? "bg-white/70 border-emerald-200"
+                                                : "bg-white/80 border-gray-200"
+                                            }`}
+                                          >
+                                            <div className="flex items-center gap-2">
+                                              <div
+                                                className={`p-1.5 rounded-lg flex-shrink-0 ${
+                                                  isCurrentUserMessage
+                                                    ? "bg-emerald-50"
+                                                    : "bg-indigo-50"
+                                                }`}
+                                              >
+                                                <Video className="w-4 h-4 md:w-5 md:h-5 text-gray-800" />
+                                              </div>
+                                              <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between gap-2">
+                                                  <span className="text-[11px] md:text-sm font-semibold text-gray-900 truncate">
+                                                    {displayType || "Video"}
+                                                  </span>
+                                                  <button
+                                                    onClick={() =>
+                                                      openMediaPreview(
+                                                        attachment.url,
+                                                        attachment.fileName,
+                                                        mime
+                                                      )
+                                                    }
+                                                    className="text-[10px] md:text-xs font-medium px-2 py-0.5 rounded-full border border-indigo-200 text-indigo-700 hover:bg-indigo-50 transition-colors"
+                                                  >
+                                                    Open
+                                                  </button>
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                  {attachment.size && (
+                                                    <span className="text-[10px] md:text-xs text-gray-500">
+                                                      {formatFileSize(
+                                                        attachment.size
+                                                      )}
+                                                    </span>
+                                                  )}
+                                                  <a
+                                                    href={attachment.url}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="text-[10px] md:text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                                    onClick={(e) =>
+                                                      e.stopPropagation()
+                                                    }
+                                                  >
+                                                    Open in new tab
+                                                  </a>
+                                                </div>
+                                              </div>
+                                            </div>
+
+                                            <div className="rounded-lg overflow-hidden bg-black">
+                                              <video
+                                                src={attachment.url}
+                                                controls
+                                                className="w-full max-h-40 md:max-h-52 rounded-lg"
+                                              />
+                                            </div>
+                                          </div>
+                                        );
+                                      }
+
+                                      // AUDIO (mp3 / wav / m4a / etc.) – compact audio layout
+                                      if (isAudio) {
+                                        return (
+                                          <div
+                                            key={i}
+                                            className={`rounded-xl border p-2 md:p-2.5 space-y-1.5 transition-all duration-200 ${
+                                              isCurrentUserMessage
+                                                ? "bg-emerald-50/60 border-emerald-200"
+                                                : "bg-sky-50/70 border-sky-200"
+                                            }`}
+                                          >
+                                            <div className="flex items-center gap-2">
+                                              <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.03)]">
+                                                <Music className="w-3.5 h-3.5 text-gray-800" />
+                                                <span className="text-[10px] font-semibold text-gray-900">
+                                                  Audio
+                                                </span>
+                                              </div>
+                                              {attachment.size && (
+                                                <span className="text-[10px] text-gray-500 truncate">
+                                                  {formatFileSize(
+                                                    attachment.size
+                                                  )}
+                                                </span>
+                                              )}
+                                              <button
+                                                onClick={() =>
+                                                  openMediaPreview(
+                                                    attachment.url,
+                                                    attachment.fileName,
+                                                    mime
+                                                  )
+                                                }
+                                                className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full border border-gray-200 text-gray-700 hover:bg-white transition-colors"
+                                              >
+                                                Open
+                                              </button>
+                                            </div>
+
+                                            <div className="rounded-lg overflow-hidden bg-white/80 px-1.5 py-1">
+                                              <audio
+                                                src={attachment.url}
+                                                controls
+                                                className="w-full"
+                                              />
+                                            </div>
+                                          </div>
+                                        );
+                                      }
+
+                                      // DOC / PDF / OTHER – slim responsive row
+                                      return (
+                                        <div
+                                          key={i}
+                                          className={`flex items-center gap-2 md:gap-3 p-1.5 md:p-2.5 rounded-xl border transition-all duration-200 ${
+                                            isCurrentUserMessage
+                                              ? "bg-white/70 border-emerald-200"
+                                              : "bg-white/80 border-gray-200"
+                                          }`}
+                                        >
+                                          <div
+                                            className={`p-1.5 rounded-lg flex-shrink-0 ${
+                                              isCurrentUserMessage
+                                                ? "bg-emerald-50"
+                                                : "bg-indigo-50"
+                                            }`}
+                                          >
+                                            <IconComponent className="w-4 h-4 md:w-5 md:h-5 text-gray-800" />
+                                          </div>
+
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-[11px] md:text-sm font-semibold text-gray-900 truncate">
+                                                {displayType}
+                                              </span>
+                                              <button
+                                                onClick={() =>
+                                                  openMediaPreview(
+                                                    attachment.url,
+                                                    attachment.fileName,
+                                                    mime
+                                                  )
+                                                }
+                                                className="ml-auto text-[10px] md:text-xs font-medium px-2 py-0.5 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+                                              >
+                                                View
+                                              </button>
+                                            </div>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                              {attachment.size && (
+                                                <span className="text-[10px] md:text-xs text-gray-500">
+                                                  {formatFileSize(
+                                                    attachment.size
+                                                  )}
+                                                </span>
+                                              )}
+                                              <a
+                                                href={attachment.url}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="text-[10px] md:text-xs text-blue-600 hover:text-blue-800 font-medium truncate"
+                                                onClick={(e) =>
+                                                  e.stopPropagation()
+                                                }
+                                              >
+                                                {attachment.fileName ||
+                                                  "Open in new tab"}
+                                              </a>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+
+                              {/* Location */}
+                              {note.location && (
+                                <div className="mt-2 pt-2 border-t border-white/20">
+                                  <button
+                                    onClick={() =>
+                                      openLocationInMaps(
+                                        note.location!.lat,
+                                        note.location!.lng
+                                      )
+                                    }
+                                    className="flex items-center gap-1 md:gap-2 text-xs hover:opacity-80 transition-opacity w-full text-left"
+                                  >
+                                    <MapPin className="w-3 h-3 flex-shrink-0" />
+                                    <span className="truncate flex-1 text-xs">
+                                      {note.location.address ||
+                                        `Location: ${note.location.lat.toFixed(
+                                          4
+                                        )}, ${note.location.lng.toFixed(4)}`}
+                                    </span>
+                                    <Navigation className="w-3 h-3 flex-shrink-0" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {!isCurrentUserMessage && (
+                              <span className="text-xs text-gray-400 mt-1 md:mt-2 flex-shrink-0 min-w-[45px] md:min-w-[60px] hidden md:block">
+                                {formatMessageTime(note.createdAt)}
+                              </span>
                             )}
                           </div>
 
-                          {!isCurrentUserMessage && (
-                            <span className="text-xs text-gray-400 mt-2 flex-shrink-0 min-w-[50px] md:min-w-[60px]">
-                              {formatMessageTime(note.createdAt)}
-                            </span>
-                          )}
+                          {/* Mobile timestamp below message */}
+                          <span className="text-xs text-gray-400 mt-1 px-1 md:hidden">
+                            {formatMessageTime(note.createdAt)}
+                          </span>
                         </div>
-                      </div>
 
-                      {isCurrentUserMessage && (
-                        <div className="flex-shrink-0">
-                          {getUserAvatar(note.author)}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </div>
-            )}
-          </div>
+                        {isCurrentUserMessage && (
+                          <div className="flex-shrink-0 self-start">
+                            {getUserAvatar(note.author)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
+
+              {/* Scroll to bottom button */}
+              {showScrollButton && (
+                <button
+                  onClick={handleScrollToBottom}
+                  className="sticky bottom-4 left-1/2 transform -translate-x-1/2 bg-[#0E3554] text-white px-4 py-2 rounded-full shadow-lg hover:bg-[#0A2A42] transition-colors flex items-center gap-2 text-sm z-10"
+                >
+                  <Navigation className="w-4 h-4 rotate-90" />
+                  Scroll to latest
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Input Area - FIXED ALIGNMENT */}
-        <div className="border-t border-gray-200 p-4 bg-white flex-shrink-0 safe-area-bottom">
-          <div className="space-y-3">
+        {/* Input Area */}
+        <div className="border-t border-gray-200 p-3 md:p-4 bg-white flex-shrink-0 safe-area-bottom">
+          <div className="space-y-2 md:space-y-3">
             {/* Voice Recording Controls */}
             {recording.state === "recording" && recording.type === "audio" && (
               <VoiceRecordingControls
@@ -993,29 +1369,29 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
 
             {/* Location Input */}
             {(location.lat || location.isGettingLocation) && (
-              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <MapPin className="w-4 h-4 text-blue-600 flex-shrink-0" />
+              <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <MapPin className="w-3 h-3 md:w-4 md:h-4 text-blue-600 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm text-blue-900 font-medium">
+                  <div className="text-xs md:text-sm text-blue-900 font-medium truncate">
                     {location.address || "Current location"}
                   </div>
-                  <div className="text-xs text-blue-700">
+                  <div className="text-xs text-blue-700 truncate">
                     {location.lat}, {location.lng}
                   </div>
                 </div>
                 <button
                   onClick={clearLocation}
-                  className="text-blue-600 hover:text-blue-800 p-1 rounded transition-colors"
+                  className="text-blue-600 hover:text-blue-800 p-0.5 md:p-1 rounded transition-colors"
                   title="Remove location"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3 h-3 md:w-4 md:h-4" />
                 </button>
               </div>
             )}
 
-            {/* File Attachments */}
+            {/* File Attachments – INLINE PREVIEW FOR VIDEO / AUDIO */}
             {selectedFiles.length > 0 && (
-              <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex flex-wrap gap-2 p-2 md:p-3 bg-gray-50 rounded-lg border border-gray-200">
                 {selectedFiles.map((file, index) => {
                   const IconComponent = getFileIcon(file.type);
                   const isImage = isImageFile(file.type);
@@ -1025,52 +1401,72 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
                   return (
                     <div
                       key={index}
-                      className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-300 text-sm max-w-[200px] transition-all duration-200 hover:shadow-sm"
+                      className="flex flex-col gap-1 bg-white px-2 py-1.5 md:px-3 md:py-2 rounded-lg border border-gray-300 text-xs md:text-sm max-w-[220px] md:max-w-[260px] transition-all duration-200 hover:shadow-sm"
                     >
-                      {isImage ? (
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={file.name}
-                          className="w-6 h-6 rounded object-cover"
-                        />
-                      ) : isVideo ? (
-                        <VideoIcon className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                      ) : isAudio ? (
-                        <Mic className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                      ) : (
-                        <IconComponent className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-medium text-gray-900 truncate">
-                          {file.name}
+                      <div className="flex items-center gap-1 md:gap-2">
+                        {isImage ? (
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={file.name}
+                            className="w-5 h-5 md:w-6 md:h-6 rounded object-cover"
+                          />
+                        ) : isVideo ? (
+                          <VideoIcon className="w-3 h-3 md:w-4 md:h-4 text-gray-500 flex-shrink-0" />
+                        ) : isAudio ? (
+                          <Mic className="w-3 h-3 md:w-4 md:h-4 text-gray-500 flex-shrink-0" />
+                        ) : (
+                          <IconComponent className="w-3 h-3 md:w-4 md:h-4 text-gray-500 flex-shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-medium text-gray-900 truncate">
+                            {file.name}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {formatFileSize(file.size)}
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-500">
-                          {formatFileSize(file.size)}
-                        </div>
+                        <button
+                          onClick={() => removeSelectedFile(index)}
+                          className="text-gray-400 hover:text-red-500 p-0.5 md:p-1 rounded transition-colors flex-shrink-0"
+                        >
+                          <X className="w-2.5 h-2.5 md:w-3 md:h-3" />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => removeSelectedFile(index)}
-                        className="text-gray-400 hover:text-red-500 p-1 rounded transition-colors flex-shrink-0"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+
+                      {(isVideo || isAudio) && (
+                        <div className="mt-1 rounded overflow-hidden">
+                          {isVideo ? (
+                            <video
+                              src={URL.createObjectURL(file)}
+                              controls
+                              className="w-full max-h-40 rounded bg-black"
+                            />
+                          ) : (
+                            <audio
+                              src={URL.createObjectURL(file)}
+                              controls
+                              className="w-full"
+                            />
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
             )}
 
-            {/* Input Row - PERFECTLY ALIGNED */}
-            <div className="flex items-center gap-3 w-full">
+            {/* Input Row */}
+            <div className="flex items-end gap-2 md:gap-3 w-full">
               {/* Action Menu Button */}
-              <div className="relative flex-shrink-0">
+              <div className="relative flex-shrink-0 self-center">
                 <button
                   onClick={() => setShowActionMenu(!showActionMenu)}
                   disabled={recording.state === "recording"}
-                  className="w-12 h-12 flex items-center justify-center border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200 hover:border-gray-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200 hover:border-gray-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
                   title="More actions"
                 >
-                  <Plus className="w-5 h-5 text-gray-700" />
+                  <Plus className="w-4 h-4 md:w-5 md:h-5 text-gray-700" />
                 </button>
 
                 <ActionMenu
@@ -1094,11 +1490,11 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
                   }
                 }}
                 placeholder="Type your message... (Enter to send)"
-                className="w-full px-4 py-3 text-sm border border-gray-300 rounded-xl placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-[#0E3554] focus:border-transparent hover:border-gray-400 bg-white text-gray-900 disabled:bg-gray-100 resize-none"
+                className="flex-1 px-3 py-2.5 md:px-4 md:py-3 text-sm border border-gray-300 rounded-xl placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-[#0E3554] focus:border-transparent hover:border-gray-400 bg-white text-gray-900 disabled:bg-gray-100 resize-none"
                 rows={1}
                 style={{
-                  minHeight: "48px",
-                  maxHeight: "120px",
+                  minHeight: "40px",
+                  maxHeight: "100px",
                   lineHeight: "1.5",
                 }}
               />
@@ -1111,13 +1507,13 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
                     selectedFiles.length === 0 &&
                     !(location.lat && location.lng))
                 }
-                className="w-12 h-12 flex items-center justify-center rounded-xl bg-[#0E3554] hover:bg-[#0A2A42] disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 text-white shadow-sm"
+                className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-xl bg-[#0E3554] hover:bg-[#0A2A42] disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 text-white shadow-sm self-center"
                 title="Send message"
               >
                 {addingNote ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-3 h-3 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <Send className="w-5 h-5" />
+                  <Send className="w-4 h-4 md:w-5 md:h-5" />
                 )}
               </button>
 
@@ -1133,11 +1529,13 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
             </div>
 
             {/* Helper Text */}
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 text-xs text-gray-500 pt-1">
-              <div className="flex items-center gap-4 flex-wrap">
-                <span>Enter to send • Shift+Enter for new line</span>
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-1 md:gap-3 text-xs text-gray-500 pt-1">
+              <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+                <span className="text-xs">
+                  Enter to send • Shift+Enter for new line
+                </span>
                 {selectedFiles.length > 0 && (
-                  <span className="text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-md">
+                  <span className="text-blue-600 font-medium bg-blue-50 px-1.5 py-0.5 md:px-2 md:py-1 rounded-md text-xs">
                     {selectedFiles.length} file
                     {selectedFiles.length > 1 ? "s" : ""} attached
                   </span>
@@ -1155,7 +1553,6 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
         onRecordingComplete={handleVideoRecordingComplete}
       />
 
-      {/* Media Preview Modal */}
       <MediaPreviewModal
         mediaUrl={mediaPreview.mediaUrl}
         fileName={mediaPreview.fileName}

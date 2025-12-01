@@ -6,6 +6,7 @@ import TeamMemberDashboard from "@/components/dashboard/TeamMemberDashboard";
 import ProjectManagerDashboard from "@/components/dashboard/ProjectManagerDashboard";
 import { Loader2, ShieldAlert, UserX } from "lucide-react";
 import { removeCookie } from "@/lib/cookies";
+import { useState, useEffect } from "react";
 
 type UserRole = "admin" | "project_manager" | "team_member";
 
@@ -119,21 +120,29 @@ const AuthenticationRequired = () => (
   </div>
 );
 
-const DashboardFooter = () => (
-  <footer className="fixed bottom-4 left-4 p-3 bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200 shadow-sm z-40">
-    <p className="text-xs text-gray-600 text-nowrap">
-      Made with ❤️ by{" "}
-      <a
-        className="font-semibold text-yellow-600 hover:text-yellow-700 transition-colors"
-        href="https://smartitbox.in"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        SMART ITBOX
-      </a>
-    </p>
-  </footer>
-);
+const DashboardFooter = ({ isVisible }: { isVisible: boolean }) => {
+  return (
+    <footer
+      className={`fixed bottom-4 left-4 p-3 bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200 shadow-sm z-40 transition-all duration-300 ease-in-out ${
+        isVisible
+          ? "translate-y-0 opacity-100"
+          : "translate-y-full opacity-0 pointer-events-none"
+      }`}
+    >
+      <p className="text-xs text-gray-600 text-nowrap">
+        Made with ❤️ by{" "}
+        <a
+          className="font-semibold text-yellow-600 hover:text-yellow-700 transition-colors"
+          href="https://smartitbox.in"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          SMART ITBOX
+        </a>
+      </p>
+    </footer>
+  );
+};
 
 // Role validation utility
 const isValidRole = (role: string | undefined): role is UserRole => {
@@ -196,9 +205,58 @@ const DASHBOARD_COMPONENTS: Record<UserRole, React.ComponentType> = {
   team_member: TeamMemberDashboard,
 };
 
+// Custom hook for scroll detection - SHOW ON SCROLL DOWN, HIDE ON SCROLL UP
+const useScrollDirection = () => {
+  const [showFooter, setShowFooter] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Show footer when scrolling down
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        setShowFooter(true);
+      }
+      // Hide footer when scrolling up (but not at the very top)
+      else if (currentScrollY < lastScrollY && currentScrollY > 50) {
+        setShowFooter(false);
+      }
+
+      // Always show footer at the top
+      if (currentScrollY <= 50) {
+        setShowFooter(true);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    // Add throttling for better performance
+    let ticking = false;
+    const throttledHandleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", throttledHandleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", throttledHandleScroll);
+    };
+  }, [lastScrollY]);
+
+  return showFooter;
+};
+
 // Main Dashboard Component
 function Dashboard() {
   const { user, loading, error } = useAuth();
+  const showFooter = useScrollDirection();
 
   // Handle loading state
   if (loading) {
@@ -240,7 +298,7 @@ function Dashboard() {
       <div className="flex-1">
         <DashboardComponent />
       </div>
-      <DashboardFooter />
+      <DashboardFooter isVisible={showFooter} />
     </div>
   );
 }

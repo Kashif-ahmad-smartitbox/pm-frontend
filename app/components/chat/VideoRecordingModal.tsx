@@ -203,18 +203,18 @@ const VideoRecordingModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-      <div className="bg-white rounded-2xl p-6 max-w-2xl w-full space-y-4 animate-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-2xl p-4 md:p-6 max-w-2xl w-full space-y-3 md:space-y-4 animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-base md:text-lg font-semibold text-gray-900">
             {recording.state === "recording"
               ? "Recording Video..."
               : "Record Video"}
           </h3>
           <button
             onClick={cancelRecording}
-            className="p-2 text-gray-500 hover:text-gray-700 rounded-lg transition-colors"
+            className="p-1.5 md:p-2 text-gray-500 hover:text-gray-700 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 md:w-5 md:h-5" />
           </button>
         </div>
 
@@ -224,32 +224,32 @@ const VideoRecordingModal = ({
             autoPlay
             muted
             playsInline
-            className="w-full h-64 md:h-96 object-cover"
+            className="w-full h-48 md:h-64 lg:h-96 object-cover"
           />
           {recording.state === "recording" && (
-            <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-2">
-              <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+            <div className="absolute top-2 md:top-4 left-2 md:left-4 bg-red-500 text-white px-2 py-1 md:px-3 md:py-1 rounded-full text-xs md:text-sm font-semibold flex items-center gap-1 md:gap-2">
+              <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-white rounded-full animate-pulse" />
               Recording
             </div>
           )}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white font-mono text-lg bg-black/50 px-3 py-1 rounded-full">
+          <div className="absolute bottom-2 md:bottom-4 left-1/2 transform -translate-x-1/2 text-white font-mono text-sm md:text-lg bg-black/50 px-2 py-1 md:px-3 md:py-1 rounded-full">
             {formatDuration(recording.duration)}
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex items-center justify-center gap-2 md:gap-3">
           <button
             onClick={cancelRecording}
-            className="px-6 py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors border border-gray-300 font-semibold"
+            className="px-4 py-2 md:px-6 md:py-3 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors border border-gray-300 font-semibold text-sm md:text-base"
           >
             {recording.state === "recording" ? "Cancel" : "Close"}
           </button>
           {recording.state === "recording" && (
             <button
               onClick={stopRecording}
-              className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-colors font-semibold flex items-center gap-2"
+              className="px-4 py-2 md:px-6 md:py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-colors font-semibold flex items-center gap-1.5 md:gap-2 text-sm md:text-base"
             >
-              <Square className="w-4 h-4" />
+              <Square className="w-3 h-3 md:w-4 md:h-4" />
               Stop Recording
             </button>
           )}
