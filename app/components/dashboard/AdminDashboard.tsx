@@ -20,6 +20,7 @@ import { deleteTask, getAllTasks } from "@/lib/api/tasks";
 import { deleteProject, getProjectData, getProjects } from "@/lib/api/projects";
 
 import TaskGrid from "../common/TaskGrid";
+import TaskList from "../common/TaskList";
 import StatsSection from "../common/StatsSection";
 import CommonHeader from "../common/CommonHeader";
 import TaskFilterPanel from "../common/TaskFilterPanel";
@@ -133,7 +134,6 @@ interface DeleteConfirmState {
   name: string;
 }
 
-// Task Stats Interface
 interface TaskStats {
   total: number;
   byStatus: {
@@ -221,6 +221,7 @@ export default function AdminDashboard() {
   const [showProjectTypesModal, setShowProjectTypesModal] = useState(false);
   const [showUpdateTaskModal, setShowUpdateTaskModal] = useState(false);
   const [showAllTasksModal, setShowAllTasksModal] = useState(false);
+  const [showReportsModal, setShowReportsModal] = useState(false);
 
   // UI states
   const [loading, setLoading] = useState(true);
@@ -228,7 +229,10 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [projectViewMode, setProjectViewMode] = useState<"grid" | "list">(
+    "grid"
+  );
+  const [taskViewMode, setTaskViewMode] = useState<"grid" | "list">("grid"); // New state for task view mode
   const [activeStatus, setActiveStatus] = useState<ProjectStatus | "all">(
     "all"
   );
@@ -367,6 +371,7 @@ export default function AdminDashboard() {
       const projectData = await getProjectData(projectId);
       setSelectedProject(projectData);
       setTaskFilters(DEFAULT_TASK_FILTERS);
+      setTaskViewMode("grid"); // Reset task view mode when opening a project
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to load project details"
@@ -443,7 +448,10 @@ export default function AdminDashboard() {
     [selectedProject, selectedTask]
   );
 
-  const handleBackToProjects = useCallback(() => setSelectedProject(null), []);
+  const handleBackToProjects = useCallback(() => {
+    setSelectedProject(null);
+    setTaskViewMode("grid"); // Reset task view mode when going back to projects
+  }, []);
 
   const handleNewProjectCreated = useCallback(() => {
     fetchProjects();
@@ -673,8 +681,10 @@ export default function AdminDashboard() {
         subtitle="Enterprise Management System"
         onProjectTypesClick={() => setShowProjectTypesModal(true)}
         onTeamManagementClick={() => setShowUserManagementModal(true)}
+        onReportsClick={() => setShowReportsModal(true)}
         showProjectTypes
         showTeamManagement
+        showReports
         showNotifications
       />
 
@@ -739,7 +749,7 @@ export default function AdminDashboard() {
                 </div>
                 <p className="text-slate-500 text-xs ml-7">
                   {selectedProject
-                    ? "Project tasks and details"
+                    ? `Project tasks (${filteredTasks.length})`
                     : "Complete project portfolio"}
                 </p>
               </div>
@@ -748,6 +758,30 @@ export default function AdminDashboard() {
               <div className="flex items-center gap-2 flex-wrap">
                 {selectedProject ? (
                   <>
+                    {/* Task View Toggle */}
+                    <div className="flex items-center gap-0.5 bg-[#F8FDFC] rounded-lg p-0.5 border border-[#E1F3F0]">
+                      <button
+                        onClick={() => setTaskViewMode("grid")}
+                        className={`p-1.5 rounded-md transition-all duration-200 ${
+                          taskViewMode === "grid"
+                            ? "bg-white text-[#0E3554] shadow-sm"
+                            : "text-slate-400 hover:text-[#0E3554] hover:bg-white"
+                        }`}
+                      >
+                        <Grid3X3 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setTaskViewMode("list")}
+                        className={`p-1.5 rounded-md transition-all duration-200 ${
+                          taskViewMode === "list"
+                            ? "bg-white text-[#0E3554] shadow-sm"
+                            : "text-slate-400 hover:text-[#0E3554] hover:bg-white"
+                        }`}
+                      >
+                        <List className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
                     <button
                       onClick={handleBackToProjects}
                       className="px-3 py-1.5 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-all duration-200 flex items-center gap-1.5 text-sm hover:bg-[#F8FDFC] rounded-lg"
@@ -766,12 +800,12 @@ export default function AdminDashboard() {
                   </>
                 ) : (
                   <>
-                    {/* View Toggle */}
+                    {/* Project View Toggle */}
                     <div className="flex items-center gap-0.5 bg-[#F8FDFC] rounded-lg p-0.5 border border-[#E1F3F0]">
                       <button
-                        onClick={() => setViewMode("grid")}
+                        onClick={() => setProjectViewMode("grid")}
                         className={`p-1.5 rounded-md transition-all duration-200 ${
-                          viewMode === "grid"
+                          projectViewMode === "grid"
                             ? "bg-white text-[#0E3554] shadow-sm"
                             : "text-slate-400 hover:text-[#0E3554] hover:bg-white"
                         }`}
@@ -779,9 +813,9 @@ export default function AdminDashboard() {
                         <Grid3X3 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => setViewMode("list")}
+                        onClick={() => setProjectViewMode("list")}
                         className={`p-1.5 rounded-md transition-all duration-200 ${
-                          viewMode === "list"
+                          projectViewMode === "list"
                             ? "bg-white text-[#0E3554] shadow-sm"
                             : "text-slate-400 hover:text-[#0E3554] hover:bg-white"
                         }`}
@@ -873,8 +907,15 @@ export default function AdminDashboard() {
                   <EmptyTasksState
                     onCreateTask={() => setShowNewTaskModal(true)}
                   />
-                ) : (
+                ) : taskViewMode === "grid" ? (
                   <TaskGrid
+                    tasks={filteredTasks}
+                    onTaskClick={handleTaskClick}
+                    onEditTask={handleEditTask}
+                    onDeleteTask={handleDeleteTask}
+                  />
+                ) : (
+                  <TaskList
                     tasks={filteredTasks}
                     onTaskClick={handleTaskClick}
                     onEditTask={handleEditTask}
@@ -884,7 +925,7 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <div>
-                {viewMode === "grid" ? (
+                {projectViewMode === "grid" ? (
                   <>
                     {/* Grid Layout */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1 mb-4">
@@ -937,6 +978,7 @@ export default function AdminDashboard() {
 
       {/* Modals */}
       <Modals
+        isAdmin={true}
         selectedTask={selectedTask}
         showNewProjectModal={showNewProjectModal}
         showNewTaskModal={showNewTaskModal}
@@ -948,6 +990,7 @@ export default function AdminDashboard() {
         editingTask={editingTask}
         editingProject={editingProject}
         deleteConfirm={deleteConfirm}
+        showReportsModal={showReportsModal}
         selectedProject={selectedProject}
         allTasks={allTasks}
         taskStats={taskStats}
@@ -965,6 +1008,7 @@ export default function AdminDashboard() {
           setShowEditProjectModal(false);
           setEditingProject(null);
         }}
+        onCloseReportsModal={() => setShowReportsModal(false)}
         onCloseUserManagementModal={() => setShowUserManagementModal(false)}
         onCloseProjectTypesModal={() => setShowProjectTypesModal(false)}
         onCloseUpdateTaskModal={() => {

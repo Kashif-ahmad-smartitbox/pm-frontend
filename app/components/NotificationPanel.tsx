@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Bell,
   X,
@@ -23,7 +23,7 @@ interface Notification {
     email: string;
     role: string;
     color?: string;
-  };
+  } | null;
   verb: string;
   contextType: "project" | "task" | "user" | "system";
   contextId?: string;
@@ -35,9 +35,9 @@ interface Notification {
 
 interface NotificationPanelProps {
   onClose?: () => void;
+  pageSize?: number;
 }
 
-// Type-safe configuration
 const NOTIFICATION_CONFIG = {
   project: {
     icon: Info,
@@ -61,13 +61,24 @@ const NOTIFICATION_CONFIG = {
   },
 } as const;
 
-function NotificationPanel({ onClose }: NotificationPanelProps) {
+function NotificationPanel({ onClose, pageSize = 50 }: NotificationPanelProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const deriveActorLabel = (n: Notification) => {
+    // Prefer populated actor -> fallback to data.actorName -> final fallback "System"
+    const actorName =
+      n.actor?.name || n.data?.actorName || (n.verb ? "System" : "System");
+    const actorEmail = n.actor?.email || n.data?.actorEmail || null;
+    const actorRole = n.actor?.role || n.data?.actorRole || null;
+    return { actorName, actorEmail, actorRole };
+  };
 
   // Filter notifications
   const filteredNotifications = notifications.filter((notification) => {
@@ -76,46 +87,65 @@ function NotificationPanel({ onClose }: NotificationPanelProps) {
   });
 
   // Fetch notifications
-  const fetchNotifications = async (showRefresh = false) => {
-    try {
-      if (showRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
+  const fetchNotifications = useCallback(
+    async (opts?: { showRefresh?: boolean; page?: number }) => {
+      try {
+        if (opts?.showRefresh) setRefreshing(true);
+        else setLoading(true);
+
+        const p = opts?.page ?? page;
+        const response = await getNotifications({ page: p, limit: pageSize });
+        // Expecting { notifications: Notification[], total, page, limit, totalPages }
+        setNotifications(response.notifications || []);
+        setUnreadCount(
+          (response.notifications || []).filter((n: Notification) => !n.read)
+            .length
+        );
+        setPage(response.page || p);
+        setTotalPages(response.totalPages || 1);
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
+    },
+    [page, pageSize]
+  );
 
-      const response = await getNotifications({ page: 1, limit: 50 });
-      setNotifications(response.notifications);
-      setUnreadCount(response.notifications.filter((n) => !n.read).length);
-    } catch (error) {
-      console.error("Failed to fetch notifications:", error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  // Mark as read
+  // Mark as read (optimistic UI)
   const handleMarkAsRead = async (notificationId: string) => {
     try {
-      await markNotificationRead(notificationId);
+      // Optimistic update
       setNotifications((prev) =>
         prev.map((n) => (n._id === notificationId ? { ...n, read: true } : n))
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
+
+      await markNotificationRead(notificationId);
+      // Optionally re-fetch single notification or ignore if API is reliable
     } catch (error) {
       console.error("Failed to mark notification as read:", error);
+      // Revert (best-effort)
+      setNotifications((prev) =>
+        prev.map((n) => (n._id === notificationId ? { ...n, read: false } : n))
+      );
+      setUnreadCount((prev) => prev + 1);
     }
   };
 
   // Mark all as read
   const handleMarkAllAsRead = async () => {
     try {
-      await markAllNotificationsRead();
+      // Optimistic update
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       setUnreadCount(0);
+
+      await markAllNotificationsRead();
     } catch (error) {
       console.error("Failed to mark all as read:", error);
+      // Re-fetch to recover state
+      fetchNotifications();
     }
   };
 
@@ -137,12 +167,25 @@ function NotificationPanel({ onClose }: NotificationPanelProps) {
 
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   // Fetch on mount
   useEffect(() => {
-    fetchNotifications();
+    fetchNotifications({ page: 1 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Pagination handlers (simple)
+  const loadNextPage = () => {
+    if (page < totalPages) {
+      fetchNotifications({ page: page + 1 });
+    }
+  };
+  const loadPrevPage = () => {
+    if (page > 1) {
+      fetchNotifications({ page: page - 1 });
+    }
+  };
 
   // Get notification icon
   const getNotificationIcon = (notification: Notification) => {
@@ -193,7 +236,7 @@ function NotificationPanel({ onClose }: NotificationPanelProps) {
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        {/* Clean Header */}
+        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-[#0E3554] rounded-lg">
@@ -220,7 +263,7 @@ function NotificationPanel({ onClose }: NotificationPanelProps) {
               </button>
             )}
             <button
-              onClick={() => fetchNotifications(true)}
+              onClick={() => fetchNotifications({ showRefresh: true })}
               disabled={refreshing}
               className="p-1.5 text-gray-500 hover:text-[#1CC2B1] hover:bg-gray-100 rounded transition-colors disabled:opacity-50"
               title="Refresh"
@@ -287,56 +330,118 @@ function NotificationPanel({ onClose }: NotificationPanelProps) {
           ) : (
             <div className="overflow-y-auto h-full">
               <div className="p-3 space-y-2">
-                {filteredNotifications.map((notification) => (
-                  <div
-                    key={notification._id}
-                    className={`p-3 rounded-lg border transition-colors cursor-pointer ${
-                      notification.read
-                        ? "bg-white border-gray-200 hover:bg-gray-50"
-                        : "bg-blue-50 border-blue-200 hover:bg-blue-100"
-                    }`}
-                    onClick={() =>
-                      !notification.read && handleMarkAsRead(notification._id)
-                    }
-                  >
-                    <div className="flex items-start gap-3">
-                      {getNotificationIcon(notification)}
+                {filteredNotifications.map((notification) => {
+                  const { actorName, actorEmail, actorRole } =
+                    deriveActorLabel(notification);
+                  // If a user was created and data contains name/email/role, surface that clearly
+                  const createdUserTitle =
+                    notification.contextType === "user" &&
+                    notification.data?.name
+                      ? `${notification.data.name} (${
+                          notification.data.role || "user"
+                        })`
+                      : null;
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <p className="text-sm text-gray-800 leading-tight">
-                            {notification.actor && (
+                  return (
+                    <div
+                      key={notification._id}
+                      className={`p-3 rounded-lg border transition-colors cursor-pointer ${
+                        notification.read
+                          ? "bg-white border-gray-200 hover:bg-gray-50"
+                          : "bg-blue-50 border-blue-200 hover:bg-blue-100"
+                      }`}
+                      onClick={() =>
+                        !notification.read && handleMarkAsRead(notification._id)
+                      }
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <div className="flex items-start gap-3">
+                        {getNotificationIcon(notification)}
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <p className="text-sm text-gray-800 leading-tight">
                               <span className="font-medium text-[#0E3554]">
-                                {notification.actor.name}
+                                {actorName}
+                                {actorRole ? (
+                                  <span className="ml-2 text-[11px] text-gray-500 capitalize">
+                                    • {actorRole}
+                                  </span>
+                                ) : null}
+                              </span>{" "}
+                              <span className="text-gray-600">
+                                {notification.verb}
                               </span>
-                            )}{" "}
-                            <span className="text-gray-600">
-                              {notification.verb}
-                            </span>
-                          </p>
-                          {!notification.read && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1"></div>
+                            </p>
+
+                            {!notification.read && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1"></div>
+                            )}
+                          </div>
+
+                          {/* friendly message */}
+                          {notification.data?.message ? (
+                            <p className="text-xs text-gray-600 mb-2 leading-tight line-clamp-2">
+                              {notification.data.message}
+                            </p>
+                          ) : createdUserTitle ? (
+                            <p className="text-xs text-gray-600 mb-2 leading-tight line-clamp-2">
+                              {actorName} created {createdUserTitle}
+                            </p>
+                          ) : (
+                            // fallback display of verb + context
+                            <p className="text-xs text-gray-600 mb-2 leading-tight line-clamp-2">
+                              {notification.verb} {notification.contextType}
+                            </p>
                           )}
-                        </div>
 
-                        {notification.data.message && (
-                          <p className="text-xs text-gray-600 mb-2 leading-tight line-clamp-2">
-                            {notification.data.message}
-                          </p>
-                        )}
-
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] text-gray-500 capitalize">
-                            {notification.contextType}
-                          </span>
-                          <span className="text-[11px] text-gray-400">
-                            {formatTime(notification.createdAt)}
-                          </span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] text-gray-500 capitalize">
+                                {notification.contextType}
+                              </span>
+                              {actorEmail && (
+                                <span
+                                  className="text-[11px] text-gray-400 truncate max-w-[10rem]"
+                                  title={actorEmail}
+                                >
+                                  {actorEmail}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[11px] text-gray-400">
+                              {formatTime(notification.createdAt)}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
+              </div>
+
+              {/* Simple pagination controls if multiple pages exist */}
+              <div className="p-3 border-t border-gray-100 flex items-center justify-between bg-white">
+                <div className="text-xs text-gray-500">
+                  Page {page} of {totalPages}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={loadPrevPage}
+                    disabled={page <= 1}
+                    className="px-2 py-1 text-xs bg-white border rounded disabled:opacity-50"
+                  >
+                    Prev
+                  </button>
+                  <button
+                    onClick={loadNextPage}
+                    disabled={page >= totalPages}
+                    className="px-2 py-1 text-xs bg-white border rounded disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </div>
           )}

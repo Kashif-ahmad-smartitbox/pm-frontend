@@ -8,6 +8,7 @@ import ConfirmationModal from "../ConfirmationModal";
 import UserManagementModal from "../UserManagementModal";
 import ProjectTypeManagementModal from "../ProjectTypeManagementModal";
 import AllTasksModal from "../AllTasksModal";
+import CombinedProjectsReportModal from "../CombinedProjectsReportModal";
 
 type ProjectStatus = "planned" | "active" | "completed" | "overdue";
 
@@ -95,6 +96,7 @@ interface ModalsProps {
   showUserManagementModal: boolean;
   showProjectTypesModal: boolean;
   showUpdateTaskModal: boolean;
+  showReportsModal: boolean;
   showAllTasksModal: boolean;
   editingTask: Task | null;
   editingProject: Project | null;
@@ -116,11 +118,13 @@ interface ModalsProps {
   onCloseUserManagementModal: () => void;
   onCloseProjectTypesModal: () => void;
   onCloseUpdateTaskModal: () => void;
+  onCloseReportsModal: () => void;
   onCloseAllTasksModal: () => void;
   onCloseDeleteConfirm: () => void;
   currentUser: User;
   onTaskClick?: (task: Task) => void;
   onChatClick?: (task: Task) => void;
+  isAdmin: boolean;
 }
 
 const Modals: React.FC<ModalsProps> = ({
@@ -130,6 +134,7 @@ const Modals: React.FC<ModalsProps> = ({
   showEditProjectModal,
   showUserManagementModal,
   showProjectTypesModal,
+  showReportsModal,
   showUpdateTaskModal,
   showAllTasksModal,
   editingTask,
@@ -154,9 +159,11 @@ const Modals: React.FC<ModalsProps> = ({
   onCloseUpdateTaskModal,
   onCloseAllTasksModal,
   onCloseDeleteConfirm,
+  onCloseReportsModal,
   currentUser,
   onTaskClick,
   onChatClick,
+  isAdmin,
 }) => {
   const handleTaskClick = (task: Task) => {
     if (onTaskClick) {
@@ -181,6 +188,7 @@ const Modals: React.FC<ModalsProps> = ({
           onClose={onCloseModal}
           onNoteAdded={onNoteAdded}
           currentUser={currentUser}
+          isAdmin={isAdmin}
         />
       )}
 
@@ -231,6 +239,13 @@ const Modals: React.FC<ModalsProps> = ({
         taskStats={taskStats}
         onTaskClick={handleTaskClick}
         onChatClick={handleChatClick}
+      />
+
+      <CombinedProjectsReportModal
+        isOpen={showReportsModal}
+        onClose={onCloseReportsModal}
+        onTaskClick={onTaskClick as any}
+        onChatClick={onChatClick as any}
       />
 
       <ConfirmationModal

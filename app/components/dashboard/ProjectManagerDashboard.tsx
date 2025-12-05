@@ -35,6 +35,7 @@ import TeamManagementModal from "../TeamManagementModal";
 import { Note, Task, TaskPriority, TaskStatus } from "../common/TaskCard2";
 import EmptyTasksState from "../common/EmptyTasksState";
 import TaskGrid from "../common/TaskGrid";
+import TaskList from "../common/TaskList";
 import LoadingTasksState from "../common/LoadingTasksState";
 
 import ProjectCard from "@/components/common/ProjectCard";
@@ -42,6 +43,7 @@ import ProjectListItem from "@/components/common/ProjectListItem";
 import { useAuth } from "@/app/context/AuthContext";
 import ActiveProjectFilterBadge from "../common/ActiveProjectFilterBadge";
 import AllTasksModal from "../AllTasksModal";
+import CombinedProjectsReportModal from "../CombinedProjectsReportModal";
 
 type ProjectStatus = "planned" | "active" | "completed" | "overdue";
 
@@ -243,6 +245,7 @@ export default function ProjectManagerDashboard() {
   );
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [showReportsModal, setShowReportsModal] = useState(false);
 
   // Task Stats State
   const [taskStats, setTaskStats] = useState<TaskStats>({
@@ -275,7 +278,10 @@ export default function ProjectManagerDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [projectMenuOpen, setProjectMenuOpen] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [projectViewMode, setProjectViewMode] = useState<"grid" | "list">(
+    "grid"
+  );
+  const [taskViewMode, setTaskViewMode] = useState<"grid" | "list">("grid"); // New state for task view mode
   const [activeStatus, setActiveStatus] = useState<ProjectStatus | "all">(
     "all"
   );
@@ -415,6 +421,7 @@ export default function ProjectManagerDashboard() {
       const projectData = await getProjectData(projectId);
       setSelectedProject(projectData);
       setTaskFilters(DEFAULT_TASK_FILTERS);
+      setTaskViewMode("grid"); // Reset task view mode when opening a project
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to load project details"
@@ -495,7 +502,10 @@ export default function ProjectManagerDashboard() {
     [selectedProject, selectedTask]
   );
 
-  const handleBackToProjects = useCallback(() => setSelectedProject(null), []);
+  const handleBackToProjects = useCallback(() => {
+    setSelectedProject(null);
+    setTaskViewMode("grid"); // Reset task view mode when going back to projects
+  }, []);
 
   const handleNewTaskCreated = useCallback(() => {
     if (selectedProject) handleProjectClick(selectedProject.project._id);
@@ -697,6 +707,8 @@ export default function ProjectManagerDashboard() {
         title="SKC Project Management"
         subtitle="Project Manager Dashboard"
         onTeamManagementClick={() => setShowTeamManagementModal(true)}
+        onReportsClick={() => setShowReportsModal(true)}
+        showReports
         showTeamManagement
         showNotifications
       />
@@ -763,7 +775,7 @@ export default function ProjectManagerDashboard() {
                 </div>
                 <p className="text-slate-500 text-xs ml-7">
                   {selectedProject
-                    ? "Project tasks and details"
+                    ? `Project tasks (${filteredTasks.length})`
                     : "Complete project portfolio"}
                 </p>
               </div>
@@ -772,6 +784,30 @@ export default function ProjectManagerDashboard() {
               <div className="flex items-center gap-2 flex-wrap">
                 {selectedProject ? (
                   <>
+                    {/* Task View Toggle */}
+                    <div className="flex items-center gap-0.5 bg-[#F8FDFC] rounded-lg p-0.5 border border-[#E1F3F0]">
+                      <button
+                        onClick={() => setTaskViewMode("grid")}
+                        className={`p-1.5 rounded-md transition-all duration-200 ${
+                          taskViewMode === "grid"
+                            ? "bg-white text-[#0E3554] shadow-sm"
+                            : "text-slate-400 hover:text-[#0E3554] hover:bg-white"
+                        }`}
+                      >
+                        <Grid3X3 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setTaskViewMode("list")}
+                        className={`p-1.5 rounded-md transition-all duration-200 ${
+                          taskViewMode === "list"
+                            ? "bg-white text-[#0E3554] shadow-sm"
+                            : "text-slate-400 hover:text-[#0E3554] hover:bg-white"
+                        }`}
+                      >
+                        <List className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
                     <button
                       onClick={handleBackToProjects}
                       className="px-3 py-1.5 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-all duration-200 flex items-center gap-1.5 text-sm hover:bg-[#F8FDFC] rounded-lg"
@@ -790,12 +826,12 @@ export default function ProjectManagerDashboard() {
                   </>
                 ) : (
                   <>
-                    {/* View Toggle */}
+                    {/* Project View Toggle */}
                     <div className="flex items-center gap-0.5 bg-[#F8FDFC] rounded-lg p-0.5 border border-[#E1F3F0]">
                       <button
-                        onClick={() => setViewMode("grid")}
+                        onClick={() => setProjectViewMode("grid")}
                         className={`p-1.5 rounded-md transition-all duration-200 ${
-                          viewMode === "grid"
+                          projectViewMode === "grid"
                             ? "bg-white text-[#0E3554] shadow-sm"
                             : "text-slate-400 hover:text-[#0E3554] hover:bg-white"
                         }`}
@@ -803,9 +839,9 @@ export default function ProjectManagerDashboard() {
                         <Grid3X3 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => setViewMode("list")}
+                        onClick={() => setProjectViewMode("list")}
                         className={`p-1.5 rounded-md transition-all duration-200 ${
-                          viewMode === "list"
+                          projectViewMode === "list"
                             ? "bg-white text-[#0E3554] shadow-sm"
                             : "text-slate-400 hover:text-[#0E3554] hover:bg-white"
                         }`}
@@ -881,8 +917,15 @@ export default function ProjectManagerDashboard() {
                   <EmptyTasksState
                     onCreateTask={() => setShowNewTaskModal(true)}
                   />
-                ) : (
+                ) : taskViewMode === "grid" ? (
                   <TaskGrid
+                    tasks={filteredTasks}
+                    onTaskClick={handleTaskClick}
+                    onEditTask={handleEditTask}
+                    onDeleteTask={handleDeleteTask}
+                  />
+                ) : (
+                  <TaskList
                     tasks={filteredTasks}
                     onTaskClick={handleTaskClick}
                     onEditTask={handleEditTask}
@@ -892,7 +935,7 @@ export default function ProjectManagerDashboard() {
               </div>
             ) : (
               <div>
-                {viewMode === "grid" ? (
+                {projectViewMode === "grid" ? (
                   <>
                     {/* Grid Layout */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1 mb-4">
@@ -910,15 +953,6 @@ export default function ProjectManagerDashboard() {
                         />
                       ))}
                     </div>
-
-                    {/* Pagination */}
-                    {pagination.totalPages > 1 && (
-                      <Pagination
-                        pagination={pagination}
-                        onPageChange={handlePageChange}
-                        totalItems={pagination.totalItems}
-                      />
-                    )}
                   </>
                 ) : (
                   <>
@@ -937,16 +971,16 @@ export default function ProjectManagerDashboard() {
                         />
                       ))}
                     </div>
-
-                    {/* Pagination */}
-                    {pagination.totalPages > 1 && (
-                      <Pagination
-                        pagination={pagination}
-                        onPageChange={handlePageChange}
-                        totalItems={pagination.totalItems}
-                      />
-                    )}
                   </>
+                )}
+
+                {/* Pagination */}
+                {pagination.totalPages > 1 && (
+                  <Pagination
+                    pagination={pagination}
+                    onPageChange={handlePageChange}
+                    totalItems={pagination.totalItems}
+                  />
                 )}
               </div>
             )}
@@ -961,6 +995,7 @@ export default function ProjectManagerDashboard() {
         showUpdateTaskModal={showUpdateTaskModal}
         editingTask={editingTask}
         deleteConfirm={deleteConfirm}
+        showReportsModal={showReportsModal}
         selectedProject={selectedProject}
         allTasks={allTasks}
         taskStats={taskStats}
@@ -972,6 +1007,7 @@ export default function ProjectManagerDashboard() {
         onConfirmDelete={handleConfirmDelete}
         onCloseNewTaskModal={() => setShowNewTaskModal(false)}
         onCloseTeamManagementModal={() => setShowTeamManagementModal(false)}
+        onCloseReportsModal={() => setShowReportsModal(false)}
         onCloseUpdateTaskModal={() => {
           setShowUpdateTaskModal(false);
           setEditingTask(null);
@@ -1068,6 +1104,7 @@ interface ModalsProps {
   showTeamManagementModal: boolean;
   showUpdateTaskModal: boolean;
   showAllTasksModal: boolean;
+  showReportsModal: boolean;
   editingTask: Task | null;
   deleteConfirm: DeleteConfirmState;
   selectedProject: ProjectData | null;
@@ -1079,6 +1116,7 @@ interface ModalsProps {
   onTaskUpdated: () => void;
   onConfirmDelete: () => void;
   onCloseNewTaskModal: () => void;
+  onCloseReportsModal: () => void;
   onCloseTeamManagementModal: () => void;
   onCloseAllTasksModal: () => void;
   onCloseUpdateTaskModal: () => void;
@@ -1093,6 +1131,7 @@ const Modals: React.FC<ModalsProps> = ({
   showNewTaskModal,
   showTeamManagementModal,
   showUpdateTaskModal,
+  showReportsModal,
   showAllTasksModal,
   allTasks = [],
   taskStats,
@@ -1108,6 +1147,7 @@ const Modals: React.FC<ModalsProps> = ({
   onCloseTeamManagementModal,
   onCloseAllTasksModal,
   onCloseUpdateTaskModal,
+  onCloseReportsModal,
   onCloseDeleteConfirm,
   currentUser,
   onTaskClick,
@@ -1166,6 +1206,13 @@ const Modals: React.FC<ModalsProps> = ({
         taskStats={taskStats}
         onTaskClick={handleTaskClick}
         onChatClick={handleChatClick}
+      />
+
+      <CombinedProjectsReportModal
+        isOpen={showReportsModal}
+        onClose={onCloseReportsModal}
+        onTaskClick={onTaskClick as any}
+        onChatClick={onChatClick as any}
       />
 
       <ConfirmationModal

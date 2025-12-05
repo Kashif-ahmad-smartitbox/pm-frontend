@@ -10,6 +10,7 @@ import {
   Building,
   Bell,
   Settings,
+  FileText, // Added FileText icon for Reports
   ChevronDown,
 } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
@@ -32,10 +33,12 @@ interface HeaderProps {
   onTeamManagementClick?: () => void;
   onNotificationsClick?: () => void;
   onSettingsClick?: () => void;
+  onReportsClick?: () => void;
   showProjectTypes?: boolean;
   showTeamManagement?: boolean;
   showNotifications?: boolean;
   showSettings?: boolean;
+  showReports?: boolean;
 }
 
 // Constants
@@ -107,6 +110,7 @@ const IconButton = React.memo(
     title,
     badgeLoading = false,
     className = "",
+    iconSize = "w-4 h-4",
   }: {
     onClick?: () => void;
     icon: React.ComponentType<any>;
@@ -114,6 +118,7 @@ const IconButton = React.memo(
     title: string;
     badgeLoading?: boolean;
     className?: string;
+    iconSize?: string;
   }) => {
     if (!onClick) return null;
 
@@ -149,7 +154,7 @@ const IconButton = React.memo(
         title={title}
         aria-label={title}
       >
-        <Icon className="w-4 h-4" aria-hidden="true" />
+        <Icon className={`${iconSize}`} aria-hidden="true" />
         {renderBadge()}
       </button>
     );
@@ -297,9 +302,11 @@ const MobileMenu = React.memo(
     showProjectTypes,
     showTeamManagement,
     showSettings,
+    showReports,
     onProjectTypesClick,
     onTeamManagementClick,
     onSettingsClick,
+    onReportsClick,
     user,
     onLogout,
   }: {
@@ -308,9 +315,11 @@ const MobileMenu = React.memo(
     showProjectTypes: boolean;
     showTeamManagement: boolean;
     showSettings: boolean;
+    showReports: boolean;
     onProjectTypesClick?: () => void;
     onTeamManagementClick?: () => void;
     onSettingsClick?: () => void;
+    onReportsClick?: () => void;
     user: AppUser | null;
     onLogout: () => void;
   }) => {
@@ -345,6 +354,19 @@ const MobileMenu = React.memo(
             </button>
           )}
 
+          {showReports && (
+            <button
+              onClick={() => {
+                onReportsClick?.();
+                onClose();
+              }}
+              className="flex items-center gap-3 p-2 text-sm text-[#0E3554] hover:bg-[#EFFFFA] rounded-lg transition-colors duration-200"
+            >
+              <FileText className="w-4 h-4" aria-hidden="true" />
+              Reports
+            </button>
+          )}
+
           <div className="pt-2 border-t border-[#E1F3F0]">
             <ProfileDropdown
               user={user}
@@ -360,6 +382,46 @@ const MobileMenu = React.memo(
 
 MobileMenu.displayName = "MobileMenu";
 
+// Desktop Text Button Component (for reports)
+const DesktopTextButton = React.memo(
+  ({
+    onClick,
+    icon: Icon,
+    text,
+    title,
+    className = "",
+  }: {
+    onClick?: () => void;
+    icon: React.ComponentType<any>;
+    text: string;
+    title: string;
+    className?: string;
+  }) => {
+    if (!onClick) return null;
+
+    return (
+      <button
+        onClick={onClick}
+        className={`
+          flex items-center gap-2 px-3 py-1.5 text-[#0E3554] hover:text-[#1CC2B1] 
+          hover:bg-[#EFFFFA] rounded-lg transition-all duration-200 font-medium text-sm
+          active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:ring-opacity-50
+          border border-[#E1F3F0] hover:border-[#1CC2B1]
+          ${className}
+        `}
+        title={title}
+        aria-label={title}
+      >
+        <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+        <span className="hidden lg:inline">{text}</span>
+        <span className="lg:hidden">{text.split(" ")[0]}</span>
+      </button>
+    );
+  }
+);
+
+DesktopTextButton.displayName = "DesktopTextButton";
+
 // Main Header Component
 export default function CommonHeader({
   title,
@@ -368,10 +430,12 @@ export default function CommonHeader({
   onTeamManagementClick,
   onNotificationsClick,
   onSettingsClick,
+  onReportsClick, // Added reports handler
   showProjectTypes = false,
   showTeamManagement = false,
   showNotifications = false,
   showSettings = false,
+  showReports = false, // Added reports flag
 }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationPanelOpen, setNotificationPanelOpen] = useState(false);
@@ -427,27 +491,32 @@ export default function CommonHeader({
             </div>
           </div>
 
-          {/* Center Title - Hidden on mobile, visible on tablet and up */}
-          <div className="hidden sm:flex flex-1 justify-center">
-            <span className="font-bold text-xl text-[#0E3554] text-center whitespace-nowrap">
-              TnA Dashboard
-            </span>
-          </div>
-
           {/* Desktop Actions - Right aligned */}
-          <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
-            {showProjectTypes && (
-              <IconButton
+          <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+            {/* Reports Button - Only shown on desktop */}
+            {showReports && onReportsClick && (
+              <DesktopTextButton
+                onClick={onReportsClick}
+                icon={FileText}
+                text="Reports"
+                title="View Reports"
+              />
+            )}
+
+            {showProjectTypes && onProjectTypesClick && (
+              <DesktopTextButton
                 onClick={onProjectTypesClick}
                 icon={Building}
+                text="Project Types"
                 title="Project Types"
               />
             )}
 
-            {showTeamManagement && (
-              <IconButton
+            {showTeamManagement && onTeamManagementClick && (
+              <DesktopTextButton
                 onClick={onTeamManagementClick}
                 icon={Users}
+                text="Team"
                 title="Team Management"
               />
             )}
@@ -498,13 +567,6 @@ export default function CommonHeader({
           </div>
         </div>
 
-        {/* Mobile Center Title - Visible only on mobile below the subtitle */}
-        <div className="sm:hidden mt-3 pt-3 border-t border-[#E1F3F0]">
-          <span className="font-bold text-lg text-[#0E3554] text-center block">
-            TnA Dashboard
-          </span>
-        </div>
-
         {/* Mobile Menu */}
         <MobileMenu
           isOpen={mobileMenuOpen}
@@ -512,9 +574,11 @@ export default function CommonHeader({
           showProjectTypes={showProjectTypes}
           showTeamManagement={showTeamManagement}
           showSettings={showSettings}
+          showReports={showReports}
           onProjectTypesClick={onProjectTypesClick}
           onTeamManagementClick={onTeamManagementClick}
           onSettingsClick={onSettingsClick}
+          onReportsClick={onReportsClick}
           user={user}
           onLogout={handleLogout}
         />

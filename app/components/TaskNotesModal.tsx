@@ -18,6 +18,7 @@ import {
   Trash2,
   Check,
   X as XIcon,
+  Shield,
 } from "lucide-react";
 import {
   DesktopHeader,
@@ -28,6 +29,7 @@ import {
   VoiceRecordingControls,
 } from "./chat";
 
+// Types
 export type TaskStatus = "todo" | "in_progress" | "done";
 export type TaskPriority = "low" | "medium" | "high" | "critical";
 export type RecordingType = "audio" | "video" | null;
@@ -478,6 +480,331 @@ export const getContrastColor = (hexColor?: string | null) => {
   return luminance > 0.5 ? "#000000" : "#FFFFFF";
 };
 
+export const formatDateDivider = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (date.toDateString() === now.toDateString()) {
+    return "Today";
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return "Yesterday";
+  } else {
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+      year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
+    });
+  }
+};
+
+// Helper component for date dividers
+const DateDivider: React.FC<{ date: string }> = ({ date }) => {
+  const formattedDate = formatDateDivider(date);
+
+  return (
+    <div className="flex items-center justify-center my-4">
+      <div className="flex-1 h-px bg-gray-300"></div>
+      <span className="mx-3 px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-full">
+        {formattedDate}
+      </span>
+      <div className="flex-1 h-px bg-gray-300"></div>
+    </div>
+  );
+};
+
+interface MessageActionsProps {
+  note: Note;
+  isCurrentUserMessage: boolean;
+  isAdmin: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+  isDeleting: boolean;
+  isEditing: boolean;
+}
+
+const MessageActions: React.FC<MessageActionsProps> = ({
+  note,
+  isCurrentUserMessage,
+  isAdmin,
+  onEdit,
+  onDelete,
+  isDeleting,
+  isEditing,
+}) => {
+  // ONLY ADMIN CAN DELETE ANY MESSAGE
+  // Regular users CANNOT delete ANY messages (not even their own)
+  const showEditButton = isCurrentUserMessage && !isEditing;
+  const showDeleteButton = isAdmin; // Only admin can delete
+
+  if (!showEditButton && !showDeleteButton) return null;
+
+  return (
+    <div className="absolute -top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      {showEditButton && (
+        <button
+          onClick={onEdit}
+          className="w-6 h-6 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
+          title="Edit message"
+        >
+          <Edit2 className="w-3 h-3 text-gray-700" />
+        </button>
+      )}
+      {showDeleteButton && (
+        <button
+          onClick={onDelete}
+          disabled={isDeleting}
+          className={`w-6 h-6 bg-white border border-gray-300 rounded-full flex items-center justify-center transition-colors shadow-sm group hover:bg-blue-50 hover:border-blue-300`}
+          title="Admin: Delete message"
+        >
+          {isDeleting ? (
+            <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <Trash2 className="w-3 h-3 text-blue-600" />
+          )}
+        </button>
+      )}
+    </div>
+  );
+};
+
+// Helper component for attachment preview
+interface AttachmentPreviewProps {
+  attachment: Attachment;
+  isCurrentUserMessage: boolean;
+  onPreview: (url: string, fileName?: string, fileType?: string) => void;
+}
+
+const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({
+  attachment,
+  isCurrentUserMessage,
+  onPreview,
+}) => {
+  const mime = attachment.fileType || attachment.mimeType || "";
+  const extension = attachment.fileName?.split(".").pop()?.toLowerCase();
+  const resourceType = attachment.resourceType;
+
+  // File type detection
+  const isPdf = mime === "application/pdf" || extension === "pdf";
+  const audioExtensions = [
+    "mp3",
+    "wav",
+    "aac",
+    "m4a",
+    "ogg",
+    "oga",
+    "flac",
+    "opus",
+  ];
+  const isAudio =
+    mime.startsWith("audio/") ||
+    audioExtensions.includes(extension || "") ||
+    resourceType === "audio";
+  const isVideo = !isAudio && (isVideoFile(mime) || resourceType === "video");
+  const isImage =
+    !isPdf &&
+    (isImageFile(mime) ||
+      resourceType === "image" ||
+      ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"].includes(
+        extension || ""
+      ));
+
+  const IconComponent = getFileIcon(mime);
+  const displayType =
+    getFileTypeDisplay(mime) || (extension ? extension.toUpperCase() : "File");
+
+  // Image preview
+  if (isImage) {
+    return (
+      <div className="rounded-lg overflow-hidden">
+        <button
+          onClick={() => onPreview(attachment.url, attachment.fileName, mime)}
+          className="w-full text-left"
+        >
+          <div className="relative group">
+            <img
+              src={attachment.url}
+              alt="Image"
+              className="w-full h-auto max-h-52 md:max-h-72 object-cover rounded-lg"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg" />
+            <div className="absolute bottom-1.5 right-1.5 bg-black/70 text-white text-[10px] md:text-xs px-1.5 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+              Tap to view
+            </div>
+          </div>
+        </button>
+        {attachment.size && (
+          <div className="text-[10px] md:text-xs text-gray-500 mt-0.5 text-center">
+            {formatFileSize(attachment.size)}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Video preview
+  if (isVideo) {
+    return (
+      <div
+        className={`rounded-xl border p-2.5 md:p-3 space-y-1.5 transition-all duration-200 ${
+          isCurrentUserMessage
+            ? "bg-white/70 border-emerald-200"
+            : "bg-white/80 border-gray-200"
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          <div
+            className={`p-1.5 rounded-lg shrink-0 ${
+              isCurrentUserMessage ? "bg-emerald-50" : "bg-indigo-50"
+            }`}
+          >
+            <Video className="w-4 h-4 md:w-5 md:h-5 text-gray-800" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] md:text-sm font-semibold text-gray-900 truncate">
+                {displayType || "Video"}
+              </span>
+              <button
+                onClick={() =>
+                  onPreview(attachment.url, attachment.fileName, mime)
+                }
+                className="text-[10px] md:text-xs font-medium px-2 py-0.5 rounded-full border border-indigo-200 text-indigo-700 hover:bg-indigo-50 transition-colors"
+              >
+                Open
+              </button>
+            </div>
+            <div className="flex items-center gap-2 mt-0.5">
+              {attachment.size && (
+                <span className="text-[10px] md:text-xs text-gray-500">
+                  {formatFileSize(attachment.size)}
+                </span>
+              )}
+              <a
+                href={attachment.url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[10px] md:text-xs text-blue-600 hover:text-blue-800 font-medium"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Open in new tab
+              </a>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-lg overflow-hidden bg-black">
+          <video
+            src={attachment.url}
+            controls
+            className="w-full max-h-40 md:max-h-52 rounded-lg"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Audio preview
+  if (isAudio) {
+    return (
+      <div
+        className={`rounded-xl border p-2 md:p-2.5 space-y-1.5 transition-all duration-200 ${
+          isCurrentUserMessage
+            ? "bg-emerald-50/60 border-emerald-200"
+            : "bg-sky-50/70 border-sky-200"
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.03)]">
+            <Music className="w-3.5 h-3.5 text-gray-800" />
+            <span className="text-[10px] font-semibold text-gray-900">
+              Audio
+            </span>
+          </div>
+          {attachment.size && (
+            <span className="text-[10px] text-gray-500 truncate">
+              {formatFileSize(attachment.size)}
+            </span>
+          )}
+          <button
+            onClick={() => onPreview(attachment.url, attachment.fileName, mime)}
+            className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full border border-gray-200 text-gray-700 hover:bg-white transition-colors"
+          >
+            Open
+          </button>
+        </div>
+        <div className="rounded-lg overflow-hidden bg-white/80 px-1.5 py-1">
+          <audio src={attachment.url} controls className="w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  // Other files (PDF, docs, etc.)
+  return (
+    <div
+      className={`flex items-center gap-2 md:gap-3 p-1.5 md:p-2.5 rounded-xl border transition-all duration-200 ${
+        isCurrentUserMessage
+          ? "bg-white/70 border-emerald-200"
+          : "bg-white/80 border-gray-200"
+      }`}
+    >
+      <div
+        className={`p-1.5 rounded-lg shrink-0 ${
+          isCurrentUserMessage ? "bg-emerald-50" : "bg-indigo-50"
+        }`}
+      >
+        <IconComponent className="w-4 h-4 md:w-5 md:h-5 text-gray-800" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] md:text-sm font-semibold text-gray-900 truncate">
+            {displayType}
+          </span>
+          <button
+            onClick={() => onPreview(attachment.url, attachment.fileName, mime)}
+            className="ml-auto text-[10px] md:text-xs font-medium px-2 py-0.5 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            View
+          </button>
+        </div>
+        <div className="flex items-center gap-2 mt-0.5">
+          {attachment.size && (
+            <span className="text-[10px] md:text-xs text-gray-500">
+              {formatFileSize(attachment.size)}
+            </span>
+          )}
+          <a
+            href={attachment.url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-[10px] md:text-xs text-blue-600 hover:text-blue-800 font-medium truncate"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {attachment.fileName || "Open in new tab"}
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const formatUserRole = (role?: string): string => {
+  if (!role) return "";
+
+  const roleMap: Record<string, string> = {
+    admin: "Administrator",
+    team_member: "Team Member",
+    project_manager: "Project Manager",
+  };
+
+  return (
+    roleMap[role.toLowerCase()] || role.charAt(0).toUpperCase() + role.slice(1)
+  );
+};
+
 interface TaskNotesModalProps {
   task: Task;
   isOpen: boolean;
@@ -486,6 +813,7 @@ interface TaskNotesModalProps {
   onNoteUpdated?: (updatedNote: Note) => void;
   onNoteDeleted?: (deletedNoteId: string) => void;
   currentUser: User;
+  isAdmin?: boolean;
 }
 
 const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
@@ -496,7 +824,9 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   onNoteUpdated,
   onNoteDeleted,
   currentUser,
+  isAdmin = false,
 }) => {
+  // State
   const [newNote, setNewNote] = useState("");
   const [addingNote, setAddingNote] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -521,6 +851,7 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   const [editingText, setEditingText] = useState("");
   const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
 
+  // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -528,9 +859,9 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   const lastNoteCountRef = useRef<number>(0);
   const isInitialMountRef = useRef(true);
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
-
   const [videoModalKey, setVideoModalKey] = useState(0);
 
+  // Custom hooks
   const {
     notes,
     loading,
@@ -551,6 +882,75 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
 
   useModal(isOpen, onClose);
 
+  // Helper functions
+  const isCurrentUser = (author?: User) => author?._id === currentUser?._id;
+
+  const getUserAvatar = (author?: User) => {
+    const initials = getAuthorInitial(author);
+    const backgroundColor = author?.color || "rgb(239, 255, 250)";
+    const textColor = getContrastColor(author?.color ?? undefined);
+
+    return (
+      <div
+        className="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm shrink-0 border-2 border-white shadow-sm"
+        style={{
+          backgroundColor,
+          color: textColor,
+        }}
+      >
+        {initials}
+      </div>
+    );
+  };
+
+  const openLocationInMaps = (lat: number, lng: number) => {
+    window.open(`https://maps.google.com/?q=${lat},${lng}`, "_blank");
+  };
+
+  const openMediaPreview = (
+    mediaUrl: string,
+    fileName?: string,
+    fileType?: string
+  ) => {
+    setMediaPreview({
+      isOpen: true,
+      mediaUrl,
+      fileName,
+      fileType,
+    });
+  };
+
+  const closeMediaPreview = () => {
+    setMediaPreview({
+      isOpen: false,
+      mediaUrl: "",
+      fileName: "",
+      fileType: "",
+    });
+  };
+
+  // Group notes by date for dividers
+  const groupedNotes = useCallback(() => {
+    const groups: { date: string; notes: Note[] }[] = [];
+
+    notes.forEach((note) => {
+      const noteDate = new Date(note.createdAt).toDateString();
+      const lastGroup = groups[groups.length - 1];
+
+      if (lastGroup && lastGroup.date === noteDate) {
+        lastGroup.notes.push(note);
+      } else {
+        groups.push({
+          date: noteDate,
+          notes: [note],
+        });
+      }
+    });
+
+    return groups;
+  }, [notes]);
+
+  // Scroll handling
   const scrollToBottom = useCallback(() => {
     if (isNearBottom && !userHasScrolled) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -570,24 +970,18 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
     setIsNearBottom(nearBottom);
     setShowScrollButton(!nearBottom && distanceFromBottom > 100);
 
-    // If user scrolls up more than 200px from bottom, mark as user has scrolled
     if (distanceFromBottom > 200) {
       setUserHasScrolled(true);
     }
 
-    // If user scrolls back to near bottom, reset the flag
     if (nearBottom) {
       setUserHasScrolled(false);
     }
   }, []);
 
-  // Only scroll to bottom when:
-  // 1. It's the initial load (notes change from 0 to some)
-  // 2. New messages arrive from current user
-  // 3. User sends a new message
+  // Auto scroll effect
   useEffect(() => {
     if (isInitialMountRef.current) {
-      // First load - always scroll to bottom
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
@@ -595,20 +989,16 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
       return;
     }
 
-    // Check if new messages were added (not just a refresh)
     const currentNoteCount = notes.length;
     const hasNewMessages = currentNoteCount > lastNoteCountRef.current;
 
     if (hasNewMessages) {
-      // Check if the latest message is from current user
       const latestNote = notes[notes.length - 1];
       const isCurrentUserMessage = latestNote?.author?._id === currentUser?._id;
 
       if (isCurrentUserMessage) {
-        // If current user sent a message, scroll to bottom
         scrollToBottom();
       } else if (isNearBottom) {
-        // If other user sent a message and we're near bottom, scroll
         scrollToBottom();
       }
     }
@@ -624,6 +1014,7 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
     }
   }, [handleScroll]);
 
+  // Recording effects
   useEffect(() => {
     if (
       recording.state === "stopped" &&
@@ -643,6 +1034,7 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
     }
   }, [recording.state]);
 
+  // File handling
   const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
@@ -675,30 +1067,7 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleStartVoiceRecording = () => {
-    setShowActionMenu(false);
-    startRecording("audio");
-  };
-
-  const handleStartVideoRecording = () => {
-    setShowActionMenu(false);
-    setVideoModalKey((prev) => prev + 1);
-    setShowVideoRecording(true);
-  };
-
-  const handleStopRecording = () => {
-    stopRecording();
-  };
-
-  const handleCancelRecording = () => {
-    cancelRecording();
-  };
-
-  const handleVideoRecordingComplete = (file: File) => {
-    setSelectedFiles((prev) => [...prev, file]);
-    setShowVideoRecording(false);
-  };
-
+  // Location handling
   const getCurrentLocation = useCallback(async () => {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser");
@@ -748,6 +1117,32 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
 
   const clearLocation = () => setLocation({});
 
+  // Recording handlers
+  const handleStartVoiceRecording = () => {
+    setShowActionMenu(false);
+    startRecording("audio");
+  };
+
+  const handleStartVideoRecording = () => {
+    setShowActionMenu(false);
+    setVideoModalKey((prev) => prev + 1);
+    setShowVideoRecording(true);
+  };
+
+  const handleStopRecording = () => {
+    stopRecording();
+  };
+
+  const handleCancelRecording = () => {
+    cancelRecording();
+  };
+
+  const handleVideoRecordingComplete = (file: File) => {
+    setSelectedFiles((prev) => [...prev, file]);
+    setShowVideoRecording(false);
+  };
+
+  // Note CRUD operations
   const handleAddNote = async () => {
     if (
       !newNote.trim() &&
@@ -789,13 +1184,10 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
       setSelectedFiles([]);
       setLocation({});
 
-      // Stop polling temporarily while adding note
       stopPolling();
       await manualRefresh();
-      // Restart polling after successful note addition
       startPolling();
 
-      // When user sends a message, scroll to bottom
       setUserHasScrolled(false);
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -852,10 +1244,8 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
         onNoteUpdated(updatedNote as Note);
       }
 
-      // Stop polling temporarily while updating note
       stopPolling();
       await manualRefresh();
-      // Restart polling after successful update
       startPolling();
 
       setEditingNoteId(null);
@@ -869,7 +1259,12 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   const handleDeleteNote = async (noteId: string) => {
     if (!task?._id) return;
 
-    if (!window.confirm("Are you sure you want to delete this message?")) {
+    const isAdminDelete = isAdmin && deletingNoteId !== noteId;
+    const confirmMessage = isAdminDelete
+      ? "Are you sure you want to delete this message? (Admin action)"
+      : "Are you sure you want to delete this message?";
+
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
@@ -882,10 +1277,8 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
         onNoteDeleted(noteId);
       }
 
-      // Stop polling temporarily while deleting note
       stopPolling();
       await manualRefresh();
-      // Restart polling after successful deletion
       startPolling();
     } catch (err) {
       console.error("Failed to delete note:", err);
@@ -893,52 +1286,6 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
     } finally {
       setDeletingNoteId(null);
     }
-  };
-
-  const openMediaPreview = (
-    mediaUrl: string,
-    fileName?: string,
-    fileType?: string
-  ) => {
-    setMediaPreview({
-      isOpen: true,
-      mediaUrl,
-      fileName,
-      fileType,
-    });
-  };
-
-  const closeMediaPreview = () => {
-    setMediaPreview({
-      isOpen: false,
-      mediaUrl: "",
-      fileName: "",
-      fileType: "",
-    });
-  };
-
-  const isCurrentUser = (author?: User) => author?._id === currentUser?._id;
-
-  const getUserAvatar = (author?: User) => {
-    const initials = getAuthorInitial(author);
-    const backgroundColor = author?.color || "rgb(239, 255, 250)";
-    const textColor = getContrastColor(author?.color ?? undefined);
-
-    return (
-      <div
-        className="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm shrink-0 border-2 border-white shadow-sm"
-        style={{
-          backgroundColor,
-          color: textColor,
-        }}
-      >
-        {initials}
-      </div>
-    );
-  };
-
-  const openLocationInMaps = (lat: number, lng: number) => {
-    window.open(`https://maps.google.com/?q=${lat},${lng}`, "_blank");
   };
 
   const handleScrollToBottom = () => {
@@ -949,10 +1296,8 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   };
 
   const handleManualRefresh = async () => {
-    // Stop polling temporarily to avoid conflicts
     stopPolling();
     await manualRefresh();
-    // Restart polling after manual refresh
     startPolling();
   };
 
@@ -1030,505 +1375,235 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="space-y-3 md:space-y-6">
-                  {notes.map((note, index) => {
-                    const isCurrentUserMessage = isCurrentUser(note.author);
-                    const isDeleted = note.isDeleted;
-                    const prev = notes[index - 1];
-                    const showHeader =
-                      index === 0 ||
-                      !prev ||
-                      prev.author._id !== note.author._id ||
-                      new Date(note.createdAt).getTime() -
-                        new Date(prev.createdAt).getTime() >
-                        300000;
+                <div className="space-y-4 md:space-y-8">
+                  {groupedNotes().map((group, groupIndex) => (
+                    <div key={group.date}>
+                      {groupIndex > 0 && (
+                        <DateDivider date={group.notes[0].createdAt} />
+                      )}
+                      {group.notes.map((note, index) => {
+                        const isCurrentUserMessage = isCurrentUser(note.author);
+                        const isDeleted = note.isDeleted;
+                        const prev = group.notes[index - 1];
+                        const showHeader =
+                          index === 0 ||
+                          !prev ||
+                          prev.author._id !== note.author._id ||
+                          new Date(note.createdAt).getTime() -
+                            new Date(prev.createdAt).getTime() >
+                            300000;
 
-                    if (isDeleted) {
-                      return (
-                        <div key={note._id} className="flex justify-center">
-                          <div className="px-4 py-2 bg-gray-100 rounded-full text-xs text-gray-500 italic">
-                            Message deleted
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div
-                        key={note._id}
-                        className={`flex gap-2 md:gap-3 group ${
-                          isCurrentUserMessage ? "justify-end" : "justify-start"
-                        }`}
-                      >
-                        {!isCurrentUserMessage && (
-                          <div className="flex-shrink-0 self-start">
-                            {getUserAvatar(note.author)}
-                          </div>
-                        )}
-
-                        <div
-                          className={`flex flex-col ${
-                            isCurrentUserMessage ? "items-end" : "items-start"
-                          } max-w-[85%] md:max-w-[75%]`}
-                        >
-                          {showHeader && !isCurrentUserMessage && (
-                            <div className="flex items-center gap-1 md:gap-2 mb-1 px-1">
-                              <span className="font-semibold text-gray-900 text-xs md:text-sm">
-                                {note.author?.name ?? "Unknown"}
-                              </span>
-                              <span className="text-xs text-gray-400 hidden md:inline">
-                                {formatMessageTime(note.createdAt)}
-                              </span>
+                        if (isDeleted) {
+                          return (
+                            <div key={note._id} className="flex justify-center">
+                              <div className="px-4 py-2 bg-gray-100 rounded-full text-xs text-gray-500 italic">
+                                Message deleted
+                              </div>
                             </div>
-                          )}
+                          );
+                        }
 
-                          <div className="flex gap-1 md:gap-2 items-start w-full">
-                            {isCurrentUserMessage && (
-                              <span className="text-xs text-gray-400 mt-1 md:mt-2 flex-shrink-0 min-w-[45px] md:min-w-[60px] text-right hidden md:block">
-                                {formatMessageTime(note.createdAt)}
-                              </span>
+                        return (
+                          <div
+                            key={note._id}
+                            className={`flex gap-2 md:gap-3 group ${
+                              isCurrentUserMessage
+                                ? "justify-end"
+                                : "justify-start"
+                            }`}
+                          >
+                            {!isCurrentUserMessage && (
+                              <div className="shrink-0 self-start">
+                                {getUserAvatar(note.author)}
+                              </div>
                             )}
 
                             <div
-                              className={`relative rounded-xl md:rounded-2xl p-3 md:p-4 transition-all duration-200 flex-1 group ${
+                              className={`flex flex-col ${
                                 isCurrentUserMessage
-                                  ? "bg-[#86c785] text-white rounded-br-md"
-                                  : "bg-[#fbf5ad] border border-gray-200 rounded-bl-md"
-                              }`}
+                                  ? "items-end"
+                                  : "items-start"
+                              } max-w-[85%] md:max-w-[75%]`}
                             >
-                              {/* Edit Mode */}
-                              {editingNoteId === note._id ? (
-                                <div className="space-y-2">
-                                  <textarea
-                                    ref={editTextareaRef}
-                                    value={editingText}
-                                    onChange={(e) =>
-                                      setEditingText(e.target.value)
-                                    }
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter" && !e.shiftKey) {
-                                        e.preventDefault();
-                                        handleUpdateNote(note._id);
-                                      }
-                                      if (e.key === "Escape") {
-                                        cancelEditingNote();
-                                      }
-                                    }}
-                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0E3554] text-gray-900 bg-white resize-none"
-                                    rows={3}
-                                    autoFocus
-                                  />
-                                  <div className="flex justify-between items-center">
-                                    <span className="text-xs text-gray-500">
-                                      You can edit within 2 minutes of posting
+                              {showHeader && !isCurrentUserMessage && (
+                                <div className="flex flex-col mb-1 px-1">
+                                  <div className="flex items-center gap-1 md:gap-2">
+                                    <span className="font-semibold text-gray-900 text-xs md:text-sm">
+                                      {note.author?.name ?? "Unknown"}
                                     </span>
-                                    <div className="flex gap-2">
-                                      <button
-                                        onClick={cancelEditingNote}
-                                        className="px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1"
-                                      >
-                                        <XIcon className="w-3 h-3" />
-                                        Cancel
-                                      </button>
-                                      <button
-                                        onClick={() =>
-                                          handleUpdateNote(note._id)
-                                        }
-                                        disabled={!editingText.trim()}
-                                        className="px-3 py-1 text-sm bg-[#0E3554] text-white rounded-lg hover:bg-[#0A2A42] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                                      >
-                                        <Check className="w-3 h-3" />
-                                        Update
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              ) : (
-                                <>
-                                  {note.text && (
-                                    <p className="text-sm leading-relaxed whitespace-pre-wrap mb-2 md:mb-3 break-words">
-                                      {note.text}
-                                    </p>
-                                  )}
-
-                                  {note.attachments &&
-                                    note.attachments.length > 0 && (
-                                      <div className="space-y-2 md:space-y-3">
-                                        {note.attachments.map(
-                                          (attachment, i) => {
-                                            const mime =
-                                              attachment.fileType ||
-                                              attachment.mimeType ||
-                                              "";
-                                            const extension =
-                                              attachment.fileName
-                                                ?.split(".")
-                                                .pop()
-                                                ?.toLowerCase();
-                                            const resourceType =
-                                              attachment.resourceType;
-
-                                            // PDF detection – must not be treated as image
-                                            const isPdf =
-                                              mime === "application/pdf" ||
-                                              extension === "pdf";
-
-                                            // AUDIO detection – supports mp3, wav, aac, m4a, ogg, flac, opus, etc.
-                                            const audioExtensions = [
-                                              "mp3",
-                                              "wav",
-                                              "aac",
-                                              "m4a",
-                                              "ogg",
-                                              "oga",
-                                              "flac",
-                                              "opus",
-                                            ];
-
-                                            const isAudio =
-                                              mime.startsWith("audio/") ||
-                                              audioExtensions.includes(
-                                                extension || ""
-                                              ) ||
-                                              resourceType === "audio";
-
-                                            // VIDEO – only when it's not audio
-                                            const isVideo =
-                                              !isAudio &&
-                                              (isVideoFile(mime) ||
-                                                resourceType === "video");
-
-                                            // IMAGE – ignore PDFs completely
-                                            const isImage =
-                                              !isPdf &&
-                                              (isImageFile(mime) ||
-                                                resourceType === "image" ||
-                                                [
-                                                  "jpg",
-                                                  "jpeg",
-                                                  "png",
-                                                  "gif",
-                                                  "webp",
-                                                  "bmp",
-                                                  "svg",
-                                                ].includes(extension || ""));
-
-                                            const IconComponent =
-                                              getFileIcon(mime);
-                                            const displayType =
-                                              getFileTypeDisplay(mime) ||
-                                              (extension
-                                                ? extension.toUpperCase()
-                                                : "File");
-
-                                            // IMAGE – clean preview, no GUID name
-                                            if (isImage) {
-                                              return (
-                                                <div
-                                                  key={i}
-                                                  className="rounded-lg overflow-hidden"
-                                                >
-                                                  <button
-                                                    onClick={() =>
-                                                      openMediaPreview(
-                                                        attachment.url,
-                                                        attachment.fileName,
-                                                        mime
-                                                      )
-                                                    }
-                                                    className="w-full text-left"
-                                                  >
-                                                    <div className="relative group">
-                                                      <img
-                                                        src={attachment.url}
-                                                        alt="Image"
-                                                        className="w-full h-auto max-h-52 md:max-h-72 object-cover rounded-lg"
-                                                        loading="lazy"
-                                                      />
-                                                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg" />
-                                                      <div className="absolute bottom-1.5 right-1.5 bg-black/70 text-white text-[10px] md:text-xs px-1.5 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        Tap to view
-                                                      </div>
-                                                    </div>
-                                                  </button>
-                                                  {attachment.size && (
-                                                    <div className="text-[10px] md:text-xs text-gray-500 mt-0.5 text-center">
-                                                      {formatFileSize(
-                                                        attachment.size
-                                                      )}
-                                                    </div>
-                                                  )}
-                                                </div>
-                                              );
-                                            }
-
-                                            // VIDEO – card with inline player
-                                            if (isVideo) {
-                                              return (
-                                                <div
-                                                  key={i}
-                                                  className={`rounded-xl border p-2.5 md:p-3 space-y-1.5 transition-all duration-200 ${
-                                                    isCurrentUserMessage
-                                                      ? "bg-white/70 border-emerald-200"
-                                                      : "bg-white/80 border-gray-200"
-                                                  }`}
-                                                >
-                                                  <div className="flex items-center gap-2">
-                                                    <div
-                                                      className={`p-1.5 rounded-lg flex-shrink-0 ${
-                                                        isCurrentUserMessage
-                                                          ? "bg-emerald-50"
-                                                          : "bg-indigo-50"
-                                                      }`}
-                                                    >
-                                                      <Video className="w-4 h-4 md:w-5 md:h-5 text-gray-800" />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                      <div className="flex items-center justify-between gap-2">
-                                                        <span className="text-[11px] md:text-sm font-semibold text-gray-900 truncate">
-                                                          {displayType ||
-                                                            "Video"}
-                                                        </span>
-                                                        <button
-                                                          onClick={() =>
-                                                            openMediaPreview(
-                                                              attachment.url,
-                                                              attachment.fileName,
-                                                              mime
-                                                            )
-                                                          }
-                                                          className="text-[10px] md:text-xs font-medium px-2 py-0.5 rounded-full border border-indigo-200 text-indigo-700 hover:bg-indigo-50 transition-colors"
-                                                        >
-                                                          Open
-                                                        </button>
-                                                      </div>
-                                                      <div className="flex items-center gap-2 mt-0.5">
-                                                        {attachment.size && (
-                                                          <span className="text-[10px] md:text-xs text-gray-500">
-                                                            {formatFileSize(
-                                                              attachment.size
-                                                            )}
-                                                          </span>
-                                                        )}
-                                                        <a
-                                                          href={attachment.url}
-                                                          target="_blank"
-                                                          rel="noreferrer"
-                                                          className="text-[10px] md:text-xs text-blue-600 hover:text-blue-800 font-medium"
-                                                          onClick={(e) =>
-                                                            e.stopPropagation()
-                                                          }
-                                                        >
-                                                          Open in new tab
-                                                        </a>
-                                                      </div>
-                                                    </div>
-                                                  </div>
-
-                                                  <div className="rounded-lg overflow-hidden bg-black">
-                                                    <video
-                                                      src={attachment.url}
-                                                      controls
-                                                      className="w-full max-h-40 md:max-h-52 rounded-lg"
-                                                    />
-                                                  </div>
-                                                </div>
-                                              );
-                                            }
-
-                                            // AUDIO (mp3 / wav / m4a / etc.) – compact audio layout
-                                            if (isAudio) {
-                                              return (
-                                                <div
-                                                  key={i}
-                                                  className={`rounded-xl border p-2 md:p-2.5 space-y-1.5 transition-all duration-200 ${
-                                                    isCurrentUserMessage
-                                                      ? "bg-emerald-50/60 border-emerald-200"
-                                                      : "bg-sky-50/70 border-sky-200"
-                                                  }`}
-                                                >
-                                                  <div className="flex items-center gap-2">
-                                                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.03)]">
-                                                      <Music className="w-3.5 h-3.5 text-gray-800" />
-                                                      <span className="text-[10px] font-semibold text-gray-900">
-                                                        Audio
-                                                      </span>
-                                                    </div>
-                                                    {attachment.size && (
-                                                      <span className="text-[10px] text-gray-500 truncate">
-                                                        {formatFileSize(
-                                                          attachment.size
-                                                        )}
-                                                      </span>
-                                                    )}
-                                                    <button
-                                                      onClick={() =>
-                                                        openMediaPreview(
-                                                          attachment.url,
-                                                          attachment.fileName,
-                                                          mime
-                                                        )
-                                                      }
-                                                      className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full border border-gray-200 text-gray-700 hover:bg-white transition-colors"
-                                                    >
-                                                      Open
-                                                    </button>
-                                                  </div>
-
-                                                  <div className="rounded-lg overflow-hidden bg-white/80 px-1.5 py-1">
-                                                    <audio
-                                                      src={attachment.url}
-                                                      controls
-                                                      className="w-full"
-                                                    />
-                                                  </div>
-                                                </div>
-                                              );
-                                            }
-
-                                            // DOC / PDF / OTHER – slim responsive row
-                                            return (
-                                              <div
-                                                key={i}
-                                                className={`flex items-center gap-2 md:gap-3 p-1.5 md:p-2.5 rounded-xl border transition-all duration-200 ${
-                                                  isCurrentUserMessage
-                                                    ? "bg-white/70 border-emerald-200"
-                                                    : "bg-white/80 border-gray-200"
-                                                }`}
-                                              >
-                                                <div
-                                                  className={`p-1.5 rounded-lg flex-shrink-0 ${
-                                                    isCurrentUserMessage
-                                                      ? "bg-emerald-50"
-                                                      : "bg-indigo-50"
-                                                  }`}
-                                                >
-                                                  <IconComponent className="w-4 h-4 md:w-5 md:h-5 text-gray-800" />
-                                                </div>
-
-                                                <div className="flex-1 min-w-0">
-                                                  <div className="flex items-center gap-2">
-                                                    <span className="text-[11px] md:text-sm font-semibold text-gray-900 truncate">
-                                                      {displayType}
-                                                    </span>
-                                                    <button
-                                                      onClick={() =>
-                                                        openMediaPreview(
-                                                          attachment.url,
-                                                          attachment.fileName,
-                                                          mime
-                                                        )
-                                                      }
-                                                      className="ml-auto text-[10px] md:text-xs font-medium px-2 py-0.5 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
-                                                    >
-                                                      View
-                                                    </button>
-                                                  </div>
-                                                  <div className="flex items-center gap-2 mt-0.5">
-                                                    {attachment.size && (
-                                                      <span className="text-[10px] md:text-xs text-gray-500">
-                                                        {formatFileSize(
-                                                          attachment.size
-                                                        )}
-                                                      </span>
-                                                    )}
-                                                    <a
-                                                      href={attachment.url}
-                                                      target="_blank"
-                                                      rel="noreferrer"
-                                                      className="text-[10px] md:text-xs text-blue-600 hover:text-blue-800 font-medium truncate"
-                                                      onClick={(e) =>
-                                                        e.stopPropagation()
-                                                      }
-                                                    >
-                                                      {attachment.fileName ||
-                                                        "Open in new tab"}
-                                                    </a>
-                                                  </div>
-                                                </div>
-                                              </div>
-                                            );
-                                          }
-                                        )}
-                                      </div>
+                                    {note.author?.role && (
+                                      <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded-full font-medium">
+                                        {formatUserRole(note.author.role)}
+                                      </span>
                                     )}
+                                    <span className="text-xs text-gray-400 hidden md:inline">
+                                      {formatMessageTime(note.createdAt)}
+                                    </span>
+                                  </div>
+                                  {/* For mobile: show timestamp below if needed */}
+                                  <span className="text-xs text-gray-400 md:hidden mt-0.5">
+                                    {formatMessageTime(note.createdAt)}
+                                  </span>
+                                </div>
+                              )}
 
-                                  {/* Location */}
-                                  {note.location && (
-                                    <div className="mt-2 pt-2 border-t border-white/20">
-                                      <button
-                                        onClick={() =>
-                                          openLocationInMaps(
-                                            note.location!.lat,
-                                            note.location!.lng
-                                          )
+                              <div className="flex gap-1 md:gap-2 items-start w-full">
+                                {isCurrentUserMessage && (
+                                  <span className="text-xs text-gray-400 mt-1 md:mt-2 shrink-0 min-w-[45px] md:min-w-[60px] text-right hidden md:block">
+                                    {formatMessageTime(note.createdAt)}
+                                  </span>
+                                )}
+
+                                <div
+                                  className={`relative rounded-xl md:rounded-2xl p-3 md:p-4 transition-all duration-200 flex-1 mb-1 group ${
+                                    isCurrentUserMessage
+                                      ? "bg-[#86c785] text-white rounded-br-md"
+                                      : "bg-[#fbf5ad] border border-gray-200 rounded-bl-md"
+                                  }`}
+                                >
+                                  {/* Edit Mode */}
+                                  {editingNoteId === note._id ? (
+                                    <div className="space-y-2">
+                                      <textarea
+                                        ref={editTextareaRef}
+                                        value={editingText}
+                                        onChange={(e) =>
+                                          setEditingText(e.target.value)
                                         }
-                                        className="flex items-center gap-1 md:gap-2 text-xs hover:opacity-80 transition-opacity w-full text-left"
-                                      >
-                                        <MapPin className="w-3 h-3 flex-shrink-0" />
-                                        <span className="truncate flex-1 text-xs">
-                                          {note.location.address ||
-                                            `Location: ${note.location.lat.toFixed(
-                                              4
-                                            )}, ${note.location.lng.toFixed(
-                                              4
-                                            )}`}
+                                        onKeyDown={(e) => {
+                                          if (
+                                            e.key === "Enter" &&
+                                            !e.shiftKey
+                                          ) {
+                                            e.preventDefault();
+                                            handleUpdateNote(note._id);
+                                          }
+                                          if (e.key === "Escape") {
+                                            cancelEditingNote();
+                                          }
+                                        }}
+                                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0E3554] text-gray-900 bg-white resize-none"
+                                        rows={3}
+                                        autoFocus
+                                      />
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-gray-500">
+                                          You can edit within 2 minutes of
+                                          posting
                                         </span>
-                                        <Navigation className="w-3 h-3 shrink-0" />
-                                      </button>
+                                        <div className="flex gap-2">
+                                          <button
+                                            onClick={cancelEditingNote}
+                                            className="px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1"
+                                          >
+                                            <XIcon className="w-3 h-3" />
+                                            Cancel
+                                          </button>
+                                          <button
+                                            onClick={() =>
+                                              handleUpdateNote(note._id)
+                                            }
+                                            disabled={!editingText.trim()}
+                                            className="px-3 py-1 text-sm bg-[#0E3554] text-white rounded-lg hover:bg-[#0A2A42] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                                          >
+                                            <Check className="w-3 h-3" />
+                                            Update
+                                          </button>
+                                        </div>
+                                      </div>
                                     </div>
-                                  )}
+                                  ) : (
+                                    <>
+                                      {note.text && (
+                                        <p className="text-sm leading-relaxed whitespace-pre-wrap mb-2 md:mb-3 wrap-break-word">
+                                          {note.text}
+                                        </p>
+                                      )}
 
-                                  {isCurrentUserMessage && !isDeleted && (
-                                    <div className="absolute -top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <button
-                                        onClick={() => startEditingNote(note)}
-                                        className="w-6 h-6 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
-                                        title="Edit message"
-                                      >
-                                        <Edit2 className="w-3 h-3 text-gray-700" />
-                                      </button>
-                                      <button
-                                        onClick={() =>
+                                      {note.attachments &&
+                                        note.attachments.length > 0 && (
+                                          <div className="space-y-2 md:space-y-3">
+                                            {note.attachments.map(
+                                              (attachment, i) => (
+                                                <AttachmentPreview
+                                                  key={i}
+                                                  attachment={attachment}
+                                                  isCurrentUserMessage={
+                                                    isCurrentUserMessage
+                                                  }
+                                                  onPreview={openMediaPreview}
+                                                />
+                                              )
+                                            )}
+                                          </div>
+                                        )}
+
+                                      {/* Location */}
+                                      {note.location && (
+                                        <div className="mt-2 pt-2 border-t border-white/20">
+                                          <button
+                                            onClick={() =>
+                                              openLocationInMaps(
+                                                note.location!.lat,
+                                                note.location!.lng
+                                              )
+                                            }
+                                            className="flex items-center gap-1 md:gap-2 text-xs hover:opacity-80 transition-opacity w-full text-left"
+                                          >
+                                            <MapPin className="w-3 h-3 shrink-0" />
+                                            <span className="truncate flex-1 text-xs">
+                                              {note.location.address ||
+                                                `Location: ${note.location.lat.toFixed(
+                                                  4
+                                                )}, ${note.location.lng.toFixed(
+                                                  4
+                                                )}`}
+                                            </span>
+                                            <Navigation className="w-3 h-3 shrink-0" />
+                                          </button>
+                                        </div>
+                                      )}
+
+                                      <MessageActions
+                                        note={note}
+                                        isCurrentUserMessage={
+                                          isCurrentUserMessage
+                                        }
+                                        isAdmin={isAdmin}
+                                        onEdit={() => startEditingNote(note)}
+                                        onDelete={() =>
                                           handleDeleteNote(note._id)
                                         }
-                                        disabled={deletingNoteId === note._id}
-                                        className="w-6 h-6 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-red-50 hover:border-red-300 transition-colors shadow-sm"
-                                        title="Delete message"
-                                      >
-                                        {deletingNoteId === note._id ? (
-                                          <div className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-                                        ) : (
-                                          <Trash2 className="w-3 h-3 text-red-600" />
-                                        )}
-                                      </button>
-                                    </div>
+                                        isDeleting={deletingNoteId === note._id}
+                                        isEditing={editingNoteId === note._id}
+                                      />
+                                    </>
                                   )}
-                                </>
-                              )}
-                            </div>
+                                </div>
 
-                            {!isCurrentUserMessage && (
-                              <span className="text-xs text-gray-400 mt-1 md:mt-2 flex-shrink-0 min-w-[45px] md:min-w-[60px] hidden md:block">
+                                {!isCurrentUserMessage && (
+                                  <span className="text-xs text-gray-400 mt-1 md:mt-2 shrink-0 min-w-[45px] md:min-w-[60px] hidden md:block">
+                                    {formatMessageTime(note.createdAt)}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Mobile timestamp below message */}
+                              <span className="text-xs text-gray-400 mt-1 px-1 md:hidden">
                                 {formatMessageTime(note.createdAt)}
                               </span>
+                            </div>
+
+                            {isCurrentUserMessage && (
+                              <div className="shrink-0 self-start">
+                                {getUserAvatar(note.author)}
+                              </div>
                             )}
                           </div>
-
-                          {/* Mobile timestamp below message */}
-                          <span className="text-xs text-gray-400 mt-1 px-1 md:hidden">
-                            {formatMessageTime(note.createdAt)}
-                          </span>
-                        </div>
-
-                        {isCurrentUserMessage && (
-                          <div className="flex-shrink-0 self-start">
-                            {getUserAvatar(note.author)}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
+                    </div>
+                  ))}
                   <div ref={messagesEndRef} />
                 </div>
               )}
@@ -1548,7 +1623,7 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
         </div>
 
         {/* Input Area */}
-        <div className="border-t border-gray-200 p-3 md:p-4 bg-white flex-shrink-0 safe-area-bottom">
+        <div className="border-t border-gray-200 p-3 md:p-4 bg-white shrink-0 safe-area-bottom">
           <div className="space-y-2 md:space-y-3">
             {/* Voice Recording Controls */}
             {recording.state === "recording" && recording.type === "audio" && (
@@ -1562,7 +1637,7 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
             {/* Location Input */}
             {(location.lat || location.isGettingLocation) && (
               <div className="flex items-center gap-2 md:gap-3 p-2 md:p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <MapPin className="w-3 h-3 md:w-4 md:h-4 text-blue-600 flex-shrink-0" />
+                <MapPin className="w-3 h-3 md:w-4 md:h-4 text-blue-600 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="text-xs md:text-sm text-blue-900 font-medium truncate">
                     {location.address || "Current location"}
@@ -1581,7 +1656,7 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
               </div>
             )}
 
-            {/* File Attachments – INLINE PREVIEW FOR VIDEO / AUDIO */}
+            {/* File Attachments */}
             {selectedFiles.length > 0 && (
               <div className="flex flex-wrap gap-2 p-2 md:p-3 bg-gray-50 rounded-lg border border-gray-200">
                 {selectedFiles.map((file, index) => {
@@ -1603,11 +1678,11 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
                             className="w-5 h-5 md:w-6 md:h-6 rounded object-cover"
                           />
                         ) : isVideo ? (
-                          <VideoIcon className="w-3 h-3 md:w-4 md:h-4 text-gray-500 flex-shrink-0" />
+                          <VideoIcon className="w-3 h-3 md:w-4 md:h-4 text-gray-500 shrink-0" />
                         ) : isAudio ? (
-                          <Mic className="w-3 h-3 md:w-4 md:h-4 text-gray-500 flex-shrink-0" />
+                          <Mic className="w-3 h-3 md:w-4 md:h-4 text-gray-500 shrink-0" />
                         ) : (
-                          <IconComponent className="w-3 h-3 md:w-4 md:h-4 text-gray-500 flex-shrink-0" />
+                          <IconComponent className="w-3 h-3 md:w-4 md:h-4 text-gray-500 shrink-0" />
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="text-xs font-medium text-gray-900 truncate">
@@ -1619,7 +1694,7 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
                         </div>
                         <button
                           onClick={() => removeSelectedFile(index)}
-                          className="text-gray-400 hover:text-red-500 p-0.5 md:p-1 rounded transition-colors flex-shrink-0"
+                          className="text-gray-400 hover:text-red-500 p-0.5 md:p-1 rounded transition-colors shrink-0"
                         >
                           <X className="w-2.5 h-2.5 md:w-3 md:h-3" />
                         </button>
@@ -1651,7 +1726,7 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
             {/* Input Row */}
             <div className="flex items-end gap-2 md:gap-3 w-full">
               {/* Action Menu Button */}
-              <div className="relative flex-shrink-0 self-center">
+              <div className="relative shrink-0 self-center">
                 <button
                   onClick={() => setShowActionMenu(!showActionMenu)}
                   disabled={recording.state === "recording"}
