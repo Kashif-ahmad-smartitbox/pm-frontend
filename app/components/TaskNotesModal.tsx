@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { createNote, getNotes } from "@/lib/api/tasks";
+import { createNote, getNotes, deleteNote, updateNote } from "@/lib/api/tasks";
 import {
   X,
   MessageSquare,
@@ -14,6 +14,10 @@ import {
   VideoIcon,
   Plus,
   MapPin,
+  Edit2,
+  Trash2,
+  Check,
+  X as XIcon,
 } from "lucide-react";
 import {
   DesktopHeader,
@@ -52,6 +56,9 @@ export interface Note {
   author: User;
   text: string;
   createdAt: string;
+  updatedAt?: string;
+  isDeleted?: boolean;
+  deletedAt?: string;
   attachments?: Attachment[];
   location?: {
     lat: number;
@@ -153,7 +160,10 @@ const useNotesPolling = (taskId: string | undefined, isOpen: boolean) => {
     try {
       const response = await getNotes(taskId);
       const notesData = (response as any)?.notes ?? [];
-      setNotes(notesData);
+
+      // Filter out deleted notes
+      const activeNotes = notesData.filter((note: Note) => !note.isDeleted);
+      setNotes(activeNotes);
       setError(null);
     } catch (err) {
       console.error("Failed to fetch notes:", err);
@@ -473,6 +483,8 @@ interface TaskNotesModalProps {
   isOpen: boolean;
   onClose: () => void;
   onNoteAdded?: (newNote: Note) => void;
+  onNoteUpdated?: (updatedNote: Note) => void;
+  onNoteDeleted?: (deletedNoteId: string) => void;
   currentUser: User;
 }
 
@@ -481,6 +493,8 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   isOpen,
   onClose,
   onNoteAdded,
+  onNoteUpdated,
+  onNoteDeleted,
   currentUser,
 }) => {
   const [newNote, setNewNote] = useState("");
@@ -503,6 +517,9 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isNearBottom, setIsNearBottom] = useState(true);
   const [userHasScrolled, setUserHasScrolled] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -510,6 +527,7 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   const textareaRef = useAutoResizeTextarea(newNote);
   const lastNoteCountRef = useRef<number>(0);
   const isInitialMountRef = useRef(true);
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [videoModalKey, setVideoModalKey] = useState(0);
 
@@ -798,6 +816,85 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
     }
   };
 
+  const startEditingNote = (note: Note) => {
+    const createdAt = new Date(note.createdAt);
+    const now = new Date();
+    const timeDiff = now.getTime() - createdAt.getTime();
+    const twoMinutes = 2 * 60 * 1000;
+
+    if (timeDiff > twoMinutes) {
+      alert("You can only edit messages within 2 minutes of posting.");
+      return;
+    }
+
+    setEditingNoteId(note._id);
+    setEditingText(note.text);
+    setTimeout(() => {
+      editTextareaRef.current?.focus();
+      editTextareaRef.current?.select();
+    }, 10);
+  };
+
+  const cancelEditingNote = () => {
+    setEditingNoteId(null);
+    setEditingText("");
+  };
+
+  const handleUpdateNote = async (noteId: string) => {
+    if (!task?._id || !editingText.trim()) return;
+
+    try {
+      const updatedNote = await updateNote(task._id, noteId, {
+        text: editingText.trim(),
+      });
+
+      if (onNoteUpdated) {
+        onNoteUpdated(updatedNote as Note);
+      }
+
+      // Stop polling temporarily while updating note
+      stopPolling();
+      await manualRefresh();
+      // Restart polling after successful update
+      startPolling();
+
+      setEditingNoteId(null);
+      setEditingText("");
+    } catch (err) {
+      console.error("Failed to update note:", err);
+      alert("Failed to update message. Please try again.");
+    }
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    if (!task?._id) return;
+
+    if (!window.confirm("Are you sure you want to delete this message?")) {
+      return;
+    }
+
+    setDeletingNoteId(noteId);
+
+    try {
+      await deleteNote(task._id, noteId);
+
+      if (onNoteDeleted) {
+        onNoteDeleted(noteId);
+      }
+
+      // Stop polling temporarily while deleting note
+      stopPolling();
+      await manualRefresh();
+      // Restart polling after successful deletion
+      startPolling();
+    } catch (err) {
+      console.error("Failed to delete note:", err);
+      alert("Failed to delete message. Please try again.");
+    } finally {
+      setDeletingNoteId(null);
+    }
+  };
+
   const openMediaPreview = (
     mediaUrl: string,
     fileName?: string,
@@ -936,6 +1033,7 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
                 <div className="space-y-3 md:space-y-6">
                   {notes.map((note, index) => {
                     const isCurrentUserMessage = isCurrentUser(note.author);
+                    const isDeleted = note.isDeleted;
                     const prev = notes[index - 1];
                     const showHeader =
                       index === 0 ||
@@ -944,6 +1042,16 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
                       new Date(note.createdAt).getTime() -
                         new Date(prev.createdAt).getTime() >
                         300000;
+
+                    if (isDeleted) {
+                      return (
+                        <div key={note._id} className="flex justify-center">
+                          <div className="px-4 py-2 bg-gray-100 rounded-full text-xs text-gray-500 italic">
+                            Message deleted
+                          </div>
+                        </div>
+                      );
+                    }
 
                     return (
                       <div
@@ -982,152 +1090,144 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
                             )}
 
                             <div
-                              className={`relative rounded-xl md:rounded-2xl p-3 md:p-4 transition-all duration-200 flex-1 ${
+                              className={`relative rounded-xl md:rounded-2xl p-3 md:p-4 transition-all duration-200 flex-1 group ${
                                 isCurrentUserMessage
                                   ? "bg-[#86c785] text-white rounded-br-md"
                                   : "bg-[#fbf5ad] border border-gray-200 rounded-bl-md"
                               }`}
                             >
-                              {note.text && (
-                                <p className="text-sm leading-relaxed whitespace-pre-wrap mb-2 md:mb-3 break-words">
-                                  {note.text}
-                                </p>
-                              )}
-
-                              {note.attachments &&
-                                note.attachments.length > 0 && (
-                                  <div className="space-y-2 md:space-y-3">
-                                    {note.attachments.map((attachment, i) => {
-                                      const mime =
-                                        attachment.fileType ||
-                                        attachment.mimeType ||
-                                        "";
-                                      const extension = attachment.fileName
-                                        ?.split(".")
-                                        .pop()
-                                        ?.toLowerCase();
-                                      const resourceType =
-                                        attachment.resourceType;
-
-                                      // PDF detection – must not be treated as image
-                                      const isPdf =
-                                        mime === "application/pdf" ||
-                                        extension === "pdf";
-
-                                      // AUDIO detection – supports mp3, wav, aac, m4a, ogg, flac, opus, etc.
-                                      const audioExtensions = [
-                                        "mp3",
-                                        "wav",
-                                        "aac",
-                                        "m4a",
-                                        "ogg",
-                                        "oga",
-                                        "flac",
-                                        "opus",
-                                      ];
-
-                                      const isAudio =
-                                        mime.startsWith("audio/") ||
-                                        audioExtensions.includes(
-                                          extension || ""
-                                        ) ||
-                                        resourceType === "audio";
-
-                                      // VIDEO – only when it's not audio
-                                      const isVideo =
-                                        !isAudio &&
-                                        (isVideoFile(mime) ||
-                                          resourceType === "video");
-
-                                      // IMAGE – ignore PDFs completely
-                                      const isImage =
-                                        !isPdf &&
-                                        (isImageFile(mime) ||
-                                          resourceType === "image" ||
-                                          [
-                                            "jpg",
-                                            "jpeg",
-                                            "png",
-                                            "gif",
-                                            "webp",
-                                            "bmp",
-                                            "svg",
-                                          ].includes(extension || ""));
-
-                                      const IconComponent = getFileIcon(mime);
-                                      const displayType =
-                                        getFileTypeDisplay(mime) ||
-                                        (extension
-                                          ? extension.toUpperCase()
-                                          : "File");
-
-                                      // IMAGE – clean preview, no GUID name
-                                      if (isImage) {
-                                        return (
-                                          <div
-                                            key={i}
-                                            className="rounded-lg overflow-hidden"
-                                          >
-                                            <button
-                                              onClick={() =>
-                                                openMediaPreview(
-                                                  attachment.url,
-                                                  attachment.fileName,
-                                                  mime
-                                                )
-                                              }
-                                              className="w-full text-left"
-                                            >
-                                              <div className="relative group">
-                                                <img
-                                                  src={attachment.url}
-                                                  alt="Image"
-                                                  className="w-full h-auto max-h-52 md:max-h-72 object-cover rounded-lg"
-                                                  loading="lazy"
-                                                />
-                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg" />
-                                                <div className="absolute bottom-1.5 right-1.5 bg-black/70 text-white text-[10px] md:text-xs px-1.5 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-                                                  Tap to view
-                                                </div>
-                                              </div>
-                                            </button>
-                                            {attachment.size && (
-                                              <div className="text-[10px] md:text-xs text-gray-500 mt-0.5 text-center">
-                                                {formatFileSize(
-                                                  attachment.size
-                                                )}
-                                              </div>
-                                            )}
-                                          </div>
-                                        );
+                              {/* Edit Mode */}
+                              {editingNoteId === note._id ? (
+                                <div className="space-y-2">
+                                  <textarea
+                                    ref={editTextareaRef}
+                                    value={editingText}
+                                    onChange={(e) =>
+                                      setEditingText(e.target.value)
+                                    }
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter" && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleUpdateNote(note._id);
                                       }
+                                      if (e.key === "Escape") {
+                                        cancelEditingNote();
+                                      }
+                                    }}
+                                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0E3554] text-gray-900 bg-white resize-none"
+                                    rows={3}
+                                    autoFocus
+                                  />
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-xs text-gray-500">
+                                      You can edit within 2 minutes of posting
+                                    </span>
+                                    <div className="flex gap-2">
+                                      <button
+                                        onClick={cancelEditingNote}
+                                        className="px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1"
+                                      >
+                                        <XIcon className="w-3 h-3" />
+                                        Cancel
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          handleUpdateNote(note._id)
+                                        }
+                                        disabled={!editingText.trim()}
+                                        className="px-3 py-1 text-sm bg-[#0E3554] text-white rounded-lg hover:bg-[#0A2A42] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                                      >
+                                        <Check className="w-3 h-3" />
+                                        Update
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  {note.text && (
+                                    <p className="text-sm leading-relaxed whitespace-pre-wrap mb-2 md:mb-3 break-words">
+                                      {note.text}
+                                    </p>
+                                  )}
 
-                                      // VIDEO – card with inline player
-                                      if (isVideo) {
-                                        return (
-                                          <div
-                                            key={i}
-                                            className={`rounded-xl border p-2.5 md:p-3 space-y-1.5 transition-all duration-200 ${
-                                              isCurrentUserMessage
-                                                ? "bg-white/70 border-emerald-200"
-                                                : "bg-white/80 border-gray-200"
-                                            }`}
-                                          >
-                                            <div className="flex items-center gap-2">
-                                              <div
-                                                className={`p-1.5 rounded-lg flex-shrink-0 ${
-                                                  isCurrentUserMessage
-                                                    ? "bg-emerald-50"
-                                                    : "bg-indigo-50"
-                                                }`}
-                                              >
-                                                <Video className="w-4 h-4 md:w-5 md:h-5 text-gray-800" />
-                                              </div>
-                                              <div className="flex-1 min-w-0">
-                                                <div className="flex items-center justify-between gap-2">
-                                                  <span className="text-[11px] md:text-sm font-semibold text-gray-900 truncate">
-                                                    {displayType || "Video"}
-                                                  </span>
+                                  {note.attachments &&
+                                    note.attachments.length > 0 && (
+                                      <div className="space-y-2 md:space-y-3">
+                                        {note.attachments.map(
+                                          (attachment, i) => {
+                                            const mime =
+                                              attachment.fileType ||
+                                              attachment.mimeType ||
+                                              "";
+                                            const extension =
+                                              attachment.fileName
+                                                ?.split(".")
+                                                .pop()
+                                                ?.toLowerCase();
+                                            const resourceType =
+                                              attachment.resourceType;
+
+                                            // PDF detection – must not be treated as image
+                                            const isPdf =
+                                              mime === "application/pdf" ||
+                                              extension === "pdf";
+
+                                            // AUDIO detection – supports mp3, wav, aac, m4a, ogg, flac, opus, etc.
+                                            const audioExtensions = [
+                                              "mp3",
+                                              "wav",
+                                              "aac",
+                                              "m4a",
+                                              "ogg",
+                                              "oga",
+                                              "flac",
+                                              "opus",
+                                            ];
+
+                                            const isAudio =
+                                              mime.startsWith("audio/") ||
+                                              audioExtensions.includes(
+                                                extension || ""
+                                              ) ||
+                                              resourceType === "audio";
+
+                                            // VIDEO – only when it's not audio
+                                            const isVideo =
+                                              !isAudio &&
+                                              (isVideoFile(mime) ||
+                                                resourceType === "video");
+
+                                            // IMAGE – ignore PDFs completely
+                                            const isImage =
+                                              !isPdf &&
+                                              (isImageFile(mime) ||
+                                                resourceType === "image" ||
+                                                [
+                                                  "jpg",
+                                                  "jpeg",
+                                                  "png",
+                                                  "gif",
+                                                  "webp",
+                                                  "bmp",
+                                                  "svg",
+                                                ].includes(extension || ""));
+
+                                            const IconComponent =
+                                              getFileIcon(mime);
+                                            const displayType =
+                                              getFileTypeDisplay(mime) ||
+                                              (extension
+                                                ? extension.toUpperCase()
+                                                : "File");
+
+                                            // IMAGE – clean preview, no GUID name
+                                            if (isImage) {
+                                              return (
+                                                <div
+                                                  key={i}
+                                                  className="rounded-lg overflow-hidden"
+                                                >
                                                   <button
                                                     onClick={() =>
                                                       openMediaPreview(
@@ -1136,183 +1236,275 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
                                                         mime
                                                       )
                                                     }
-                                                    className="text-[10px] md:text-xs font-medium px-2 py-0.5 rounded-full border border-indigo-200 text-indigo-700 hover:bg-indigo-50 transition-colors"
+                                                    className="w-full text-left"
                                                   >
-                                                    Open
+                                                    <div className="relative group">
+                                                      <img
+                                                        src={attachment.url}
+                                                        alt="Image"
+                                                        className="w-full h-auto max-h-52 md:max-h-72 object-cover rounded-lg"
+                                                        loading="lazy"
+                                                      />
+                                                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg" />
+                                                      <div className="absolute bottom-1.5 right-1.5 bg-black/70 text-white text-[10px] md:text-xs px-1.5 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        Tap to view
+                                                      </div>
+                                                    </div>
                                                   </button>
-                                                </div>
-                                                <div className="flex items-center gap-2 mt-0.5">
                                                   {attachment.size && (
-                                                    <span className="text-[10px] md:text-xs text-gray-500">
+                                                    <div className="text-[10px] md:text-xs text-gray-500 mt-0.5 text-center">
                                                       {formatFileSize(
                                                         attachment.size
                                                       )}
-                                                    </span>
+                                                    </div>
                                                   )}
-                                                  <a
-                                                    href={attachment.url}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="text-[10px] md:text-xs text-blue-600 hover:text-blue-800 font-medium"
-                                                    onClick={(e) =>
-                                                      e.stopPropagation()
-                                                    }
-                                                  >
-                                                    Open in new tab
-                                                  </a>
+                                                </div>
+                                              );
+                                            }
+
+                                            // VIDEO – card with inline player
+                                            if (isVideo) {
+                                              return (
+                                                <div
+                                                  key={i}
+                                                  className={`rounded-xl border p-2.5 md:p-3 space-y-1.5 transition-all duration-200 ${
+                                                    isCurrentUserMessage
+                                                      ? "bg-white/70 border-emerald-200"
+                                                      : "bg-white/80 border-gray-200"
+                                                  }`}
+                                                >
+                                                  <div className="flex items-center gap-2">
+                                                    <div
+                                                      className={`p-1.5 rounded-lg flex-shrink-0 ${
+                                                        isCurrentUserMessage
+                                                          ? "bg-emerald-50"
+                                                          : "bg-indigo-50"
+                                                      }`}
+                                                    >
+                                                      <Video className="w-4 h-4 md:w-5 md:h-5 text-gray-800" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                      <div className="flex items-center justify-between gap-2">
+                                                        <span className="text-[11px] md:text-sm font-semibold text-gray-900 truncate">
+                                                          {displayType ||
+                                                            "Video"}
+                                                        </span>
+                                                        <button
+                                                          onClick={() =>
+                                                            openMediaPreview(
+                                                              attachment.url,
+                                                              attachment.fileName,
+                                                              mime
+                                                            )
+                                                          }
+                                                          className="text-[10px] md:text-xs font-medium px-2 py-0.5 rounded-full border border-indigo-200 text-indigo-700 hover:bg-indigo-50 transition-colors"
+                                                        >
+                                                          Open
+                                                        </button>
+                                                      </div>
+                                                      <div className="flex items-center gap-2 mt-0.5">
+                                                        {attachment.size && (
+                                                          <span className="text-[10px] md:text-xs text-gray-500">
+                                                            {formatFileSize(
+                                                              attachment.size
+                                                            )}
+                                                          </span>
+                                                        )}
+                                                        <a
+                                                          href={attachment.url}
+                                                          target="_blank"
+                                                          rel="noreferrer"
+                                                          className="text-[10px] md:text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                                          onClick={(e) =>
+                                                            e.stopPropagation()
+                                                          }
+                                                        >
+                                                          Open in new tab
+                                                        </a>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+
+                                                  <div className="rounded-lg overflow-hidden bg-black">
+                                                    <video
+                                                      src={attachment.url}
+                                                      controls
+                                                      className="w-full max-h-40 md:max-h-52 rounded-lg"
+                                                    />
+                                                  </div>
+                                                </div>
+                                              );
+                                            }
+
+                                            // AUDIO (mp3 / wav / m4a / etc.) – compact audio layout
+                                            if (isAudio) {
+                                              return (
+                                                <div
+                                                  key={i}
+                                                  className={`rounded-xl border p-2 md:p-2.5 space-y-1.5 transition-all duration-200 ${
+                                                    isCurrentUserMessage
+                                                      ? "bg-emerald-50/60 border-emerald-200"
+                                                      : "bg-sky-50/70 border-sky-200"
+                                                  }`}
+                                                >
+                                                  <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.03)]">
+                                                      <Music className="w-3.5 h-3.5 text-gray-800" />
+                                                      <span className="text-[10px] font-semibold text-gray-900">
+                                                        Audio
+                                                      </span>
+                                                    </div>
+                                                    {attachment.size && (
+                                                      <span className="text-[10px] text-gray-500 truncate">
+                                                        {formatFileSize(
+                                                          attachment.size
+                                                        )}
+                                                      </span>
+                                                    )}
+                                                    <button
+                                                      onClick={() =>
+                                                        openMediaPreview(
+                                                          attachment.url,
+                                                          attachment.fileName,
+                                                          mime
+                                                        )
+                                                      }
+                                                      className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full border border-gray-200 text-gray-700 hover:bg-white transition-colors"
+                                                    >
+                                                      Open
+                                                    </button>
+                                                  </div>
+
+                                                  <div className="rounded-lg overflow-hidden bg-white/80 px-1.5 py-1">
+                                                    <audio
+                                                      src={attachment.url}
+                                                      controls
+                                                      className="w-full"
+                                                    />
+                                                  </div>
+                                                </div>
+                                              );
+                                            }
+
+                                            // DOC / PDF / OTHER – slim responsive row
+                                            return (
+                                              <div
+                                                key={i}
+                                                className={`flex items-center gap-2 md:gap-3 p-1.5 md:p-2.5 rounded-xl border transition-all duration-200 ${
+                                                  isCurrentUserMessage
+                                                    ? "bg-white/70 border-emerald-200"
+                                                    : "bg-white/80 border-gray-200"
+                                                }`}
+                                              >
+                                                <div
+                                                  className={`p-1.5 rounded-lg flex-shrink-0 ${
+                                                    isCurrentUserMessage
+                                                      ? "bg-emerald-50"
+                                                      : "bg-indigo-50"
+                                                  }`}
+                                                >
+                                                  <IconComponent className="w-4 h-4 md:w-5 md:h-5 text-gray-800" />
+                                                </div>
+
+                                                <div className="flex-1 min-w-0">
+                                                  <div className="flex items-center gap-2">
+                                                    <span className="text-[11px] md:text-sm font-semibold text-gray-900 truncate">
+                                                      {displayType}
+                                                    </span>
+                                                    <button
+                                                      onClick={() =>
+                                                        openMediaPreview(
+                                                          attachment.url,
+                                                          attachment.fileName,
+                                                          mime
+                                                        )
+                                                      }
+                                                      className="ml-auto text-[10px] md:text-xs font-medium px-2 py-0.5 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+                                                    >
+                                                      View
+                                                    </button>
+                                                  </div>
+                                                  <div className="flex items-center gap-2 mt-0.5">
+                                                    {attachment.size && (
+                                                      <span className="text-[10px] md:text-xs text-gray-500">
+                                                        {formatFileSize(
+                                                          attachment.size
+                                                        )}
+                                                      </span>
+                                                    )}
+                                                    <a
+                                                      href={attachment.url}
+                                                      target="_blank"
+                                                      rel="noreferrer"
+                                                      className="text-[10px] md:text-xs text-blue-600 hover:text-blue-800 font-medium truncate"
+                                                      onClick={(e) =>
+                                                        e.stopPropagation()
+                                                      }
+                                                    >
+                                                      {attachment.fileName ||
+                                                        "Open in new tab"}
+                                                    </a>
+                                                  </div>
                                                 </div>
                                               </div>
-                                            </div>
+                                            );
+                                          }
+                                        )}
+                                      </div>
+                                    )}
 
-                                            <div className="rounded-lg overflow-hidden bg-black">
-                                              <video
-                                                src={attachment.url}
-                                                controls
-                                                className="w-full max-h-40 md:max-h-52 rounded-lg"
-                                              />
-                                            </div>
-                                          </div>
-                                        );
-                                      }
+                                  {/* Location */}
+                                  {note.location && (
+                                    <div className="mt-2 pt-2 border-t border-white/20">
+                                      <button
+                                        onClick={() =>
+                                          openLocationInMaps(
+                                            note.location!.lat,
+                                            note.location!.lng
+                                          )
+                                        }
+                                        className="flex items-center gap-1 md:gap-2 text-xs hover:opacity-80 transition-opacity w-full text-left"
+                                      >
+                                        <MapPin className="w-3 h-3 flex-shrink-0" />
+                                        <span className="truncate flex-1 text-xs">
+                                          {note.location.address ||
+                                            `Location: ${note.location.lat.toFixed(
+                                              4
+                                            )}, ${note.location.lng.toFixed(
+                                              4
+                                            )}`}
+                                        </span>
+                                        <Navigation className="w-3 h-3 shrink-0" />
+                                      </button>
+                                    </div>
+                                  )}
 
-                                      // AUDIO (mp3 / wav / m4a / etc.) – compact audio layout
-                                      if (isAudio) {
-                                        return (
-                                          <div
-                                            key={i}
-                                            className={`rounded-xl border p-2 md:p-2.5 space-y-1.5 transition-all duration-200 ${
-                                              isCurrentUserMessage
-                                                ? "bg-emerald-50/60 border-emerald-200"
-                                                : "bg-sky-50/70 border-sky-200"
-                                            }`}
-                                          >
-                                            <div className="flex items-center gap-2">
-                                              <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.03)]">
-                                                <Music className="w-3.5 h-3.5 text-gray-800" />
-                                                <span className="text-[10px] font-semibold text-gray-900">
-                                                  Audio
-                                                </span>
-                                              </div>
-                                              {attachment.size && (
-                                                <span className="text-[10px] text-gray-500 truncate">
-                                                  {formatFileSize(
-                                                    attachment.size
-                                                  )}
-                                                </span>
-                                              )}
-                                              <button
-                                                onClick={() =>
-                                                  openMediaPreview(
-                                                    attachment.url,
-                                                    attachment.fileName,
-                                                    mime
-                                                  )
-                                                }
-                                                className="ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full border border-gray-200 text-gray-700 hover:bg-white transition-colors"
-                                              >
-                                                Open
-                                              </button>
-                                            </div>
-
-                                            <div className="rounded-lg overflow-hidden bg-white/80 px-1.5 py-1">
-                                              <audio
-                                                src={attachment.url}
-                                                controls
-                                                className="w-full"
-                                              />
-                                            </div>
-                                          </div>
-                                        );
-                                      }
-
-                                      // DOC / PDF / OTHER – slim responsive row
-                                      return (
-                                        <div
-                                          key={i}
-                                          className={`flex items-center gap-2 md:gap-3 p-1.5 md:p-2.5 rounded-xl border transition-all duration-200 ${
-                                            isCurrentUserMessage
-                                              ? "bg-white/70 border-emerald-200"
-                                              : "bg-white/80 border-gray-200"
-                                          }`}
-                                        >
-                                          <div
-                                            className={`p-1.5 rounded-lg flex-shrink-0 ${
-                                              isCurrentUserMessage
-                                                ? "bg-emerald-50"
-                                                : "bg-indigo-50"
-                                            }`}
-                                          >
-                                            <IconComponent className="w-4 h-4 md:w-5 md:h-5 text-gray-800" />
-                                          </div>
-
-                                          <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                              <span className="text-[11px] md:text-sm font-semibold text-gray-900 truncate">
-                                                {displayType}
-                                              </span>
-                                              <button
-                                                onClick={() =>
-                                                  openMediaPreview(
-                                                    attachment.url,
-                                                    attachment.fileName,
-                                                    mime
-                                                  )
-                                                }
-                                                className="ml-auto text-[10px] md:text-xs font-medium px-2 py-0.5 rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
-                                              >
-                                                View
-                                              </button>
-                                            </div>
-                                            <div className="flex items-center gap-2 mt-0.5">
-                                              {attachment.size && (
-                                                <span className="text-[10px] md:text-xs text-gray-500">
-                                                  {formatFileSize(
-                                                    attachment.size
-                                                  )}
-                                                </span>
-                                              )}
-                                              <a
-                                                href={attachment.url}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="text-[10px] md:text-xs text-blue-600 hover:text-blue-800 font-medium truncate"
-                                                onClick={(e) =>
-                                                  e.stopPropagation()
-                                                }
-                                              >
-                                                {attachment.fileName ||
-                                                  "Open in new tab"}
-                                              </a>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-
-                              {/* Location */}
-                              {note.location && (
-                                <div className="mt-2 pt-2 border-t border-white/20">
-                                  <button
-                                    onClick={() =>
-                                      openLocationInMaps(
-                                        note.location!.lat,
-                                        note.location!.lng
-                                      )
-                                    }
-                                    className="flex items-center gap-1 md:gap-2 text-xs hover:opacity-80 transition-opacity w-full text-left"
-                                  >
-                                    <MapPin className="w-3 h-3 flex-shrink-0" />
-                                    <span className="truncate flex-1 text-xs">
-                                      {note.location.address ||
-                                        `Location: ${note.location.lat.toFixed(
-                                          4
-                                        )}, ${note.location.lng.toFixed(4)}`}
-                                    </span>
-                                    <Navigation className="w-3 h-3 flex-shrink-0" />
-                                  </button>
-                                </div>
+                                  {isCurrentUserMessage && !isDeleted && (
+                                    <div className="absolute -top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <button
+                                        onClick={() => startEditingNote(note)}
+                                        className="w-6 h-6 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
+                                        title="Edit message"
+                                      >
+                                        <Edit2 className="w-3 h-3 text-gray-700" />
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          handleDeleteNote(note._id)
+                                        }
+                                        disabled={deletingNoteId === note._id}
+                                        className="w-6 h-6 bg-white border border-gray-300 rounded-full flex items-center justify-center hover:bg-red-50 hover:border-red-300 transition-colors shadow-sm"
+                                        title="Delete message"
+                                      >
+                                        {deletingNoteId === note._id ? (
+                                          <div className="w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                                        ) : (
+                                          <Trash2 className="w-3 h-3 text-red-600" />
+                                        )}
+                                      </button>
+                                    </div>
+                                  )}
+                                </>
                               )}
                             </div>
 

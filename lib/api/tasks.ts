@@ -109,6 +109,30 @@ export function updateTask(taskId: string, data: any) {
 
 /**
  * -----------------------------
+ *  UPDATE NOTE (edit message)
+ * -----------------------------
+ * data example: { text: "updated message" }
+ */
+export function updateNote(taskId: string, noteId: string, data: any) {
+  return request(`/api/tasks/${taskId}/notes/${noteId}`, {
+    method: "PATCH",
+    body: data,
+  });
+}
+
+/**
+ * -----------------------------
+ *  DELETE NOTE (soft delete)
+ * -----------------------------
+ */
+export function deleteNote(taskId: string, noteId: string) {
+  return request(`/api/tasks/${taskId}/notes/${noteId}`, {
+    method: "DELETE",
+  });
+}
+
+/**
+ * -----------------------------
  *  DELETE TASK
  * -----------------------------
  */
