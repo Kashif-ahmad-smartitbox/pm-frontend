@@ -16,7 +16,7 @@ import TaskCard from "@/components/common/TaskCard";
 import TaskNotesModal from "../TaskNotesModal";
 import { useAuth } from "@/app/context/AuthContext";
 import ConfirmationModal from "../ConfirmationModal";
-import { getTaskMe, updateTask } from "@/lib/api/tasks";
+import { getTaskMe, updateTask, getTask } from "@/lib/api/tasks";
 import CommonHeader from "../common/CommonHeader";
 import StatsSection from "../common/StatsSection";
 
@@ -459,6 +459,21 @@ export default function TeamMemberDashboard() {
   );
   const handleCloseModal = useCallback(() => setSelectedTask(null), []);
 
+  // Handle notification task click - fetch task and open modal
+  const handleNotificationTaskClick = useCallback(
+    async (taskId: string, projectId?: string, taskName?: string) => {
+      try {
+        const task = await getTask(taskId);
+        if (task) {
+          setSelectedTask(task);
+        }
+      } catch (error) {
+        console.error("Failed to fetch task:", error);
+      }
+    },
+    []
+  );
+
   const handleStatusChangeClick = useCallback(
     (taskId: string, newStatus: TaskStatus, taskTitle: string) => {
       setConfirmationModal({
@@ -595,6 +610,7 @@ export default function TeamMemberDashboard() {
         title="SKC Project Management"
         subtitle="Team Member Dashboard"
         showNotifications
+        onTaskClick={handleNotificationTaskClick}
       />
 
       <main className="space-y-4">

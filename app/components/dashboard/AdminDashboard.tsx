@@ -120,6 +120,8 @@ interface TaskFilters {
   priority: TaskPriority | "all";
   assignee: string | "all";
   dueDate: "all" | "today" | "week" | "overdue";
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 interface PaginationState {
