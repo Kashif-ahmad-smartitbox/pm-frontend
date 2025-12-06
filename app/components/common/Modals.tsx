@@ -124,6 +124,7 @@ interface ModalsProps {
   currentUser: User;
   onTaskClick?: (task: Task) => void;
   onChatClick?: (task: Task) => void;
+  onProjectEdit?: (project: any) => void;
   isAdmin: boolean;
 }
 
@@ -163,6 +164,7 @@ const Modals: React.FC<ModalsProps> = ({
   currentUser,
   onTaskClick,
   onChatClick,
+  onProjectEdit,
   isAdmin,
 }) => {
   const handleTaskClick = (task: Task) => {
@@ -246,6 +248,8 @@ const Modals: React.FC<ModalsProps> = ({
         onClose={onCloseReportsModal}
         onTaskClick={onTaskClick as any}
         onChatClick={onChatClick as any}
+        onProjectEdit={onProjectEdit as any}
+        currentUserRole={currentUser?.role}
       />
 
       <ConfirmationModal

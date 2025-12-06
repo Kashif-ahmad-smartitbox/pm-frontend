@@ -26,6 +26,7 @@ interface TaskCardProps {
     newStatus: "todo" | "in_progress" | "done",
     taskTitle: string
   ) => void;
+  userRole?: string;
 }
 
 // Helper function to check if task was created within last 24 hours
@@ -105,6 +106,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   task,
   onTaskClick,
   onStatusChange,
+  userRole,
 }) => {
   const convertTaskForModal = (task: TaskWithProjectDetails) => ({
     ...task,
@@ -173,8 +175,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
     );
   };
 
-  // Hide chat button when pending approval
-  const showChatButton = task.status !== "todo" && task.approvalStatus !== "pending";
+  // Hide chat button when pending approval or when task is done for team members
+  const showChatButton = task.status !== "todo" && 
+    task.approvalStatus !== "pending" && 
+    !(userRole === "team_member" && task.status === "done");
 
   return (
     <div

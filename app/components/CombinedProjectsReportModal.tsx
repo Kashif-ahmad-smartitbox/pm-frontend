@@ -38,6 +38,8 @@ interface CombinedProjectsReportModalProps {
   onClose: () => void;
   onTaskClick?: (task: ReportTask) => void;
   onChatClick?: (task: ReportTask) => void;
+  onProjectEdit?: (project: ReportProject) => void;
+  currentUserRole?: string;
 }
 
 // Helper functions for styling
@@ -158,7 +160,7 @@ interface SortConfig {
 
 const CombinedProjectsReportModal: React.FC<
   CombinedProjectsReportModalProps
-> = ({ isOpen, onClose, onTaskClick, onChatClick }) => {
+> = ({ isOpen, onClose, onTaskClick, onChatClick, onProjectEdit, currentUserRole }) => {
   // State
   const [reportData, setReportData] =
     useState<CombinedProjectsReportResponse | null>(null);
@@ -1108,15 +1110,14 @@ const CombinedProjectsReportModal: React.FC<
                                     )}
                                   </button>
                                 )}
-                                {onTaskClick && hasTasks && (
+                                {onProjectEdit && (
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      // Trigger task click for the first task (opens edit modal)
-                                      handleTaskClick(project.tasks[0]);
+                                      onProjectEdit(project);
                                     }}
                                     className="p-1 text-gray-600 hover:text-[#1CC2B1] hover:bg-[#EFFFFA] rounded transition-colors"
-                                    title="Edit First Task"
+                                    title="Edit Project"
                                   >
                                     <Edit className="w-4 h-4" />
                                   </button>
@@ -1223,29 +1224,37 @@ const CombinedProjectsReportModal: React.FC<
                                             </td>
                                             <td className="p-2">
                                               <div className="flex items-center gap-1">
-                                                {onTaskClick && (
-                                                  <button
-                                                    onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      handleTaskClick(task);
-                                                    }}
-                                                    className="p-1 text-slate-600 hover:text-[#1CC2B1] hover:bg-[#EFFFFA] rounded transition-colors"
-                                                    title="Edit Task"
-                                                  >
-                                                    <Edit className="w-3.5 h-3.5" />
-                                                  </button>
-                                                )}
                                                 {onChatClick && (
-                                                  <button
-                                                    onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      handleChatClick(task);
-                                                    }}
-                                                    className="p-1 text-slate-600 hover:text-[#1CC2B1] hover:bg-[#EFFFFA] rounded transition-colors"
-                                                    title="Open Chat"
-                                                  >
-                                                    <MessageSquare className="w-3.5 h-3.5" />
-                                                  </button>
+                                                  currentUserRole === "team_member" ? (
+                                                    task.status !== "done" && (
+                                                      <button
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          handleChatClick(task);
+                                                        }}
+                                                        className="p-1 text-slate-600 hover:text-[#1CC2B1] hover:bg-[#EFFFFA] rounded transition-colors"
+                                                        title="Open Chat"
+                                                      >
+                                                        <MessageSquare className="w-3.5 h-3.5" />
+                                                      </button>
+                                                    )
+                                                  ) : (
+                                                    <button
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleChatClick(task);
+                                                      }}
+                                                      className="p-1 text-slate-600 hover:text-[#1CC2B1] hover:bg-[#EFFFFA] rounded transition-colors"
+                                                      title="Open Chat"
+                                                    >
+                                                      <MessageSquare className="w-3.5 h-3.5" />
+                                                    </button>
+                                                  )
+                                                )}
+                                                {task.status === "done" && currentUserRole === "team_member" && (
+                                                  <span className="text-xs text-green-600 font-medium px-2 py-1 bg-green-50 rounded">
+                                                    Done
+                                                  </span>
                                                 )}
                                               </div>
                                             </td>

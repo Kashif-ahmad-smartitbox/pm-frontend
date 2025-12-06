@@ -709,6 +709,7 @@ export default function TeamMemberDashboard() {
                       task={task}
                       onTaskClick={handleTaskClick}
                       onStatusChange={handleStatusChangeClick}
+                      userRole="team_member"
                     />
                   ))}
                 </div>

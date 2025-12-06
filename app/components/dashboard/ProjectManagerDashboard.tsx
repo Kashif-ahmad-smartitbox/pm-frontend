@@ -809,10 +809,18 @@ export default function ProjectManagerDashboard() {
     };
   }, []);
 
-  // Project actions for Project Manager (read-only for projects)
+  // Project actions for Project Manager - main view
   const handleEditProject = useCallback((project: Project) => {
-    // Project managers can't edit projects, only view them
+    // Project managers can view project details  
     console.log("View project details:", project);
+    // You can add navigation or open a view/edit modal here
+  }, []);
+
+  // Project actions for Project Manager (read-only for projects from reports)
+  const handleEditProjectFromReport = useCallback((project: Project) => {
+    // Project managers can view project details but can't edit from reports
+    // They can only edit from the main project view
+    console.log("View project details from report:", project);
   }, []);
 
   const handleDeleteProject = useCallback((projectId: string) => {
@@ -1354,6 +1362,8 @@ const Modals: React.FC<ModalsProps> = ({
         onClose={onCloseReportsModal}
         onTaskClick={onTaskClick as any}
         onChatClick={onChatClick as any}
+        onProjectEdit={handleEditProjectFromReport as any}
+        currentUserRole={currentUser?.role}
       />
 
       <ConfirmationModal

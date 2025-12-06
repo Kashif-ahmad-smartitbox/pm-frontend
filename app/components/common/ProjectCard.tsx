@@ -335,7 +335,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
               }`}
             >
               <span
-                className={`text-[10px] font-bold ${
+                className={`text-sm font-bold ${
                   overdue ? "text-red-800" : "text-[#0E3554]"
                 }`}
               >
@@ -384,7 +384,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
                 }`}
               ></div>
               <span
-                className={`text-[10px] font-semibold ${
+                className={`text-sm font-semibold ${
                   overdue ? "text-red-800" : "text-slate-700"
                 }`}
               >
@@ -398,7 +398,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
                 }`}
               ></div>
               <span
-                className={`text-[10px] font-semibold ${
+                className={`text-sm font-semibold ${
                   overdue ? "text-red-800" : "text-slate-700"
                 }`}
               >
@@ -412,7 +412,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
                 }`}
               ></div>
               <span
-                className={`text-[10px] font-semibold ${
+                className={`text-sm font-semibold ${
                   overdue ? "text-green-700" : "text-slate-700"
                 }`}
               >

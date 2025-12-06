@@ -1179,6 +1179,7 @@ export default function AdminDashboard() {
         onChatClick={(task) => {
           setSelectedTask(task);
         }}
+        onProjectEdit={handleEditProject}
       />
     </div>
   );

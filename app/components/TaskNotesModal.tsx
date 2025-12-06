@@ -1308,7 +1308,7 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   return (
     <>
       {/* Main Modal - Full Screen */}
-      <div className="fixed inset-0 bg-white flex flex-col z-50 safe-area">
+      <div className="fixed inset-0 bg-white flex flex-col z-60 safe-area">
         {/* Responsive Header */}
         <div className="md:hidden">
           <MobileHeader
