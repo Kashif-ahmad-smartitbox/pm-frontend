@@ -1362,7 +1362,6 @@ const Modals: React.FC<ModalsProps> = ({
         onClose={onCloseReportsModal}
         onTaskClick={onTaskClick as any}
         onChatClick={onChatClick as any}
-        onProjectEdit={handleEditProjectFromReport as any}
         currentUserRole={currentUser?.role}
       />
 
