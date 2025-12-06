@@ -7,6 +7,7 @@ import {
   Info,
   CheckCheck,
   RefreshCw,
+  ExternalLink,
 } from "lucide-react";
 import {
   getNotifications,
@@ -36,6 +37,7 @@ interface Notification {
 interface NotificationPanelProps {
   onClose?: () => void;
   pageSize?: number;
+  onTaskClick?: (taskId: string, projectId?: string, taskName?: string) => void;
 }
 
 const NOTIFICATION_CONFIG = {
@@ -61,7 +63,7 @@ const NOTIFICATION_CONFIG = {
   },
 } as const;
 
-function NotificationPanel({ onClose, pageSize = 50 }: NotificationPanelProps) {
+function NotificationPanel({ onClose, pageSize = 50, onTaskClick }: NotificationPanelProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
@@ -376,9 +378,25 @@ function NotificationPanel({ onClose, pageSize = 50 }: NotificationPanelProps) {
                             </p>
 
                             {!notification.read && (
-                              <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1"></div>
+                              <div className="w-2 h-2 bg-blue-500 rounded-full shrink-0 mt-1"></div>
                             )}
                           </div>
+
+                          {/* Task Name - Clickable */}
+                          {notification.contextType === "task" && (notification.data?.taskTitle || notification.data?.taskName) && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onTaskClick && notification.contextId) {
+                                  onTaskClick(notification.contextId, notification.data.projectId, notification.data.taskTitle || notification.data.taskName);
+                                }
+                              }}
+                              className="flex items-center gap-1 text-xs text-[#1CC2B1] hover:text-[#0E3554] font-medium mb-1 transition-colors"
+                            >
+                              <span className="truncate max-w-[200px]">📋 {notification.data.taskTitle || notification.data.taskName}</span>
+                              <ExternalLink className="w-3 h-3 shrink-0" />
+                            </button>
+                          )}
 
                           {/* friendly message */}
                           {notification.data?.message ? (
@@ -403,7 +421,7 @@ function NotificationPanel({ onClose, pageSize = 50 }: NotificationPanelProps) {
                               </span>
                               {actorEmail && (
                                 <span
-                                  className="text-[11px] text-gray-400 truncate max-w-[10rem]"
+                                  className="text-[11px] text-gray-400 truncate max-w-40"
                                   title={actorEmail}
                                 >
                                   {actorEmail}

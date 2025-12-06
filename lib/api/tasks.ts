@@ -55,7 +55,7 @@ export const getAllTasks = async (
  * -----------------------------
  */
 export function getTask(taskId: string) {
-  return request(`/api/tasks/${taskId}`);
+  return request(`/api/tasks/${taskId}/notification`);
 }
 
 /**
@@ -104,6 +104,17 @@ export function updateTask(taskId: string, data: any) {
   return request(`/api/tasks/${taskId}`, {
     method: "PATCH",
     body: data,
+  });
+}
+
+/**
+ * -----------------------------
+ *  APPROVE TASK (Admin/PM only)
+ * -----------------------------
+ */
+export function approveTask(taskId: string) {
+  return request(`/api/tasks/${taskId}/approve`, {
+    method: "PATCH",
   });
 }
 

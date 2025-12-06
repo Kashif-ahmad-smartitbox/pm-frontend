@@ -8,6 +8,8 @@ import {
   Users,
   Clock,
   AlertTriangle,
+  CheckCircle,
+  Loader2,
 } from "lucide-react";
 
 export type TaskStatus = "todo" | "in_progress" | "done";
@@ -27,6 +29,8 @@ export interface Note {
   createdAt: string;
 }
 
+export type ApprovalStatus = "none" | "pending" | "approved";
+
 export interface Task {
   _id: string;
   title: string;
@@ -35,6 +39,7 @@ export interface Task {
   assignees: User[];
   createdBy: User;
   status: TaskStatus;
+  approvalStatus?: ApprovalStatus;
   dueDate: string;
   priority: TaskPriority;
   notes: Note[];
@@ -121,11 +126,13 @@ const TaskCard2 = ({
   onTaskClick,
   onEditTask,
   onDeleteTask,
+  onApproveTask,
 }: {
   task: Task;
   onTaskClick: (task: Task) => void;
   onEditTask: (task: Task) => void;
   onDeleteTask: (task: Task) => void;
+  onApproveTask?: (task: Task) => void;
 }) => {
   const isNew = task.createdAt && isNewTask(task.createdAt);
   const overdue = isTaskOverdue(task);
@@ -167,30 +174,39 @@ const TaskCard2 = ({
           </div>
         </div>
         <div className="flex items-center gap-1">
+          {/* Approval Pending Badge */}
+          {task.approvalStatus === "pending" && (
+            <span className="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200 flex items-center gap-1">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Approval Pending
+            </span>
+          )}
           {/* New Badge - Next to status */}
-          {isNew && (
+          {isNew && task.approvalStatus !== "pending" && (
             <div className="bg-green-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full border border-white shadow-sm flex items-center gap-0.5">
               <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
               NEW
             </div>
           )}
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${
-              overdue
-                ? "bg-red-100 text-red-700 border border-red-200"
-                : task.status === "todo"
-                ? "bg-slate-100 text-slate-700"
+          {task.approvalStatus !== "pending" && (
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${
+                overdue
+                  ? "bg-red-100 text-red-700 border border-red-200"
+                  : task.status === "todo"
+                  ? "bg-slate-100 text-slate-700"
+                  : task.status === "in_progress"
+                  ? "bg-[#E0FFFA] text-[#0E3554]"
+                  : "bg-[#E1F3F0] text-[#1CC2B1]"
+              }`}
+            >
+              {task.status === "todo"
+                ? "To Do"
                 : task.status === "in_progress"
-                ? "bg-[#E0FFFA] text-[#0E3554]"
-                : "bg-[#E1F3F0] text-[#1CC2B1]"
-            }`}
-          >
-            {task.status === "todo"
-              ? "To Do"
-              : task.status === "in_progress"
-              ? "In Progress"
-              : "Done"}
-          </span>
+                ? "In Progress"
+                : "Done"}
+            </span>
+          )}
         </div>
       </div>
 
@@ -321,17 +337,28 @@ const TaskCard2 = ({
 
       {/* Action Buttons */}
       <div className="flex items-center gap-1.5 pt-2 border-t border-slate-200">
-        <button
-          onClick={() => onTaskClick(task)}
-          className={`flex-1 px-2 py-1.5 rounded-lg font-medium text-xs flex items-center justify-center gap-1 transition-colors ${
-            overdue
-              ? "text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 hover:border-red-300"
-              : "text-slate-700 bg-white border border-slate-300 hover:bg-slate-50"
-          }`}
-        >
-          <MessageCircle className="w-3 h-3" />
-          Chat
-        </button>
+        {/* Show Approve button when pending approval */}
+        {task.approvalStatus === "pending" && onApproveTask ? (
+          <button
+            onClick={() => onApproveTask(task)}
+            className="flex-1 px-2 py-1.5 rounded-lg font-medium text-xs flex items-center justify-center gap-1 transition-colors text-white bg-[#1CC2B1] border border-[#19AFA1] hover:bg-[#19AFA1]"
+          >
+            <CheckCircle className="w-3 h-3" />
+            Approve
+          </button>
+        ) : (
+          <button
+            onClick={() => onTaskClick(task)}
+            className={`flex-1 px-2 py-1.5 rounded-lg font-medium text-xs flex items-center justify-center gap-1 transition-colors ${
+              overdue
+                ? "text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 hover:border-red-300"
+                : "text-slate-700 bg-white border border-slate-300 hover:bg-slate-50"
+            }`}
+          >
+            <MessageCircle className="w-3 h-3" />
+            Chat
+          </button>
+        )}
         <button
           onClick={() => onEditTask(task)}
           className={`flex-1 px-2 py-1.5 rounded-lg font-medium text-xs flex items-center justify-center gap-1 transition-colors ${

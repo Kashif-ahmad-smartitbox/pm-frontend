@@ -12,6 +12,7 @@ import {
   Eye,
   Clock,
   AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import { TaskWithProjectDetails } from "@/types/task";
 import TaskStatusBadge from "./TaskStatusBadge";
@@ -114,6 +115,20 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const isNew = task.createdAt && isNewTask(task.createdAt);
 
   const StatusButton = ({ currentStatus, taskId, taskTitle }: any) => {
+    // Check if task is pending approval
+    const isPendingApproval = task.approvalStatus === "pending";
+    
+    if (isPendingApproval) {
+      return (
+        <div
+          className="w-full flex items-center justify-center gap-1 px-3 py-2 rounded-lg font-semibold text-xs shadow-sm bg-amber-100 text-amber-700 border border-amber-200"
+        >
+          <Loader2 className="w-3 h-3 animate-spin" />
+          <span>Approval Pending</span>
+        </div>
+      );
+    }
+    
     if (currentStatus === "todo") {
       return (
         <button
@@ -158,7 +173,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
     );
   };
 
-  const showChatButton = task.status !== "todo";
+  // Hide chat button when pending approval
+  const showChatButton = task.status !== "todo" && task.approvalStatus !== "pending";
 
   return (
     <div

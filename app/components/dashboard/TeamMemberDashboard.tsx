@@ -548,7 +548,12 @@ export default function TeamMemberDashboard() {
       filtered = filtered.filter((task) => task.status === activeStatus);
     }
 
-    return filtered;
+    // Sort by createdAt descending (latest first)
+    return filtered.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return dateB - dateA;
+    });
   }, [tasks, activeStatus]);
 
   const getConfirmationMessage = useCallback(() => {

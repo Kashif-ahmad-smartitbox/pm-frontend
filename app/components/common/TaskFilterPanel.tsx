@@ -28,6 +28,8 @@ interface TaskFilters {
   priority: TaskPriority | "all";
   assignee: string | "all";
   dueDate: "all" | "today" | "week" | "overdue";
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 interface TaskFilterPanelProps {
@@ -47,7 +49,9 @@ const TaskFilterPanel: React.FC<TaskFilterPanelProps> = ({
     filters.status !== "all" ||
     filters.priority !== "all" ||
     filters.assignee !== "all" ||
-    filters.dueDate !== "all";
+    filters.dueDate !== "all" ||
+    !!filters.dateFrom ||
+    !!filters.dateTo;
 
   const filterConfigs = [
     {
@@ -136,7 +140,7 @@ const TaskFilterPanel: React.FC<TaskFilterPanelProps> = ({
         </div>
 
         {/* Filter Controls */}
-        <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-1.5">
+        <div className="flex-1 grid grid-cols-2 lg:grid-cols-6 gap-1.5">
           {filterConfigs.map((filter) => {
             const IconComponent = filter.icon;
             return (
@@ -164,6 +168,34 @@ const TaskFilterPanel: React.FC<TaskFilterPanelProps> = ({
               </div>
             );
           })}
+          
+          {/* Date From Filter */}
+          <div className="relative group">
+            <input
+              type="date"
+              value={filters.dateFrom || ""}
+              onChange={(e) =>
+                onFiltersChange({ ...filters, dateFrom: e.target.value })
+              }
+              className="w-full p-1.5 pr-2 pl-7 border border-[#E1F3F0] rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1] transition-all hover:border-[#1CC2B1] cursor-pointer"
+              placeholder="From"
+            />
+            <Calendar className="w-3 h-3 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-[#1CC2B1]" />
+          </div>
+          
+          {/* Date To Filter */}
+          <div className="relative group">
+            <input
+              type="date"
+              value={filters.dateTo || ""}
+              onChange={(e) =>
+                onFiltersChange({ ...filters, dateTo: e.target.value })
+              }
+              className="w-full p-1.5 pr-2 pl-7 border border-[#E1F3F0] rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1] transition-all hover:border-[#1CC2B1] cursor-pointer"
+              placeholder="To"
+            />
+            <Calendar className="w-3 h-3 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-[#E6A93A]" />
+          </div>
         </div>
 
         {/* Clear Button */}
@@ -221,6 +253,24 @@ const TaskFilterPanel: React.FC<TaskFilterPanelProps> = ({
               </div>
             );
           })}
+          
+          {/* Date Range Badge */}
+          {(filters.dateFrom || filters.dateTo) && (
+            <div className="px-2 py-1 bg-[#F8FDFC] text-[#0E3554] rounded-lg text-xs flex items-center gap-1.5 border border-[#E1F3F0] group hover:border-[#1CC2B1] transition-colors">
+              <Calendar className="w-3 h-3 text-[#1CC2B1]" />
+              <span>
+                {filters.dateFrom || "..."} → {filters.dateTo || "..."}
+              </span>
+              <button
+                onClick={() =>
+                  onFiltersChange({ ...filters, dateFrom: undefined, dateTo: undefined })
+                }
+                className="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded hover:bg-slate-200 ml-1"
+              >
+                <X className="w-2.5 h-2.5" />
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

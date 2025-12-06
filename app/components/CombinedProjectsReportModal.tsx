@@ -17,11 +17,13 @@ import {
   Clock,
   Download,
   ChevronDown,
+  ChevronRight,
   MessageSquare,
   AlertCircle,
   RefreshCw,
   Printer,
   ArrowUpDown,
+  Edit,
 } from "lucide-react";
 import {
   CombinedProjectsReportResponse,
@@ -120,6 +122,8 @@ interface ReportFilters {
   taskStatus: string;
   taskPriority: string;
   taskAssigneeId: string;
+  projectFrom: string;
+  projectTo: string;
 }
 
 const DEFAULT_FILTERS: ReportFilters = {
@@ -130,7 +134,12 @@ const DEFAULT_FILTERS: ReportFilters = {
   taskStatus: "",
   taskPriority: "",
   taskAssigneeId: "",
+  projectFrom: "",
+  projectTo: "",
 };
+
+// Stats filter type
+type StatsFilter = "all" | "totalProjects" | "totalTasks" | "completedTasks" | "inProgressTasks" | "todoTasks" | "overdueTasks";
 
 // Sorting types
 type SortField =
@@ -162,6 +171,8 @@ const CombinedProjectsReportModal: React.FC<
     field: "projectName",
     direction: "asc",
   });
+  const [statsFilter, setStatsFilter] = useState<StatsFilter>("all");
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
 
   // Fetch report data
   const fetchReportData = useCallback(async () => {
@@ -180,6 +191,8 @@ const CombinedProjectsReportModal: React.FC<
         taskPriority: filters.taskPriority || undefined,
         taskAssigneeId: filters.taskAssigneeId || undefined,
         taskSearch: filters.taskSearch || undefined,
+        projectFrom: filters.projectFrom || undefined,
+        projectTo: filters.projectTo || undefined,
       });
 
       setReportData(data);
@@ -206,6 +219,25 @@ const CombinedProjectsReportModal: React.FC<
 
   const clearFilters = () => {
     setFilters(DEFAULT_FILTERS);
+    setStatsFilter("all");
+  };
+
+  // Toggle project expansion
+  const toggleProjectExpansion = (projectId: string) => {
+    setExpandedProjects((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(projectId)) {
+        newSet.delete(projectId);
+      } else {
+        newSet.add(projectId);
+      }
+      return newSet;
+    });
+  };
+
+  // Handle stats card click
+  const handleStatsCardClick = (cardType: StatsFilter) => {
+    setStatsFilter(cardType === statsFilter ? "all" : cardType);
   };
 
   // Handle sort
@@ -260,8 +292,51 @@ const CombinedProjectsReportModal: React.FC<
       }
     );
 
+    // Filter projects and their tasks based on statsFilter
+    let filteredProjects = reportData.projects.map((project) => {
+      // If no filter or showing all, return project as is
+      if (statsFilter === "all" || statsFilter === "totalProjects") {
+        return project;
+      }
+
+      // Filter tasks within the project based on statsFilter
+      let filteredTasks = project.tasks;
+      
+      switch (statsFilter) {
+        case "completedTasks":
+          filteredTasks = project.tasks.filter((task) => task.status === "done");
+          break;
+        case "inProgressTasks":
+          filteredTasks = project.tasks.filter((task) => task.status === "in_progress");
+          break;
+        case "todoTasks":
+          filteredTasks = project.tasks.filter((task) => task.status === "todo");
+          break;
+        case "overdueTasks":
+          filteredTasks = project.tasks.filter((task) => isTaskOverdue(task));
+          break;
+        case "totalTasks":
+          // Show all tasks
+          filteredTasks = project.tasks;
+          break;
+      }
+
+      // Return project with filtered tasks
+      return {
+        ...project,
+        tasks: filteredTasks,
+      };
+    }).filter((project) => {
+      // Only show projects that have tasks after filtering
+      // (or show all projects if statsFilter is "all" or "totalProjects")
+      if (statsFilter === "all" || statsFilter === "totalProjects") {
+        return true;
+      }
+      return project.tasks.length > 0;
+    });
+
     // Sort projects - FIXED: Handle undefined dates
-    const sorted = [...reportData.projects].sort((a, b) => {
+    const sorted = filteredProjects.sort((a, b) => {
       let aValue: any, bValue: any;
 
       switch (sortConfig.field) {
@@ -303,7 +378,7 @@ const CombinedProjectsReportModal: React.FC<
     });
 
     return { totals, sortedProjects: sorted };
-  }, [reportData, sortConfig]);
+  }, [reportData, sortConfig, statsFilter]);
 
   const hasActiveFilters = Object.values(filters).some((value) => value !== "");
 
@@ -389,7 +464,7 @@ const CombinedProjectsReportModal: React.FC<
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className="bg-white rounded-xl shadow-sm border border-[#D9F3EE] w-full max-w-6xl h-[90vh] sm:h-[85vh] flex flex-col">
+      <div className="bg-white rounded-xl shadow-sm border border-[#D9F3EE] w-full max-w-7xl h-[90vh] sm:h-[85vh] flex flex-col">
         {/* Header */}
         <div className="border-b border-[#D9F3EE] p-3 sm:p-4 shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -610,6 +685,42 @@ const CombinedProjectsReportModal: React.FC<
                   <option value="critical">Critical</option>
                 </select>
               </div>
+
+              {/* Date Range - From */}
+              <div>
+                <label className="block text-xs font-semibold text-[#0E3554] mb-1">
+                  From Date
+                </label>
+                <div className="relative">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="date"
+                    value={filters.projectFrom}
+                    onChange={(e) =>
+                      handleFilterChange("projectFrom", e.target.value)
+                    }
+                    className="w-full pl-9 pr-3 py-1.5 text-sm border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Date Range - To */}
+              <div>
+                <label className="block text-xs font-semibold text-[#0E3554] mb-1">
+                  To Date
+                </label>
+                <div className="relative">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="date"
+                    value={filters.projectTo}
+                    onChange={(e) =>
+                      handleFilterChange("projectTo", e.target.value)
+                    }
+                    className="w-full pl-9 pr-3 py-1.5 text-sm border border-[#D9F3EE] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] bg-white"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="flex justify-between items-center mt-3 pt-3 border-t border-[#D9F3EE]">
@@ -639,7 +750,14 @@ const CombinedProjectsReportModal: React.FC<
         {totals && (
           <div className="border-b border-[#D9F3EE] p-3 sm:p-4 bg-gradient-to-br from-gray-50 to-white shrink-0">
             <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3">
-              <div className="bg-white rounded-lg p-2 sm:p-3 border border-[#D9F3EE]">
+              <div 
+                onClick={() => handleStatsCardClick("totalProjects")}
+                className={`bg-white rounded-lg p-2 sm:p-3 border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                  statsFilter === "totalProjects" 
+                    ? "border-[#1CC2B1] ring-2 ring-[#1CC2B1]/20" 
+                    : "border-[#D9F3EE] hover:border-[#1CC2B1]"
+                }`}
+              >
                 <div className="flex items-center justify-between">
                   <div className="text-lg sm:text-xl font-bold text-[#0E3554]">
                     {totals.totalProjects}
@@ -651,7 +769,14 @@ const CombinedProjectsReportModal: React.FC<
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg p-2 sm:p-3 border border-[#D9F3EE]">
+              <div 
+                onClick={() => handleStatsCardClick("totalTasks")}
+                className={`bg-white rounded-lg p-2 sm:p-3 border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                  statsFilter === "totalTasks" 
+                    ? "border-blue-500 ring-2 ring-blue-500/20" 
+                    : "border-[#D9F3EE] hover:border-blue-400"
+                }`}
+              >
                 <div className="flex items-center justify-between">
                   <div className="text-lg sm:text-xl font-bold text-blue-600">
                     {totals.totalTasks}
@@ -663,7 +788,14 @@ const CombinedProjectsReportModal: React.FC<
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg p-2 sm:p-3 border border-[#D9F3EE]">
+              <div 
+                onClick={() => handleStatsCardClick("completedTasks")}
+                className={`bg-white rounded-lg p-2 sm:p-3 border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                  statsFilter === "completedTasks" 
+                    ? "border-emerald-500 ring-2 ring-emerald-500/20" 
+                    : "border-[#D9F3EE] hover:border-emerald-400"
+                }`}
+              >
                 <div className="flex items-center justify-between">
                   <div className="text-lg sm:text-xl font-bold text-emerald-600">
                     {totals.completedTasks}
@@ -675,7 +807,14 @@ const CombinedProjectsReportModal: React.FC<
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg p-2 sm:p-3 border border-[#D9F3EE]">
+              <div 
+                onClick={() => handleStatsCardClick("inProgressTasks")}
+                className={`bg-white rounded-lg p-2 sm:p-3 border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                  statsFilter === "inProgressTasks" 
+                    ? "border-amber-500 ring-2 ring-amber-500/20" 
+                    : "border-[#D9F3EE] hover:border-amber-400"
+                }`}
+              >
                 <div className="flex items-center justify-between">
                   <div className="text-lg sm:text-xl font-bold text-amber-600">
                     {totals.inProgressTasks}
@@ -687,7 +826,14 @@ const CombinedProjectsReportModal: React.FC<
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg p-2 sm:p-3 border border-[#D9F3EE]">
+              <div 
+                onClick={() => handleStatsCardClick("todoTasks")}
+                className={`bg-white rounded-lg p-2 sm:p-3 border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                  statsFilter === "todoTasks" 
+                    ? "border-gray-500 ring-2 ring-gray-500/20" 
+                    : "border-[#D9F3EE] hover:border-gray-400"
+                }`}
+              >
                 <div className="flex items-center justify-between">
                   <div className="text-lg sm:text-xl font-bold text-gray-600">
                     {totals.todoTasks}
@@ -699,7 +845,14 @@ const CombinedProjectsReportModal: React.FC<
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg p-2 sm:p-3 border border-[#D9F3EE]">
+              <div 
+                onClick={() => handleStatsCardClick("overdueTasks")}
+                className={`bg-white rounded-lg p-2 sm:p-3 border cursor-pointer transition-all duration-200 hover:shadow-md ${
+                  statsFilter === "overdueTasks" 
+                    ? "border-red-500 ring-2 ring-red-500/20" 
+                    : "border-[#D9F3EE] hover:border-red-400"
+                }`}
+              >
                 <div className="flex items-center justify-between">
                   <div className="text-lg sm:text-xl font-bold text-red-600">
                     {totals.overdueTasks}
@@ -711,6 +864,28 @@ const CombinedProjectsReportModal: React.FC<
                 </div>
               </div>
             </div>
+            
+            {/* Active Filter Indicator */}
+            {statsFilter !== "all" && (
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-xs text-slate-600">
+                  Filtering by: <span className="font-semibold text-[#0E3554]">{
+                    statsFilter === "totalProjects" ? "All Projects" :
+                    statsFilter === "totalTasks" ? "Projects with Tasks" :
+                    statsFilter === "completedTasks" ? "Projects with Completed Tasks" :
+                    statsFilter === "inProgressTasks" ? "Projects with In Progress Tasks" :
+                    statsFilter === "todoTasks" ? "Projects with Todo Tasks" :
+                    "Projects with Overdue Tasks"
+                  }</span>
+                </span>
+                <button
+                  onClick={() => setStatsFilter("all")}
+                  className="text-xs text-[#1CC2B1] hover:text-[#0E3554] font-medium"
+                >
+                  Clear Filter
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -820,12 +995,34 @@ const CombinedProjectsReportModal: React.FC<
                               100
                           )
                         : 0;
+                      const isExpanded = expandedProjects.has(project._id);
+                      const hasTasks = project.tasks && project.tasks.length > 0;
 
                       return (
                         <React.Fragment key={project._id}>
-                          <tr className="hover:bg-gray-50 transition-colors">
+                          <tr 
+                            className={`hover:bg-gray-50 transition-colors ${hasTasks ? 'cursor-pointer' : ''}`}
+                            onClick={() => hasTasks && toggleProjectExpansion(project._id)}
+                          >
                             <td className="p-3">
                               <div className="flex items-center gap-2">
+                                {hasTasks ? (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleProjectExpansion(project._id);
+                                    }}
+                                    className="p-0.5 hover:bg-gray-100 rounded transition-colors"
+                                  >
+                                    {isExpanded ? (
+                                      <ChevronDown className="w-4 h-4 text-[#1CC2B1]" />
+                                    ) : (
+                                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                                    )}
+                                  </button>
+                                ) : (
+                                  <div className="w-5" />
+                                )}
                                 <FolderOpen className="w-4 h-4 text-[#1CC2B1]" />
                                 <div>
                                   <div className="font-medium text-[#0E3554]">
@@ -895,29 +1092,41 @@ const CombinedProjectsReportModal: React.FC<
                             </td>
                             <td className="p-3">
                               <div className="flex items-center gap-2">
-                                {onTaskClick && (
+                                {hasTasks && (
                                   <button
-                                    onClick={() => {
-                                      // Trigger task click for the first task
-                                      if (
-                                        project.tasks &&
-                                        project.tasks.length > 0
-                                      ) {
-                                        handleTaskClick(project.tasks[0]);
-                                      }
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleProjectExpansion(project._id);
                                     }}
                                     className="p-1 text-gray-600 hover:text-[#0E3554] hover:bg-gray-100 rounded transition-colors"
-                                    title="View Project Tasks"
+                                    title={isExpanded ? "Collapse Tasks" : "Expand Tasks"}
                                   >
-                                    <FileText className="w-4 h-4" />
+                                    {isExpanded ? (
+                                      <ChevronDown className="w-4 h-4" />
+                                    ) : (
+                                      <ChevronRight className="w-4 h-4" />
+                                    )}
+                                  </button>
+                                )}
+                                {onTaskClick && hasTasks && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // Trigger task click for the first task (opens edit modal)
+                                      handleTaskClick(project.tasks[0]);
+                                    }}
+                                    className="p-1 text-gray-600 hover:text-[#1CC2B1] hover:bg-[#EFFFFA] rounded transition-colors"
+                                    title="Edit First Task"
+                                  >
+                                    <Edit className="w-4 h-4" />
                                   </button>
                                 )}
                               </div>
                             </td>
                           </tr>
 
-                          {/* Tasks sub-table */}
-                          {project.tasks && project.tasks.length > 0 && (
+                          {/* Tasks sub-table - Only show when expanded */}
+                          {isExpanded && hasTasks && (
                             <tr>
                               <td
                                 colSpan={7}
@@ -955,10 +1164,11 @@ const CombinedProjectsReportModal: React.FC<
                                         {project.tasks.map((task) => (
                                           <tr
                                             key={task._id}
-                                            className="border-b border-gray-200 last:border-0"
+                                            className="border-b border-gray-200 last:border-0 hover:bg-gray-100 cursor-pointer transition-colors"
+                                            onClick={() => handleTaskClick(task)}
                                           >
                                             <td className="p-2">
-                                              <div className="font-medium text-[#0E3554]">
+                                              <div className="font-medium text-[#0E3554] hover:text-[#1CC2B1]">
                                                 {task.title}
                                               </div>
                                               <div className="text-xs text-gray-600 truncate max-w-xs">
@@ -1013,11 +1223,24 @@ const CombinedProjectsReportModal: React.FC<
                                             </td>
                                             <td className="p-2">
                                               <div className="flex items-center gap-1">
+                                                {onTaskClick && (
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleTaskClick(task);
+                                                    }}
+                                                    className="p-1 text-slate-600 hover:text-[#1CC2B1] hover:bg-[#EFFFFA] rounded transition-colors"
+                                                    title="Edit Task"
+                                                  >
+                                                    <Edit className="w-3.5 h-3.5" />
+                                                  </button>
+                                                )}
                                                 {onChatClick && (
                                                   <button
-                                                    onClick={() =>
-                                                      handleChatClick(task)
-                                                    }
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleChatClick(task);
+                                                    }}
                                                     className="p-1 text-slate-600 hover:text-[#1CC2B1] hover:bg-[#EFFFFA] rounded transition-colors"
                                                     title="Open Chat"
                                                   >

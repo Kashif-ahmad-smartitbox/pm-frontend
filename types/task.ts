@@ -1,5 +1,6 @@
 export type TaskStatus = "todo" | "in_progress" | "done";
 export type TaskPriority = "low" | "medium" | "high" | "critical";
+export type ApprovalStatus = "none" | "pending" | "approved";
 
 export interface User {
   _id: string;
@@ -23,6 +24,7 @@ export interface Task {
   assignees: User[];
   createdBy: User;
   status: TaskStatus;
+  approvalStatus?: ApprovalStatus;
   dueDate: string;
   priority: TaskPriority;
   notes: Note[];

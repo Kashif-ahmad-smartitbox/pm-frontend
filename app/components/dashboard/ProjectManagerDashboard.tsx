@@ -21,7 +21,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-import { deleteTask, getAllTasks } from "@/lib/api/tasks";
+import { deleteTask, getAllTasks, approveTask, getTask } from "@/lib/api/tasks";
 import { getProjectData, getProjects } from "@/lib/api/projects";
 
 import NewTaskModal from "../NewTaskModal";
@@ -299,6 +299,17 @@ export default function ProjectManagerDashboard() {
     name: "",
   });
 
+  // Approval confirmation state
+  const [approvalConfirm, setApprovalConfirm] = useState<{
+    isOpen: boolean;
+    taskId: string;
+    taskTitle: string;
+  }>({
+    isOpen: false,
+    taskId: "",
+    taskTitle: "",
+  });
+
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   // Data fetching
@@ -444,6 +455,101 @@ export default function ProjectManagerDashboard() {
 
   const handleDeleteTask = useCallback((task: Task) => {
     setDeleteConfirm({ type: "task", id: task._id, name: task.title });
+  }, []);
+
+  // Handle notification task click - navigate to project and then show task
+  const handleNotificationTaskClick = useCallback(async (taskId: string, projectId?: string) => {
+    try {
+      setLoadingProject(true);
+      
+      // If no projectId provided (old notifications), fetch task to get project ID
+      if (!projectId) {
+        const taskData = await getTask(taskId);
+        if (taskData && taskData.project) {
+          // Extract project ID from task data
+          projectId = typeof taskData.project === 'string' 
+            ? taskData.project 
+            : taskData.project._id;
+        }
+      }
+      
+      // Now navigate to the project if we have projectId
+      if (projectId) {
+        const projectData = await getProjectData(projectId);
+        setSelectedProject(projectData);
+        setTaskFilters(DEFAULT_TASK_FILTERS);
+        setTaskViewMode("grid");
+        setLoadingProject(false);
+        
+        // Find and select the task from the project's tasks
+        const task = projectData.tasks?.find((t: Task) => t._id === taskId);
+        if (task) {
+          setSelectedTask(task);
+        } else {
+          // Task not found in project - might have been deleted
+          setError("This task may have been deleted or is no longer available.");
+        }
+      } else {
+        // Last resort: show task modal without project context
+        const taskData = await getTask(taskId);
+        setLoadingProject(false);
+        if (taskData) {
+          setSelectedTask(taskData);
+        }
+      }
+    } catch (err: any) {
+      console.error("Failed to fetch task from notification:", err);
+      setLoadingProject(false);
+      // Show user-friendly error
+      if (err?.message?.includes("not found")) {
+        setError("This task may have been deleted or is no longer available.");
+      } else {
+        setError("Failed to load task. Please try again.");
+      }
+    }
+  }, []);
+
+  // Handle approve task click - show confirmation
+  const handleApproveTaskClick = useCallback((task: Task) => {
+    setApprovalConfirm({
+      isOpen: true,
+      taskId: task._id,
+      taskTitle: task.title,
+    });
+  }, []);
+
+  // Handle confirm approval
+  const handleConfirmApproval = useCallback(async () => {
+    if (!approvalConfirm.taskId) return;
+
+    try {
+      await approveTask(approvalConfirm.taskId);
+
+      // Refresh data
+      if (selectedProject) {
+        handleProjectClick(selectedProject.project._id);
+      }
+      fetchAllTasks();
+
+      setApprovalConfirm({
+        isOpen: false,
+        taskId: "",
+        taskTitle: "",
+      });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to approve task"
+      );
+    }
+  }, [approvalConfirm.taskId, selectedProject, handleProjectClick, fetchAllTasks]);
+
+  // Handle cancel approval
+  const handleCancelApproval = useCallback(() => {
+    setApprovalConfirm({
+      isOpen: false,
+      taskId: "",
+      taskTitle: "",
+    });
   }, []);
 
   const handleConfirmDelete = useCallback(async () => {
@@ -637,16 +743,39 @@ export default function ProjectManagerDashboard() {
           }
         }
 
+        // Date range filter
+        if (taskFilters.dateFrom || taskFilters.dateTo) {
+          const taskDueDate = new Date(task.dueDate);
+          
+          if (taskFilters.dateFrom) {
+            const fromDate = new Date(taskFilters.dateFrom);
+            fromDate.setHours(0, 0, 0, 0);
+            if (taskDueDate < fromDate) return false;
+          }
+          
+          if (taskFilters.dateTo) {
+            const toDate = new Date(taskFilters.dateTo);
+            toDate.setHours(23, 59, 59, 999);
+            if (taskDueDate > toDate) return false;
+          }
+        }
+
         return true;
       });
     },
     [taskFilters]
   );
 
-  const filteredTasks = useMemo(
-    () => (selectedProject ? getFilteredTasks(selectedProject.tasks) : []),
-    [selectedProject, getFilteredTasks]
-  );
+  const filteredTasks = useMemo(() => {
+    if (!selectedProject) return [];
+    const filtered = getFilteredTasks(selectedProject.tasks);
+    // Sort by createdAt descending (latest first)
+    return filtered.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return dateB - dateA;
+    });
+  }, [selectedProject, getFilteredTasks]);
 
   const getUniqueAssignees = useCallback(() => {
     if (!selectedProject) return [];
@@ -708,6 +837,7 @@ export default function ProjectManagerDashboard() {
         subtitle="Project Manager Dashboard"
         onTeamManagementClick={() => setShowTeamManagementModal(true)}
         onReportsClick={() => setShowReportsModal(true)}
+        onTaskClick={handleNotificationTaskClick}
         showReports
         showTeamManagement
         showNotifications
@@ -757,9 +887,8 @@ export default function ProjectManagerDashboard() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <div
-                    className={`p-1.5 rounded-lg ${
-                      selectedProject ? "bg-[#E0FFFA]" : "bg-[#F0F7FF]"
-                    }`}
+                    className={`p-1.5 rounded-lg ${selectedProject ? "bg-[#E0FFFA]" : "bg-[#F0F7FF]"
+                      }`}
                   >
                     {selectedProject ? (
                       <FolderOpen className="w-4 h-4 text-[#1CC2B1]" />
@@ -788,21 +917,19 @@ export default function ProjectManagerDashboard() {
                     <div className="flex items-center gap-0.5 bg-[#F8FDFC] rounded-lg p-0.5 border border-[#E1F3F0]">
                       <button
                         onClick={() => setTaskViewMode("grid")}
-                        className={`p-1.5 rounded-md transition-all duration-200 ${
-                          taskViewMode === "grid"
+                        className={`p-1.5 rounded-md transition-all duration-200 ${taskViewMode === "grid"
                             ? "bg-white text-[#0E3554] shadow-sm"
                             : "text-slate-400 hover:text-[#0E3554] hover:bg-white"
-                        }`}
+                          }`}
                       >
                         <Grid3X3 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => setTaskViewMode("list")}
-                        className={`p-1.5 rounded-md transition-all duration-200 ${
-                          taskViewMode === "list"
+                        className={`p-1.5 rounded-md transition-all duration-200 ${taskViewMode === "list"
                             ? "bg-white text-[#0E3554] shadow-sm"
                             : "text-slate-400 hover:text-[#0E3554] hover:bg-white"
-                        }`}
+                          }`}
                       >
                         <List className="w-3.5 h-3.5" />
                       </button>
@@ -830,21 +957,19 @@ export default function ProjectManagerDashboard() {
                     <div className="flex items-center gap-0.5 bg-[#F8FDFC] rounded-lg p-0.5 border border-[#E1F3F0]">
                       <button
                         onClick={() => setProjectViewMode("grid")}
-                        className={`p-1.5 rounded-md transition-all duration-200 ${
-                          projectViewMode === "grid"
+                        className={`p-1.5 rounded-md transition-all duration-200 ${projectViewMode === "grid"
                             ? "bg-white text-[#0E3554] shadow-sm"
                             : "text-slate-400 hover:text-[#0E3554] hover:bg-white"
-                        }`}
+                          }`}
                       >
                         <Grid3X3 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => setProjectViewMode("list")}
-                        className={`p-1.5 rounded-md transition-all duration-200 ${
-                          projectViewMode === "list"
+                        className={`p-1.5 rounded-md transition-all duration-200 ${projectViewMode === "list"
                             ? "bg-white text-[#0E3554] shadow-sm"
                             : "text-slate-400 hover:text-[#0E3554] hover:bg-white"
-                        }`}
+                          }`}
                       >
                         <List className="w-3.5 h-3.5" />
                       </button>
@@ -923,6 +1048,7 @@ export default function ProjectManagerDashboard() {
                     onTaskClick={handleTaskClick}
                     onEditTask={handleEditTask}
                     onDeleteTask={handleDeleteTask}
+                    onApproveTask={handleApproveTaskClick}
                   />
                 ) : (
                   <TaskList
@@ -930,6 +1056,7 @@ export default function ProjectManagerDashboard() {
                     onTaskClick={handleTaskClick}
                     onEditTask={handleEditTask}
                     onDeleteTask={handleDeleteTask}
+                    onApproveTask={handleApproveTaskClick}
                   />
                 )}
               </div>
@@ -995,6 +1122,7 @@ export default function ProjectManagerDashboard() {
         showUpdateTaskModal={showUpdateTaskModal}
         editingTask={editingTask}
         deleteConfirm={deleteConfirm}
+        approvalConfirm={approvalConfirm}
         showReportsModal={showReportsModal}
         selectedProject={selectedProject}
         allTasks={allTasks}
@@ -1005,6 +1133,8 @@ export default function ProjectManagerDashboard() {
         onNewTaskCreated={handleNewTaskCreated}
         onTaskUpdated={handleTaskUpdated}
         onConfirmDelete={handleConfirmDelete}
+        onConfirmApproval={handleConfirmApproval}
+        onCancelApproval={handleCancelApproval}
         onCloseNewTaskModal={() => setShowNewTaskModal(false)}
         onCloseTeamManagementModal={() => setShowTeamManagementModal(false)}
         onCloseReportsModal={() => setShowReportsModal(false)}
@@ -1077,11 +1207,10 @@ const Pagination: React.FC<PaginationProps> = ({
           <button
             key={page}
             onClick={() => onPageChange(page)}
-            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-              pagination.currentPage === page
+            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${pagination.currentPage === page
                 ? "bg-[#0E3554] text-white"
                 : "text-slate-600 hover:bg-[#EFFFFA] border border-[#D9F3EE]"
-            }`}
+              }`}
           >
             {page}
           </button>
@@ -1107,6 +1236,11 @@ interface ModalsProps {
   showReportsModal: boolean;
   editingTask: Task | null;
   deleteConfirm: DeleteConfirmState;
+  approvalConfirm: {
+    isOpen: boolean;
+    taskId: string;
+    taskTitle: string;
+  };
   selectedProject: ProjectData | null;
   allTasks: Task[];
   taskStats: TaskStats;
@@ -1115,6 +1249,8 @@ interface ModalsProps {
   onNewTaskCreated: () => void;
   onTaskUpdated: () => void;
   onConfirmDelete: () => void;
+  onConfirmApproval: () => void;
+  onCancelApproval: () => void;
   onCloseNewTaskModal: () => void;
   onCloseReportsModal: () => void;
   onCloseTeamManagementModal: () => void;
@@ -1137,12 +1273,15 @@ const Modals: React.FC<ModalsProps> = ({
   taskStats,
   editingTask,
   deleteConfirm,
+  approvalConfirm,
   selectedProject,
   onCloseModal,
   onNoteAdded,
   onNewTaskCreated,
   onTaskUpdated,
   onConfirmDelete,
+  onConfirmApproval,
+  onCancelApproval,
   onCloseNewTaskModal,
   onCloseTeamManagementModal,
   onCloseAllTasksModal,
@@ -1196,7 +1335,7 @@ const Modals: React.FC<ModalsProps> = ({
       <TeamManagementModal
         isOpen={showTeamManagementModal}
         onClose={onCloseTeamManagementModal}
-        onUserCreated={() => {}}
+        onUserCreated={() => { }}
       />
 
       <AllTasksModal
@@ -1219,12 +1358,22 @@ const Modals: React.FC<ModalsProps> = ({
         isOpen={deleteConfirm.type !== null}
         onClose={onCloseDeleteConfirm}
         onConfirm={onConfirmDelete}
-        title={`Delete ${
-          deleteConfirm.type === "project" ? "Project" : "Task"
-        }`}
+        title={`Delete ${deleteConfirm.type === "project" ? "Project" : "Task"
+          }`}
         message={`Are you sure you want to delete "${deleteConfirm.name}"? This action cannot be undone.`}
         confirmText="Delete"
         variant="danger"
+      />
+
+      <ConfirmationModal
+        isOpen={approvalConfirm.isOpen}
+        onClose={onCancelApproval}
+        onConfirm={onConfirmApproval}
+        title="Approve Task Completion"
+        message={`Are you sure you want to approve the completion of "${approvalConfirm.taskTitle}"? This will mark the task as done.`}
+        confirmText="Approve"
+        cancelText="Cancel"
+        variant="success"
       />
     </>
   );

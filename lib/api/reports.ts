@@ -93,6 +93,8 @@ export function getCombinedProjectsReport(params: {
   taskPriority?: string;
   taskAssigneeId?: string;
   taskSearch?: string;
+  projectFrom?: string;
+  projectTo?: string;
 }): Promise<CombinedProjectsReportResponse> {
   const q = new URLSearchParams({
     page: String(params.page),
@@ -113,6 +115,8 @@ export function getCombinedProjectsReport(params: {
   push("taskPriority", params.taskPriority);
   push("taskAssigneeId", params.taskAssigneeId);
   push("taskSearch", params.taskSearch);
+  push("projectFrom", params.projectFrom);
+  push("projectTo", params.projectTo);
 
   return request(`/api/reports/combined?${q.toString()}`);
 }

@@ -16,7 +16,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-import { deleteTask, getAllTasks } from "@/lib/api/tasks";
+import { deleteTask, getAllTasks, getTask, approveTask } from "@/lib/api/tasks";
 import { deleteProject, getProjectData, getProjects } from "@/lib/api/projects";
 
 import TaskGrid from "../common/TaskGrid";
@@ -35,6 +35,7 @@ import ProjectListItem from "@/components/common/ProjectListItem";
 import ActiveProjectFilterBadge from "../common/ActiveProjectFilterBadge";
 import LoadingState from "../common/LoadingState";
 import ErrorState from "../common/ErrorState";
+import ConfirmationModal from "../ConfirmationModal";
 import { useAuth } from "@/app/context/AuthContext";
 
 type ProjectStatus = "planned" | "active" | "completed" | "overdue";
@@ -247,6 +248,17 @@ export default function AdminDashboard() {
     id: null,
     name: "",
   });
+  
+  // Approval confirmation state
+  const [approvalConfirm, setApprovalConfirm] = useState<{
+    isOpen: boolean;
+    taskId: string;
+    taskTitle: string;
+  }>({
+    isOpen: false,
+    taskId: "",
+    taskTitle: "",
+  });
 
   const { user: currentUser } = useAuth();
 
@@ -392,8 +404,109 @@ export default function AdminDashboard() {
     setShowUpdateTaskModal(true);
   }, []);
 
+  // Handle notification task click - navigate to project and then show task
+  const handleNotificationTaskClick = useCallback(async (taskId: string, projectId?: string) => {
+    console.log('[handleNotificationTaskClick] taskId:', taskId, 'projectId:', projectId);
+    try {
+      setLoadingProject(true);
+      
+      // If no projectId provided (old notifications), fetch task to get project ID
+      if (!projectId) {
+        console.log('[handleNotificationTaskClick] No projectId, fetching task to get project');
+        const taskData = await getTask(taskId);
+        if (taskData && taskData.project) {
+          // Extract project ID from task data
+          projectId = typeof taskData.project === 'string' 
+            ? taskData.project 
+            : taskData.project._id;
+          console.log('[handleNotificationTaskClick] Got projectId from task:', projectId);
+        }
+      }
+      
+      // Now navigate to the project if we have projectId
+      if (projectId) {
+        console.log('[handleNotificationTaskClick] Navigating to project:', projectId);
+        const projectData = await getProjectData(projectId);
+        setSelectedProject(projectData);
+        setTaskFilters(DEFAULT_TASK_FILTERS);
+        setTaskViewMode("grid");
+        setLoadingProject(false);
+        
+        // Find and select the task from the project's tasks
+        const task = projectData.tasks?.find((t: Task) => t._id === taskId);
+        console.log('[handleNotificationTaskClick] Task found in project:', !!task);
+        if (task) {
+          setSelectedTask(task);
+        } else {
+          // Task not found in project - might have been deleted
+          setError("This task may have been deleted or is no longer available.");
+        }
+      } else {
+        // Last resort: show task modal without project context
+        console.log('[handleNotificationTaskClick] Could not get projectId, fetching task only');
+        const taskData = await getTask(taskId);
+        setLoadingProject(false);
+        if (taskData) {
+          setSelectedTask(taskData);
+        }
+      }
+    } catch (err: any) {
+      console.error("Failed to fetch task from notification:", err);
+      setLoadingProject(false);
+      // Show user-friendly error
+      if (err?.message?.includes("not found")) {
+        setError("This task may have been deleted or is no longer available.");
+      } else {
+        setError("Failed to load task. Please try again.");
+      }
+    }
+  }, []);
+
   const handleDeleteTask = useCallback((task: Task) => {
     setDeleteConfirm({ type: "task", id: task._id, name: task.title });
+  }, []);
+
+  // Handle approve task click - show confirmation
+  const handleApproveTaskClick = useCallback((task: Task) => {
+    setApprovalConfirm({
+      isOpen: true,
+      taskId: task._id,
+      taskTitle: task.title,
+    });
+  }, []);
+
+  // Handle confirm approval
+  const handleConfirmApproval = useCallback(async () => {
+    if (!approvalConfirm.taskId) return;
+
+    try {
+      await approveTask(approvalConfirm.taskId);
+      
+      // Refresh data
+      if (selectedProject) {
+        handleProjectClick(selectedProject.project._id);
+      }
+      fetchAllTasks();
+      
+      setApprovalConfirm({
+        isOpen: false,
+        taskId: "",
+        taskTitle: "",
+      });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to approve task"
+      );
+    }
+  }, [approvalConfirm.taskId, selectedProject, fetchAllTasks]);
+
+  // Handle cancel approval
+  const handleCancelApproval = useCallback(() => {
+    setApprovalConfirm({
+      isOpen: false,
+      taskId: "",
+      taskTitle: "",
+    });
   }, []);
 
   const handleConfirmDelete = useCallback(async () => {
@@ -623,16 +736,39 @@ export default function AdminDashboard() {
           }
         }
 
+        // Date range filter (dateFrom and dateTo)
+        if (taskFilters.dateFrom || taskFilters.dateTo) {
+          const taskDueDate = new Date(task.dueDate);
+          
+          if (taskFilters.dateFrom) {
+            const fromDate = new Date(taskFilters.dateFrom);
+            fromDate.setHours(0, 0, 0, 0);
+            if (taskDueDate < fromDate) return false;
+          }
+          
+          if (taskFilters.dateTo) {
+            const toDate = new Date(taskFilters.dateTo);
+            toDate.setHours(23, 59, 59, 999);
+            if (taskDueDate > toDate) return false;
+          }
+        }
+
         return true;
       });
     },
     [taskFilters]
   );
 
-  const filteredTasks = useMemo(
-    () => (selectedProject ? getFilteredTasks(selectedProject.tasks) : []),
-    [selectedProject, getFilteredTasks]
-  );
+  const filteredTasks = useMemo(() => {
+    if (!selectedProject) return [];
+    const filtered = getFilteredTasks(selectedProject.tasks);
+    // Sort by createdAt descending (latest first)
+    return filtered.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return dateB - dateA;
+    });
+  }, [selectedProject, getFilteredTasks]);
 
   const getUniqueAssignees = useCallback(() => {
     if (!selectedProject) return [];
@@ -682,6 +818,7 @@ export default function AdminDashboard() {
         onProjectTypesClick={() => setShowProjectTypesModal(true)}
         onTeamManagementClick={() => setShowUserManagementModal(true)}
         onReportsClick={() => setShowReportsModal(true)}
+        onTaskClick={handleNotificationTaskClick}
         showProjectTypes
         showTeamManagement
         showReports
@@ -913,6 +1050,7 @@ export default function AdminDashboard() {
                     onTaskClick={handleTaskClick}
                     onEditTask={handleEditTask}
                     onDeleteTask={handleDeleteTask}
+                    onApproveTask={handleApproveTaskClick}
                   />
                 ) : (
                   <TaskList
@@ -920,6 +1058,7 @@ export default function AdminDashboard() {
                     onTaskClick={handleTaskClick}
                     onEditTask={handleEditTask}
                     onDeleteTask={handleDeleteTask}
+                    onApproveTask={handleApproveTaskClick}
                   />
                 )}
               </div>
@@ -975,6 +1114,18 @@ export default function AdminDashboard() {
           </div>
         </section>
       </main>
+
+      {/* Approval Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={approvalConfirm.isOpen}
+        onClose={handleCancelApproval}
+        onConfirm={handleConfirmApproval}
+        title="Approve Task Completion"
+        message={`Are you sure you want to approve the completion of "${approvalConfirm.taskTitle}"? This will mark the task as done.`}
+        confirmText="Approve"
+        cancelText="Cancel"
+        variant="success"
+      />
 
       {/* Modals */}
       <Modals

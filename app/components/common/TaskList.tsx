@@ -9,6 +9,7 @@ import {
   Circle,
   PlayCircle,
   Edit,
+  Loader2,
 } from "lucide-react";
 import { Task, TaskStatus, TaskPriority } from "./TaskCard2";
 
@@ -17,6 +18,7 @@ interface TaskListProps {
   onTaskClick: (task: Task) => void;
   onEditTask: (task: Task) => void;
   onDeleteTask: (task: Task) => void;
+  onApproveTask?: (task: Task) => void;
 }
 
 const TaskList: React.FC<TaskListProps> = ({
@@ -24,6 +26,7 @@ const TaskList: React.FC<TaskListProps> = ({
   onTaskClick,
   onEditTask,
   onDeleteTask,
+  onApproveTask,
 }) => {
   const getStatusIcon = (status: TaskStatus) => {
     switch (status) {
@@ -122,14 +125,21 @@ const TaskList: React.FC<TaskListProps> = ({
                   {task.priority}
                 </span>
 
-                {/* Status Badge */}
-                <span
-                  className={`px-2 py-1 rounded-md text-xs font-medium ${getStatusColor(
-                    task.status
-                  )}`}
-                >
-                  {task.status.replace("_", " ")}
-                </span>
+                {/* Status Badge or Approval Pending */}
+                {task.approvalStatus === "pending" ? (
+                  <span className="px-2 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-700 flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Approval Pending
+                  </span>
+                ) : (
+                  <span
+                    className={`px-2 py-1 rounded-md text-xs font-medium ${getStatusColor(
+                      task.status
+                    )}`}
+                  >
+                    {task.status.replace("_", " ")}
+                  </span>
+                )}
 
                 {/* Due Date */}
                 <div className="flex items-center gap-1 text-sm text-gray-600">
@@ -163,6 +173,19 @@ const TaskList: React.FC<TaskListProps> = ({
             </div>
 
             <div className="flex items-center gap-2 ml-4">
+              {/* Approve button for pending tasks */}
+              {task.approvalStatus === "pending" && onApproveTask && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onApproveTask(task);
+                  }}
+                  className="p-1.5 text-white bg-[#1CC2B1] hover:bg-[#19AFA1] rounded-md transition-colors"
+                  title="Approve Task"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                </button>
+              )}
               <button
                 onClick={(e) => {
                   e.stopPropagation();

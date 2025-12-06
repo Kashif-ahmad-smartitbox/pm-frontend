@@ -34,6 +34,7 @@ interface HeaderProps {
   onNotificationsClick?: () => void;
   onSettingsClick?: () => void;
   onReportsClick?: () => void;
+  onTaskClick?: (taskId: string, projectId?: string, taskName?: string) => void;
   showProjectTypes?: boolean;
   showTeamManagement?: boolean;
   showNotifications?: boolean;
@@ -431,6 +432,7 @@ export default function CommonHeader({
   onNotificationsClick,
   onSettingsClick,
   onReportsClick, // Added reports handler
+  onTaskClick, // Added task click handler for notifications
   showProjectTypes = false,
   showTeamManagement = false,
   showNotifications = false,
@@ -586,7 +588,10 @@ export default function CommonHeader({
 
       {/* Notification Panel */}
       {showNotifications && notificationPanelOpen && (
-        <NotificationPanel onClose={handleCloseNotificationPanel} />
+        <NotificationPanel 
+          onClose={handleCloseNotificationPanel} 
+          onTaskClick={onTaskClick}
+        />
       )}
     </>
   );
