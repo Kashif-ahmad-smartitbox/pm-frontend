@@ -104,7 +104,7 @@ export interface RecordingStateData {
 // Constants
 export const MAX_FILE_SIZE = 10 * 1024 * 1024;
 export const POLLING_INTERVAL = 10000;
-export const MAX_RECORDING_DURATION = 3000;
+export const MAX_RECORDING_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 const FILE_ICONS = {
   image: ImageIcon,

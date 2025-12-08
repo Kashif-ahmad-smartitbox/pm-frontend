@@ -133,17 +133,6 @@ const ColorPicker: React.FC<{
     for (let i = 0; i < 6; i++) {
       color += letters[Math.floor(Math.random() * 16)];
     }
-
-    // Ensure the color is not already used
-    let attempts = 0;
-    while (usedColors.includes(color) && attempts < 10) {
-      color = "#";
-      for (let i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
-      }
-      attempts++;
-    }
-
     handleColorSelect(color);
   };
 
@@ -165,79 +154,86 @@ const ColorPicker: React.FC<{
       </button>
 
       {showPicker && (
-        <div className="absolute top-full left-0 mt-2 bg-white border border-[#D9F3EE] rounded-lg shadow-lg p-4 z-50 min-w-64">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold text-[#0E3554]">
-              Choose Color
-            </h4>
-            <button
-              onClick={generateRandomColor}
-              className="p-1 text-slate-400 hover:text-[#1CC2B1] transition-colors"
-              title="Generate random color"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Predefined Color Palette */}
-          <div className="grid grid-cols-5 gap-2 mb-3">
-            {COLOR_PALETTE.map((color) => (
+        <>
+          {/* Overlay to close picker - must be before picker in DOM */}
+          <div
+            className="fixed inset-0 z-[45]"
+            onClick={() => setShowPicker(false)}
+          />
+          <div 
+            className="absolute top-full left-0 mt-2 bg-white border border-[#D9F3EE] rounded-lg shadow-lg p-4 z-[60] min-w-64"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-semibold text-[#0E3554]">
+                Choose Color
+              </h4>
               <button
-                key={color}
-                onClick={() => handleColorSelect(color)}
-                className={`w-8 h-8 rounded border-2 transition-all ${
-                  selectedColor === color
-                    ? "border-[#0E3554] scale-110"
-                    : "border-slate-200 hover:scale-105"
-                } ${usedColors.includes(color) ? "opacity-50" : ""}`}
-                style={{ backgroundColor: color }}
-                title={
-                  usedColors.includes(color) ? "Color already used" : color
-                }
-                disabled={usedColors.includes(color)}
-              />
-            ))}
-          </div>
-
-          {/* Custom Color Input */}
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-[#0E3554]">
-              Custom Color
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="color"
-                value={selectedColor}
-                onChange={(e) => onColorChange(e.target.value)}
-                className="w-10 h-10 rounded border border-[#D9F3EE] cursor-pointer"
-              />
-              <input
-                type="text"
-                value={selectedColor}
-                onChange={(e) => onColorChange(e.target.value)}
-                placeholder="#000000"
-                className="flex-1 px-3 py-2 text-sm border border-[#D9F3EE] rounded focus:outline-none focus:ring-1 focus:ring-[#1CC2B1]"
-                pattern="^#[0-9A-Fa-f]{6}$"
-                maxLength={7}
-              />
+                onClick={(e) => {
+                  e.stopPropagation();
+                  generateRandomColor();
+                }}
+                className="p-1 text-slate-400 hover:text-[#1CC2B1] transition-colors"
+                title="Generate random color"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
             </div>
-          </div>
 
-          {/* Used Colors Warning */}
-          {usedColors.length > 0 && (
-            <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
-              <p>Some colors are already used by other users</p>
+            {/* Predefined Color Palette */}
+            <div className="grid grid-cols-5 gap-2 mb-3">
+              {COLOR_PALETTE.map((color) => (
+                <button
+                  key={color}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleColorSelect(color);
+                  }}
+                  className={`w-8 h-8 rounded border-2 transition-all ${
+                    selectedColor === color
+                      ? "border-[#0E3554] scale-110"
+                      : "border-slate-200 hover:scale-105"
+                  }`}
+                  style={{ backgroundColor: color }}
+                  title={color}
+                />
+              ))}
             </div>
-          )}
-        </div>
-      )}
 
-      {/* Overlay to close picker */}
-      {showPicker && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowPicker(false)}
-        />
+            {/* Custom Color Input */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-[#0E3554]">
+                Custom Color
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="color"
+                  value={selectedColor}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    onColorChange(e.target.value);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-10 h-10 rounded border border-[#D9F3EE] cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={selectedColor}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    onColorChange(e.target.value);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  placeholder="#000000"
+                  className="flex-1 px-3 py-2 text-sm border border-[#D9F3EE] rounded focus:outline-none focus:ring-1 focus:ring-[#1CC2B1]"
+                  pattern="^#[0-9A-Fa-f]{6}$"
+                  maxLength={7}
+                />
+              </div>
+            </div>
+
+          </div>
+        </>
       )}
     </div>
   );
@@ -282,6 +278,12 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     userId: string | null;
     userName: string;
   }>({ isOpen: false, userId: null, userName: "" });
+
+  // Error dialog state
+  const [errorDialog, setErrorDialog] = useState<{
+    isOpen: boolean;
+    message: string;
+  }>({ isOpen: false, message: "" });
 
   // User type options with icons
   const userTypeOptions = [
@@ -555,10 +557,32 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       setTimeout(() => {
         setSuccess(null);
       }, 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete user");
-    } finally {
       setDeleteConfirm({ isOpen: false, userId: null, userName: "" });
+    } catch (err: any) {
+      // Extract error message from API response
+      let errorMessage = "Failed to delete user";
+      
+      if (err instanceof Error) {
+        // The error message should now be directly from the API
+        errorMessage = err.message;
+        
+        // If message contains project/task assignment info, make it more user-friendly
+        if (errorMessage.includes("assigned to") && errorMessage.includes("project")) {
+          errorMessage = "Cannot delete user: This user has assigned projects. Please reassign or remove the projects first.";
+        } else if (errorMessage.includes("referenced") || errorMessage.includes("task")) {
+          errorMessage = "Cannot delete user: This user is referenced in tasks. Please reassign or remove the tasks first.";
+        } else if (errorMessage.includes("Cannot delete")) {
+          // Keep the original message if it's already user-friendly
+          errorMessage = errorMessage;
+        }
+      }
+      
+      setError(errorMessage);
+      // Show error in custom dialog
+      setErrorDialog({ isOpen: true, message: errorMessage });
+      // Close the confirmation modal
+      setDeleteConfirm({ isOpen: false, userId: null, userName: "" });
+      throw err; // Re-throw to prevent further execution
     }
   };
 
@@ -610,16 +634,6 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
     onClose();
   };
 
-  // Auto-generate color when email changes
-  useEffect(() => {
-    if (formData.email && activeTab === "new") {
-      const generatedColor = generateUniqueColor(formData.email, usedColors);
-      setFormData((prev) => ({
-        ...prev,
-        color: generatedColor,
-      }));
-    }
-  }, [formData.email, activeTab, usedColors]);
 
   const getRoleBadge = (role: string) => {
     const roleConfig: {
@@ -706,7 +720,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div className="bg-white rounded-xl shadow-sm border border-[#D9F3EE] overflow-hidden w-full max-w-2xl max-h-[85vh] flex flex-col">
           {/* Header - Compact */}
-          <div className="bg-white border-b border-[#D9F3EE] p-4 flex-shrink-0">
+          <div className="bg-white border-b border-[#D9F3EE] p-4 shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-[#EFFFFA] rounded-lg flex items-center justify-center">
@@ -732,7 +746,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           </div>
 
           {/* Tabs - Compact */}
-          <div className="border-b border-[#D9F3EE] bg-white flex-shrink-0">
+          <div className="border-b border-[#D9F3EE] bg-white shrink-0">
             <div className="flex">
               <button
                 onClick={() => setActiveTab("existing")}
@@ -1244,7 +1258,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           </div>
 
           {/* Footer - Compact */}
-          <div className="border-t border-[#D9F3EE] p-4 bg-white flex-shrink-0">
+          <div className="border-t border-[#D9F3EE] p-4 bg-white shrink-0">
             <div className="flex justify-end gap-2">
               <button
                 onClick={handleClose}
@@ -1293,6 +1307,50 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         confirmText="Delete User"
         variant="danger"
       />
+
+      {/* Error Dialog */}
+      {errorDialog.isOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[70]">
+          <div className="bg-white rounded-xl shadow-xl border border-[#D9F3EE] w-full max-w-md overflow-hidden">
+            {/* Header */}
+            <div className="bg-red-600 text-white p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                  <AlertCircle className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-base font-bold">Cannot Delete User</h2>
+                  <p className="text-white/80 text-xs mt-0.5">
+                    Action not allowed
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-4">
+              <div className="mb-4">
+                <p className="text-slate-700 text-sm leading-relaxed">
+                  {errorDialog.message}
+                </p>
+              </div>
+
+              {/* OK Button */}
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setErrorDialog({ isOpen: false, message: "" })}
+                  className="px-4 py-2 text-sm text-white rounded font-medium 
+                    transition-all duration-200 bg-red-600 hover:bg-red-700
+                    focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-red-500
+                    flex items-center justify-center gap-1.5 min-w-16"
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

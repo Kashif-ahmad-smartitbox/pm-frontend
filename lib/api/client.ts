@@ -55,8 +55,26 @@ export async function request<T = any>(
   const res = await fetch(url, fetchOptions);
 
   if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`API Error ${res.status}: ${text}`);
+    const contentType = res.headers.get("content-type") || "";
+    let errorMessage = `API Error ${res.status}`;
+    
+    if (contentType.includes("application/json")) {
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.message || errorData.error || JSON.stringify(errorData);
+      } catch {
+        const text = await res.text().catch(() => "");
+        errorMessage = text || errorMessage;
+      }
+    } else {
+      const text = await res.text().catch(() => "");
+      errorMessage = text || errorMessage;
+    }
+    
+    const error = new Error(errorMessage);
+    (error as any).status = res.status;
+    (error as any).response = errorMessage;
+    throw error;
   }
 
   // Handle no-content responses

@@ -87,9 +87,18 @@ const ConfirmationModal = ({
               {cancelText}
             </button>
             <button
-              onClick={() => {
-                onConfirm();
-                onClose();
+              onClick={async () => {
+                try {
+                  const result = onConfirm();
+                  // If onConfirm returns a promise, wait for it
+                  if (result !== undefined && result !== null && typeof result === 'object' && typeof (result as any).then === 'function') {
+                    await (result as Promise<any>);
+                  }
+                  onClose();
+                } catch (error) {
+                  // Don't close on error - let the parent handle it
+                  // The error will be shown in the parent component
+                }
               }}
               className={`px-4 py-2 text-sm text-white rounded font-medium 
                 transition-all duration-200 ${config.buttonColor}
