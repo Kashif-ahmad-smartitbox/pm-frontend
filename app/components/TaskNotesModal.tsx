@@ -519,6 +519,7 @@ interface MessageActionsProps {
   note: Note;
   isCurrentUserMessage: boolean;
   isAdmin: boolean;
+  currentUserRole?: string;
   onEdit: () => void;
   onDelete: () => void;
   isDeleting: boolean;
@@ -529,14 +530,34 @@ const MessageActions: React.FC<MessageActionsProps> = ({
   note,
   isCurrentUserMessage,
   isAdmin,
+  currentUserRole,
   onEdit,
   onDelete,
   isDeleting,
   isEditing,
 }) => {
+  // Check if note can be edited (2-minute restriction for team members)
+  const canEditNote = () => {
+    if (!isCurrentUserMessage) return false;
+    
+    // Admins and project managers can always edit
+    if (isAdmin || currentUserRole === "project_manager") return true;
+    
+    // Team members can only edit within 2 minutes
+    if (currentUserRole === "team_member") {
+      const createdAt = new Date(note.createdAt);
+      const now = new Date();
+      const timeDiff = now.getTime() - createdAt.getTime();
+      const twoMinutes = 2 * 60 * 1000;
+      return timeDiff <= twoMinutes;
+    }
+    
+    return true; // Default: allow editing
+  };
+
   // ONLY ADMIN CAN DELETE ANY MESSAGE
   // Regular users CANNOT delete ANY messages (not even their own)
-  const showEditButton = isCurrentUserMessage && !isEditing;
+  const showEditButton = canEditNote() && !isEditing;
   const showDeleteButton = isAdmin; // Only admin can delete
 
   if (!showEditButton && !showDeleteButton) return null;
@@ -1209,14 +1230,18 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   };
 
   const startEditingNote = (note: Note) => {
-    const createdAt = new Date(note.createdAt);
-    const now = new Date();
-    const timeDiff = now.getTime() - createdAt.getTime();
-    const twoMinutes = 2 * 60 * 1000;
+    // Only apply 2-minute restriction to team members
+    const userRole = currentUser?.role?.toLowerCase();
+    if (userRole === "team_member") {
+      const createdAt = new Date(note.createdAt);
+      const now = new Date();
+      const timeDiff = now.getTime() - createdAt.getTime();
+      const twoMinutes = 2 * 60 * 1000;
 
-    if (timeDiff > twoMinutes) {
-      alert("You can only edit messages within 2 minutes of posting.");
-      return;
+      if (timeDiff > twoMinutes) {
+        alert("You can only edit messages within 2 minutes of posting.");
+        return;
+      }
     }
 
     setEditingNoteId(note._id);
@@ -1250,9 +1275,13 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
 
       setEditingNoteId(null);
       setEditingText("");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to update note:", err);
-      alert("Failed to update message. Please try again.");
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to update message. Please try again.";
+      alert(errorMessage);
     }
   };
 
@@ -1570,6 +1599,7 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
                                           isCurrentUserMessage
                                         }
                                         isAdmin={isAdmin}
+                                        currentUserRole={currentUser?.role}
                                         onEdit={() => startEditingNote(note)}
                                         onDelete={() =>
                                           handleDeleteNote(note._id)
