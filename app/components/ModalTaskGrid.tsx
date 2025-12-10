@@ -76,15 +76,20 @@ interface ModalTaskGridProps {
   tasks: Task[];
   onTaskClick?: (task: Task) => void;
   onChatClick?: (task: Task) => void;
+  userRole?: string;
 }
 
 const ModalTaskCard: React.FC<{
   task: Task;
   onTaskClick?: (task: Task) => void;
   onChatClick?: (task: Task) => void;
-}> = ({ task, onTaskClick, onChatClick }) => {
+  userRole?: string;
+}> = ({ task, onTaskClick, onChatClick, userRole }) => {
   const StatusIcon = getStatusIcon(task.status);
   const overdue = isTaskOverdue(task);
+  // Check if task is not started and user is admin or project manager
+  const isNotStarted = task.status === "todo";
+  const shouldHighlight = isNotStarted && (userRole === "admin" || userRole === "project_manager");
 
   const handleTaskClick = () => {
     if (onTaskClick) {
@@ -106,6 +111,8 @@ const ModalTaskCard: React.FC<{
         ${
           overdue
             ? "border-red-200 bg-red-50/50 hover:border-red-300"
+            : shouldHighlight
+            ? "border-yellow-300 bg-yellow-50/70 hover:border-yellow-400 hover:bg-yellow-50/90"
             : "border-[#E1F3F0] hover:border-[#1CC2B1] hover:bg-[#F8FDFC]"
         }`}
       onClick={handleTaskClick}
@@ -238,6 +245,7 @@ const ModalTaskGrid: React.FC<ModalTaskGridProps> = ({
   tasks,
   onTaskClick,
   onChatClick,
+  userRole,
 }) => {
   if (tasks.length === 0) {
     return (
@@ -265,6 +273,7 @@ const ModalTaskGrid: React.FC<ModalTaskGridProps> = ({
           task={task}
           onTaskClick={onTaskClick}
           onChatClick={onChatClick}
+          userRole={userRole}
         />
       ))}
     </div>

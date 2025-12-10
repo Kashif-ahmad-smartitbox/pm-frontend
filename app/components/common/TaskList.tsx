@@ -19,6 +19,7 @@ interface TaskListProps {
   onEditTask: (task: Task) => void;
   onDeleteTask: (task: Task) => void;
   onApproveTask?: (task: Task) => void;
+  userRole?: string;
 }
 
 const TaskList: React.FC<TaskListProps> = ({
@@ -27,6 +28,7 @@ const TaskList: React.FC<TaskListProps> = ({
   onEditTask,
   onDeleteTask,
   onApproveTask,
+  userRole,
 }) => {
   const getStatusIcon = (status: TaskStatus) => {
     switch (status) {
@@ -96,10 +98,19 @@ const TaskList: React.FC<TaskListProps> = ({
 
   return (
     <div className="space-y-2">
-      {tasks.map((task) => (
+      {tasks.map((task) => {
+        // Check if task is not started and user is admin or project manager
+        const isNotStarted = task.status === "todo";
+        const shouldHighlight = isNotStarted && (userRole === "admin" || userRole === "project_manager");
+        
+        return (
         <div
           key={task._id}
-          className="bg-white rounded-lg border border-[#E1F3F0] p-4 hover:shadow-sm transition-shadow duration-200 cursor-pointer"
+          className={`rounded-lg border p-4 hover:shadow-sm transition-shadow duration-200 cursor-pointer ${
+            shouldHighlight
+              ? "bg-yellow-50/70 border-yellow-300 hover:border-yellow-400"
+              : "bg-white border-[#E1F3F0]"
+          }`}
           onClick={() => onTaskClick(task)}
         >
           <div className="flex items-start justify-between">
@@ -207,7 +218,8 @@ const TaskList: React.FC<TaskListProps> = ({
             </div>
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

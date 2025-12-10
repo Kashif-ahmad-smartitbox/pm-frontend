@@ -241,6 +241,7 @@ const Modals: React.FC<ModalsProps> = ({
         taskStats={taskStats}
         onTaskClick={handleTaskClick}
         onChatClick={handleChatClick}
+        userRole={currentUser?.role}
       />
 
       <CombinedProjectsReportModal

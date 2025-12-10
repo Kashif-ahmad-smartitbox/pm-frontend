@@ -127,21 +127,28 @@ const TaskCard2 = ({
   onEditTask,
   onDeleteTask,
   onApproveTask,
+  userRole,
 }: {
   task: Task;
   onTaskClick: (task: Task) => void;
   onEditTask: (task: Task) => void;
   onDeleteTask: (task: Task) => void;
   onApproveTask?: (task: Task) => void;
+  userRole?: string;
 }) => {
   const isNew = task.createdAt && isNewTask(task.createdAt);
   const overdue = isTaskOverdue(task);
+  // Check if task is not started and user is admin or project manager
+  const isNotStarted = task.status === "todo";
+  const shouldHighlight = isNotStarted && (userRole === "admin" || userRole === "project_manager");
 
   return (
     <div
       className={`bg-white rounded-xl p-3 border transition-all duration-300 group ${
         overdue
           ? "border-red-200 bg-red-50/50 hover:border-red-300 hover:bg-red-50/70"
+          : shouldHighlight
+          ? "border-yellow-300 bg-yellow-50/70 hover:border-yellow-400 hover:bg-yellow-50/90"
           : "border-[#E1F3F0] hover:border-[#1CC2B1] hover:shadow-md"
       }`}
     >

@@ -40,6 +40,7 @@ interface AllTasksModalProps {
   taskStats?: TaskStats;
   onTaskClick?: (task: Task) => void;
   onChatClick?: (task: Task) => void;
+  userRole?: string;
 }
 
 // Helper function to get status badge styles
@@ -121,6 +122,7 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
   taskStats,
   onTaskClick,
   onChatClick,
+  userRole,
 }) => {
   const [activeFilter, setActiveFilter] = useState<{
     type: "status" | "priority" | "overdue" | "all";
@@ -468,6 +470,7 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
                 tasks={filteredTasks}
                 onTaskClick={onTaskClick}
                 onChatClick={onChatClick}
+                userRole={userRole}
               />
             </div>
           </div>

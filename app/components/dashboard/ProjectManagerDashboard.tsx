@@ -1059,6 +1059,7 @@ export default function ProjectManagerDashboard() {
                     onEditTask={handleEditTask}
                     onDeleteTask={handleDeleteTask}
                     onApproveTask={handleApproveTaskClick}
+                    userRole={currentUser?.role}
                   />
                 ) : (
                   <TaskList
@@ -1067,6 +1068,7 @@ export default function ProjectManagerDashboard() {
                     onEditTask={handleEditTask}
                     onDeleteTask={handleDeleteTask}
                     onApproveTask={handleApproveTaskClick}
+                    userRole={currentUser?.role}
                   />
                 )}
               </div>
@@ -1355,6 +1357,7 @@ const Modals: React.FC<ModalsProps> = ({
         taskStats={taskStats}
         onTaskClick={handleTaskClick}
         onChatClick={handleChatClick}
+        userRole={currentUser?.role}
       />
 
       <CombinedProjectsReportModal

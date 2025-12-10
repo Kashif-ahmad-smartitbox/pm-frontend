@@ -1053,6 +1053,7 @@ export default function AdminDashboard() {
                     onEditTask={handleEditTask}
                     onDeleteTask={handleDeleteTask}
                     onApproveTask={handleApproveTaskClick}
+                    userRole={currentUser?.role}
                   />
                 ) : (
                   <TaskList
@@ -1061,6 +1062,7 @@ export default function AdminDashboard() {
                     onEditTask={handleEditTask}
                     onDeleteTask={handleDeleteTask}
                     onApproveTask={handleApproveTaskClick}
+                    userRole={currentUser?.role}
                   />
                 )}
               </div>
