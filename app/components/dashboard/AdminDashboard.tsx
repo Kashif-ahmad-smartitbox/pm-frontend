@@ -425,23 +425,66 @@ export default function AdminDashboard() {
         }
       }
       
-      // Now navigate to the project if we have projectId
-      if (projectId) {
-        console.log('[handleNotificationTaskClick] Navigating to project:', projectId);
-        const projectData = await getProjectData(projectId);
-        setSelectedProject(projectData);
-        setTaskFilters(DEFAULT_TASK_FILTERS);
-        setTaskViewMode("grid");
-        setLoadingProject(false);
+      // Validate projectId format before using it
+      if (projectId && projectId.trim() && projectId !== "[object Object]") {
+        // Check if it's a valid ObjectId format (24 hex characters)
+        const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(projectId);
         
-        // Find and select the task from the project's tasks
-        const task = projectData.tasks?.find((t: Task) => t._id === taskId);
-        console.log('[handleNotificationTaskClick] Task found in project:', !!task);
-        if (task) {
-          setSelectedTask(task);
+        if (isValidObjectId) {
+          console.log('[handleNotificationTaskClick] Navigating to project:', projectId);
+          try {
+            const projectData = await getProjectData(projectId);
+            setSelectedProject(projectData);
+            setTaskFilters(DEFAULT_TASK_FILTERS);
+            setTaskViewMode("grid");
+            setLoadingProject(false);
+            
+            // Find and select the task from the project's tasks
+            const task = projectData.tasks?.find((t: Task) => t._id === taskId);
+            console.log('[handleNotificationTaskClick] Task found in project:', !!task);
+            if (task) {
+              setSelectedTask(task);
+            } else {
+              // Task not found in project - might have been deleted
+              setError("This task may have been deleted or is no longer available.");
+            }
+          } catch (projectError: any) {
+            console.error('[handleNotificationTaskClick] Error loading project:', projectError);
+            setLoadingProject(false);
+            // If project load fails, try to show task directly
+            const taskData = await getTask(taskId);
+            if (taskData) {
+              setSelectedTask(taskData);
+            } else {
+              setError("Failed to load project or task. Please try again.");
+            }
+          }
         } else {
-          // Task not found in project - might have been deleted
-          setError("This task may have been deleted or is no longer available.");
+          // Invalid projectId format, fetch task to get correct projectId
+          console.log('[handleNotificationTaskClick] Invalid projectId format, fetching task:', projectId);
+          const taskData = await getTask(taskId);
+          if (taskData && taskData.project) {
+            const validProjectId = typeof taskData.project === 'string' 
+              ? taskData.project 
+              : taskData.project._id;
+            if (validProjectId) {
+              const projectData = await getProjectData(validProjectId);
+              setSelectedProject(projectData);
+              setTaskFilters(DEFAULT_TASK_FILTERS);
+              setTaskViewMode("grid");
+              const task = projectData.tasks?.find((t: Task) => t._id === taskId);
+              if (task) {
+                setSelectedTask(task);
+              } else {
+                setSelectedTask(taskData);
+              }
+            } else {
+              setSelectedTask(taskData);
+            }
+          } else {
+            setSelectedTask(taskData);
+          }
+          setLoadingProject(false);
         }
       } else {
         // Last resort: show task modal without project context
