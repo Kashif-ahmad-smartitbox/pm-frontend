@@ -46,10 +46,19 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
   onTaskCreated,
   projectId,
 }) => {
+  // Helper function to get today's date in YYYY-MM-DD format
+  const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    dueDate: "",
+    dueDate: getTodayDate(), // Set default to today's date
     priority: "medium" as TaskPriority,
     assigneeIds: [] as string[],
   });
@@ -61,6 +70,14 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       fetchTeamMembers();
+      // Reset form data with today's date when modal opens
+      setFormData({
+        title: "",
+        description: "",
+        dueDate: getTodayDate(),
+        priority: "medium" as TaskPriority,
+        assigneeIds: [],
+      });
     }
   }, [isOpen]);
 
@@ -137,7 +154,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({
     setFormData({
       title: "",
       description: "",
-      dueDate: "",
+      dueDate: getTodayDate(), // Reset to today's date when closing
       priority: "medium",
       assigneeIds: [],
     });
