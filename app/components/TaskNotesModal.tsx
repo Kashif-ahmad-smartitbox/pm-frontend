@@ -28,6 +28,7 @@ import {
   VideoRecordingModal,
   VoiceRecordingControls,
 } from "./chat";
+import NewTaskModal from "./NewTaskModal";
 
 // Types
 export type TaskStatus = "todo" | "in_progress" | "done";
@@ -833,6 +834,7 @@ interface TaskNotesModalProps {
   onNoteAdded?: (newNote: Note) => void;
   onNoteUpdated?: (updatedNote: Note) => void;
   onNoteDeleted?: (deletedNoteId: string) => void;
+  onTaskCreated?: () => void;
   currentUser: User;
   isAdmin?: boolean;
 }
@@ -844,6 +846,7 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   onNoteAdded,
   onNoteUpdated,
   onNoteDeleted,
+  onTaskCreated,
   currentUser,
   isAdmin = false,
 }) => {
@@ -871,6 +874,7 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
   const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
+  const [showNewTaskModal, setShowNewTaskModal] = useState(false);
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -1330,9 +1334,76 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
     startPolling();
   };
 
+  // Get project ID from task
+  const getProjectId = (): string => {
+    if (!task?.project) {
+      console.warn("Task project is missing");
+      return "";
+    }
+    if (typeof task.project === "string") {
+      return task.project;
+    }
+    if (task.project && typeof task.project === "object") {
+      const projectId = task.project._id || task.project.id || "";
+      if (!projectId) {
+        console.warn("Project ID not found in project object", task.project);
+      }
+      return projectId;
+    }
+    return "";
+  };
+
+  // Handle task creation
+  const handleCreateTask = (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    const projectIdValue = getProjectId();
+    console.log("handleCreateTask called, projectId:", projectIdValue, "task:", task);
+    if (!projectIdValue) {
+      console.error("Cannot create task: Project ID is missing", task);
+      alert("Cannot create task: Project information is missing");
+      return;
+    }
+    console.log("Opening task modal for project:", projectIdValue);
+    console.log("Setting showNewTaskModal to true");
+    setShowNewTaskModal(true);
+    console.log("showNewTaskModal state should be true now");
+  };
+
+  // Handle task created callback
+  const handleTaskCreated = () => {
+    console.log("Task created from chat, closing modal and refreshing");
+    setShowNewTaskModal(false);
+    // Call parent callback to refresh task list
+    if (onTaskCreated) {
+      onTaskCreated();
+    }
+  };
+
+  // Ensure userRole is available - use useEffect to update when currentUser changes
+  const [userRole, setUserRole] = useState<string | undefined>(currentUser?.role);
+  
+  useEffect(() => {
+    console.log("TaskNotesModal - currentUser changed:", currentUser);
+    if (currentUser?.role) {
+      console.log("TaskNotesModal - Setting userRole to:", currentUser.role);
+      setUserRole(currentUser.role);
+    } else {
+      console.log("TaskNotesModal - currentUser.role is not available yet");
+    }
+  }, [currentUser, isOpen]);
+
+  // Use the most up-to-date role value (either from state or directly from currentUser)
+  const effectiveUserRole = userRole || currentUser?.role;
+
   if (!isOpen) return null;
 
   const notesCount = notes?.length ?? 0;
+  const projectId = getProjectId();
+  
+  console.log("TaskNotesModal render - effectiveUserRole:", effectiveUserRole, "userRole:", userRole, "currentUser:", currentUser, "projectId:", projectId);
 
   return (
     <>
@@ -1346,6 +1417,8 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
             onRefresh={handleManualRefresh}
             loading={refreshing}
             notesCount={notesCount}
+            userRole={effectiveUserRole}
+            onCreateTask={handleCreateTask}
           />
         </div>
         <div className="hidden md:block">
@@ -1355,6 +1428,8 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
             onRefresh={handleManualRefresh}
             loading={refreshing}
             notesCount={notesCount}
+            userRole={effectiveUserRole}
+            onCreateTask={handleCreateTask}
           />
         </div>
 
@@ -1856,6 +1931,17 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
         fileType={mediaPreview.fileType}
         isOpen={mediaPreview.isOpen}
         onClose={closeMediaPreview}
+      />
+
+      {/* New Task Modal - Always render but control visibility with isOpen */}
+      <NewTaskModal
+        isOpen={showNewTaskModal && !!projectId}
+        onClose={() => {
+          console.log("Closing task modal");
+          setShowNewTaskModal(false);
+        }}
+        onTaskCreated={handleTaskCreated}
+        projectId={projectId || ""}
       />
     </>
   );

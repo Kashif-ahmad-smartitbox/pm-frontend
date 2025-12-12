@@ -384,34 +384,46 @@ function NotificationPanel({ onClose, pageSize = 50, onTaskClick }: Notification
 
                           {/* Task Name - Clickable */}
                           {notification.contextType === "task" && (notification.data?.taskTitle || notification.data?.taskName) && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (onTaskClick && notification.contextId) {
-                                  onTaskClick(notification.contextId, notification.data.projectId, notification.data.taskTitle || notification.data.taskName);
-                                }
-                              }}
-                              className="flex items-center gap-1 text-xs text-[#1CC2B1] hover:text-[#0E3554] font-medium mb-1 transition-colors"
-                            >
-                              <span className="truncate max-w-[200px]">📋 {notification.data.taskTitle || notification.data.taskName}</span>
-                              <ExternalLink className="w-3 h-3 shrink-0" />
-                            </button>
+                            <div className="mb-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (onTaskClick && notification.contextId) {
+                                    onTaskClick(notification.contextId, notification.data.projectId, notification.data.taskTitle || notification.data.taskName);
+                                  }
+                                }}
+                                className="flex items-center gap-1 text-xs text-[#1CC2B1] hover:text-[#0E3554] font-medium transition-colors"
+                              >
+                                <span className="truncate max-w-[200px]">📋 {notification.data.taskTitle || notification.data.taskName}</span>
+                                <ExternalLink className="w-3 h-3 shrink-0" />
+                              </button>
+                              {/* Show project name instead of verb message for task notifications */}
+                              {notification.data?.projectName && (
+                                <p className="text-xs text-gray-600 mb-2 leading-tight line-clamp-2">
+                                  Project: <span className="font-medium text-gray-800">{notification.data.projectName}</span>
+                                </p>
+                              )}
+                            </div>
                           )}
 
-                          {/* friendly message */}
-                          {notification.data?.message ? (
-                            <p className="text-xs text-gray-600 mb-2 leading-tight line-clamp-2">
-                              {notification.data.message}
-                            </p>
-                          ) : createdUserTitle ? (
-                            <p className="text-xs text-gray-600 mb-2 leading-tight line-clamp-2">
-                              {actorName} created {createdUserTitle}
-                            </p>
-                          ) : (
-                            // fallback display of verb + context
-                            <p className="text-xs text-gray-600 mb-2 leading-tight line-clamp-2">
-                              {notification.verb} {notification.contextType}
-                            </p>
+                          {/* friendly message - Skip for task notifications if project name is shown */}
+                          {notification.contextType !== "task" && (
+                            <>
+                              {notification.data?.message ? (
+                                <p className="text-xs text-gray-600 mb-2 leading-tight line-clamp-2">
+                                  {notification.data.message}
+                                </p>
+                              ) : createdUserTitle ? (
+                                <p className="text-xs text-gray-600 mb-2 leading-tight line-clamp-2">
+                                  {actorName} created {createdUserTitle}
+                                </p>
+                              ) : (
+                                // fallback display of verb + context
+                                <p className="text-xs text-gray-600 mb-2 leading-tight line-clamp-2">
+                                  {notification.verb} {notification.contextType}
+                                </p>
+                              )}
+                            </>
                           )}
 
                           <div className="flex items-center justify-between">

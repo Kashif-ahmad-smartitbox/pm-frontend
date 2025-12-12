@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Task } from "../TaskNotesModal";
-import { ChevronDown, ChevronUp, RefreshCw, User, X } from "lucide-react";
+import { ChevronDown, ChevronUp, RefreshCw, User, X, Plus } from "lucide-react";
 
 const MobileHeader = ({
   task,
@@ -8,12 +8,16 @@ const MobileHeader = ({
   onRefresh,
   loading,
   notesCount,
+  userRole,
+  onCreateTask,
 }: {
   task: Task;
   onClose: () => void;
   onRefresh: () => void;
   loading: boolean;
   notesCount: number;
+  userRole?: string;
+  onCreateTask?: () => void;
 }) => {
   const [showDetails, setShowDetails] = useState(false);
 
@@ -102,6 +106,20 @@ const MobileHeader = ({
                   {task.priority}
                 </span>
               </div>
+            )}
+            {/* Add Task Button - Only for admin and project_manager */}
+            {(userRole === "admin" || userRole === "project_manager") && onCreateTask && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCreateTask();
+                }}
+                className="flex items-center gap-1 bg-[#1CC2B1] hover:bg-[#0E3554] text-white px-2 py-1 rounded border border-transparent hover:border-[#1CC2B1] transition-all duration-200 font-medium"
+                title="Create new task for this project"
+              >
+                <Plus className="w-3 h-3" />
+                <span>Add Task</span>
+              </button>
             )}
           </div>
         </div>

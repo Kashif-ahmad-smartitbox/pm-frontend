@@ -1,4 +1,4 @@
-import { MessageSquare, RefreshCw, User, X } from "lucide-react";
+import { MessageSquare, RefreshCw, User, X, Plus } from "lucide-react";
 import { Task } from "../TaskNotesModal";
 
 const DesktopHeader = ({
@@ -7,12 +7,16 @@ const DesktopHeader = ({
   onRefresh,
   loading,
   notesCount,
+  userRole,
+  onCreateTask,
 }: {
   task: Task;
   onClose: () => void;
   onRefresh: () => void;
   loading: boolean;
   notesCount: number;
+  userRole?: string;
+  onCreateTask?: () => void;
 }) => (
   <div className="bg-white border-b border-gray-200 p-6">
     <div className="flex items-center justify-between">
@@ -96,6 +100,20 @@ const DesktopHeader = ({
             {task.priority} priority
           </span>
         </div>
+      )}
+      {/* Add Task Button - Only for admin and project_manager */}
+      {(userRole === "admin" || userRole === "project_manager") && onCreateTask && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onCreateTask();
+          }}
+          className="flex items-center gap-2 bg-[#1CC2B1] hover:bg-[#0E3554] text-white px-3 py-2 rounded-lg border border-transparent hover:border-[#1CC2B1] transition-all duration-200 font-medium"
+          title="Create new task for this project"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add Task</span>
+        </button>
       )}
     </div>
   </div>

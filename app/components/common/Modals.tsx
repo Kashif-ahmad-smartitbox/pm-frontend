@@ -189,6 +189,7 @@ const Modals: React.FC<ModalsProps> = ({
           isOpen={!!selectedTask}
           onClose={onCloseModal}
           onNoteAdded={onNoteAdded}
+          onTaskCreated={onNewTaskCreated}
           currentUser={currentUser}
           isAdmin={isAdmin}
         />
