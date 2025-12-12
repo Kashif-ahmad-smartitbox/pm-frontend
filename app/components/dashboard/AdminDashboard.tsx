@@ -964,21 +964,23 @@ export default function AdminDashboard() {
                       </button>
                     </div>
 
-                    <button
-                      onClick={handleBackToProjects}
-                      className="px-3 py-1.5 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-all duration-200 flex items-center gap-1.5 text-sm hover:bg-[#F8FDFC] rounded-lg"
-                    >
-                      <ArrowLeft className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Back</span>
-                    </button>
-                    <button
-                      onClick={() => setShowNewTaskModal(true)}
-                      className="px-3 py-1.5 bg-[#0E3554] text-white font-medium rounded-lg hover:bg-[#0A2A42] transition-all duration-200 flex items-center gap-1.5 text-sm hover:shadow-sm"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">New Task</span>
-                      <span className="sm:hidden">Task</span>
-                    </button>
+                    <div className="flex items-center gap-2 ml-auto sm:ml-0">
+                      <button
+                        onClick={handleBackToProjects}
+                        className="px-3 py-1.5 text-[#0E3554] hover:text-[#1CC2B1] font-medium transition-all duration-200 flex items-center gap-1.5 text-sm hover:bg-[#F8FDFC] rounded-lg"
+                      >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Back</span>
+                      </button>
+                      <button
+                        onClick={() => setShowNewTaskModal(true)}
+                        className="px-3 py-1.5 bg-[#0E3554] text-white font-medium rounded-lg hover:bg-[#0A2A42] transition-all duration-200 flex items-center gap-1.5 text-sm hover:shadow-sm"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">New Task</span>
+                        <span className="sm:hidden">Task</span>
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <>

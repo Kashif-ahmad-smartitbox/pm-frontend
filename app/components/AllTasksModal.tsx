@@ -196,20 +196,20 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
-      <div className="bg-white rounded-xl shadow-sm border border-[#D9F3EE] w-full max-w-6xl h-[90vh] sm:h-[85vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-1 sm:p-4 z-50">
+      <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-[#D9F3EE] w-full max-w-[95vw] sm:max-w-6xl h-[95vh] sm:h-[85vh] flex flex-col">
         {/* Header - Fixed */}
-        <div className="border-b border-[#D9F3EE] p-3 sm:p-4 shrink-0">
+        <div className="border-b border-[#D9F3EE] p-2 sm:p-4 shrink-0">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#EFFFFA] rounded-lg flex items-center justify-center flex-shrink-0">
-                <FileText className="w-3 h-3 sm:w-4 sm:h-4 text-[#0E3554]" />
+            <div className="flex items-center gap-1.5 sm:gap-3">
+              <div className="w-5 h-5 sm:w-8 sm:h-8 bg-[#EFFFFA] rounded-lg flex items-center justify-center flex-shrink-0">
+                <FileText className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-[#0E3554]" />
               </div>
               <div>
-                <h2 className="text-base sm:text-lg font-bold text-[#0E3554]">
+                <h2 className="text-sm sm:text-lg font-bold text-[#0E3554]">
                   All Tasks Overview
                 </h2>
-                <p className="text-slate-600 text-xs mt-0.5">
+                <p className="text-slate-600 text-[10px] sm:text-xs mt-0.5">
                   {filteredTasks.length} of {allTasks.length} tasks
                   {hasActiveFilters && " (filtered)"}
                 </p>
@@ -227,7 +227,7 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
 
               <button
                 onClick={onClose}
-                className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center text-slate-600 hover:text-[#0E3554] hover:bg-slate-100 rounded transition-colors"
+                className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -238,10 +238,10 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
         {/* Task Stats Summary with Filter Cards - Fixed */}
         {/* Task Stats Summary with Filter Cards - Fixed */}
         {taskStats && (
-          <div className="p-3 sm:p-4 bg-linear-to-br from-gray-50 to-white border-b border-[#D9F3EE] shrink-0">
+          <div className="p-2 sm:p-4 bg-linear-to-br from-gray-50 to-white border-b border-[#D9F3EE] shrink-0">
             {/* Mobile Filter Menu */}
             {isMobileMenuOpen && (
-              <div className="sm:hidden mb-4 p-3 bg-white border border-[#D9F3EE] rounded-lg shadow-sm">
+              <div className="sm:hidden mb-3 p-2 bg-white border border-[#D9F3EE] rounded-lg shadow-sm">
                 <div className="space-y-2">
                   <button
                     onClick={() =>
@@ -304,10 +304,10 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
 
             {/* Desktop Stats Grid - Hidden on mobile when menu is open */}
             {!isMobileMenuOpen && (
-              <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 mb-4">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-1.5 sm:gap-3 mb-3">
                 {/* Total Tasks Card */}
                 <div
-                  className={`bg-white rounded-lg p-2 sm:p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
+                  className={`bg-white rounded-lg p-1.5 sm:p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
                     activeFilter.type === "all"
                       ? "border-[#1CC2B1] ring-1 ring-[#1CC2B1]"
                       : "border-[#D9F3EE] hover:border-[#0E3554]"
@@ -315,19 +315,19 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
                   onClick={() => setActiveFilter({ type: "all", value: "all" })}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="text-lg sm:text-xl font-bold text-[#0E3554]">
+                    <div className="text-sm sm:text-xl font-bold text-[#0E3554]">
                       {taskStats.total}
                     </div>
-                    <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 text-[#1CC2B1]" />
+                    <BarChart3 className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-[#1CC2B1]" />
                   </div>
-                  <div className="text-xs text-gray-600 font-medium mt-1">
+                  <div className="text-[10px] sm:text-xs text-gray-600 font-medium mt-0.5">
                     Total Tasks
                   </div>
                 </div>
 
                 {/* To Do Card */}
                 <div
-                  className={`bg-white rounded-lg p-2 sm:p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
+                  className={`bg-white rounded-lg p-1.5 sm:p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
                     activeFilter.type === "status" &&
                     activeFilter.value === "todo"
                       ? "border-blue-500 ring-1 ring-blue-500"
@@ -336,19 +336,19 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
                   onClick={() => handleFilterClick("status", "todo")}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="text-lg sm:text-xl font-bold text-blue-600">
+                    <div className="text-sm sm:text-xl font-bold text-blue-600">
                       {taskStats.byStatus.todo}
                     </div>
-                    <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
+                    <Clock className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-blue-400" />
                   </div>
-                  <div className="text-xs text-gray-600 font-medium mt-1">
+                  <div className="text-[10px] sm:text-xs text-gray-600 font-medium mt-0.5">
                     To Do
                   </div>
                 </div>
 
                 {/* In Progress Card */}
                 <div
-                  className={`bg-white rounded-lg p-2 sm:p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
+                  className={`bg-white rounded-lg p-1.5 sm:p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
                     activeFilter.type === "status" &&
                     activeFilter.value === "in_progress"
                       ? "border-amber-500 ring-1 ring-amber-500"
@@ -357,19 +357,19 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
                   onClick={() => handleFilterClick("status", "in_progress")}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="text-lg sm:text-xl font-bold text-amber-600">
+                    <div className="text-sm sm:text-xl font-bold text-amber-600">
                       {taskStats.byStatus.in_progress}
                     </div>
-                    <PlayCircle className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400" />
+                    <PlayCircle className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-amber-400" />
                   </div>
-                  <div className="text-xs text-gray-600 font-medium mt-1">
+                  <div className="text-[10px] sm:text-xs text-gray-600 font-medium mt-0.5">
                     In Progress
                   </div>
                 </div>
 
                 {/* Completed Card */}
                 <div
-                  className={`rounded-lg p-2 sm:p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
+                  className={`rounded-lg p-1.5 sm:p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
                     activeFilter.type === "status" &&
                     activeFilter.value === "done"
                       ? "border-emerald-500 ring-1 ring-emerald-500"
@@ -378,19 +378,19 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
                   onClick={() => handleFilterClick("status", "done")}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="text-lg sm:text-xl font-bold text-emerald-600">
+                    <div className="text-sm sm:text-xl font-bold text-emerald-600">
                       {taskStats.byStatus.done}
                     </div>
-                    <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
+                    <CheckCircle className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-emerald-400" />
                   </div>
-                  <div className="text-xs text-gray-600 font-medium mt-1">
+                  <div className="text-[10px] sm:text-xs text-gray-600 font-medium mt-0.5">
                     Completed
                   </div>
                 </div>
 
                 {/* Overdue Card */}
                 <div
-                  className={`rounded-lg p-2 sm:p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
+                  className={`rounded-lg p-1.5 sm:p-3 border transition-all duration-200 cursor-pointer hover:shadow-md ${
                     activeFilter.type === "overdue"
                       ? "border-red-500 ring-1 ring-red-500"
                       : "border-[#D9F3EE] hover:border-red-500"
@@ -398,12 +398,12 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
                   onClick={() => handleFilterClick("overdue", "overdue")}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="text-lg sm:text-xl font-bold text-red-600">
+                    <div className="text-sm sm:text-xl font-bold text-red-600">
                       {taskStats.overdue || overdueTasksCount}
                     </div>
-                    <AlertTriangle className="w-3 h-3 sm:w-4 sm:h-4 text-red-400" />
+                    <AlertTriangle className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-red-400" />
                   </div>
-                  <div className="text-xs text-gray-600 font-medium mt-1">
+                  <div className="text-[10px] sm:text-xs text-gray-600 font-medium mt-0.5">
                     Overdue
                   </div>
                 </div>
@@ -411,16 +411,16 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
             )}
 
             {/* Search and Filter Controls */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 sm:gap-3">
               {/* Search */}
               <div className="flex-1 relative">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400 absolute left-2 sm:left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Search tasks, projects, or assignees..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 text-sm border border-[#D9F3EE] rounded-lg 
+                  className="w-full pl-8 sm:pl-10 pr-2 sm:pr-3 py-1.5 sm:py-2 text-xs sm:text-sm border border-[#D9F3EE] rounded-lg 
             placeholder-slate-400 transition-all duration-200
             focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
             hover:border-[#0E3554] bg-white text-[#0E3554]"
@@ -431,11 +431,11 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
               {hasActiveFilters && (
                 <button
                   onClick={handleClearFilters}
-                  className="px-3 py-2 text-sm text-slate-600 hover:text-[#0E3554] font-medium 
+                  className="px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm text-slate-600 hover:text-[#0E3554] font-medium 
             transition-colors hover:bg-[#EFFFFA] rounded-lg border border-[#D9F3EE] 
-            flex items-center gap-1.5 justify-center"
+            flex items-center gap-1 sm:gap-1.5 justify-center"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                   Clear
                 </button>
               )}
@@ -465,7 +465,7 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
         {/* Tasks List - Scrollable Area */}
         <div className="flex-1 overflow-hidden min-h-0">
           <div className="h-full overflow-y-auto">
-            <div className="p-2 sm:p-4">
+            <div className="p-1.5 sm:p-4">
               <ModalTaskGrid
                 tasks={filteredTasks}
                 onTaskClick={onTaskClick}
@@ -477,9 +477,9 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
         </div>
 
         {/* Footer - Fixed */}
-        <div className="border-t border-[#D9F3EE] p-3 sm:p-4 shrink-0">
+        <div className="border-t border-[#D9F3EE] p-2 sm:p-4 shrink-0">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4">
-            <div className="text-sm text-slate-600 text-center sm:text-left">
+            <div className="text-xs sm:text-sm text-slate-600 text-center sm:text-left">
               Showing{" "}
               <span className="font-semibold text-[#0E3554]">
                 {filteredTasks.length}
@@ -503,7 +503,7 @@ const AllTasksModal: React.FC<AllTasksModalProps> = ({
             <button
               onClick={onClose}
               className="w-full sm:w-auto px-4 py-2 text-sm rounded font-medium
-                bg-[#0E3554] hover:bg-[#0A2A42]
+                bg-red-600 hover:bg-red-700
                 transition-all duration-200
                 flex items-center justify-center gap-1.5 text-white"
             >
