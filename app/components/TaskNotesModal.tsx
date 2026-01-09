@@ -837,6 +837,7 @@ interface TaskNotesModalProps {
   onNoteAdded?: (newNote: Note) => void;
   onNoteUpdated?: (updatedNote: Note) => void;
   onNoteDeleted?: (deletedNoteId: string) => void;
+  onTaskUpdated?: () => void;
   onTaskCreated?: () => void;
   onUsersAdded?: () => void;
   currentUser: User;
@@ -852,6 +853,7 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   onNoteDeleted,
   onTaskCreated,
   onUsersAdded,
+  onTaskUpdated,
   currentUser,
   isAdmin = false,
 }) => {
@@ -1403,13 +1405,15 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
     setShowAddUsersModal(true);
   };
 
-  // Handle users added callback
   const handleUsersAdded = (newAssignees: User[]) => {
     console.log("Users added to task:", newAssignees);
     setTaskAssignees(newAssignees);
     setShowAddUsersModal(false);
 
-    // Call parent callback if provided
+    if (onTaskUpdated) {
+      onTaskUpdated();
+    }
+
     if (onUsersAdded) {
       onUsersAdded();
     }

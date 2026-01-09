@@ -150,6 +150,7 @@ const Modals: React.FC<ModalsProps> = ({
   onNewTaskCreated,
   onProjectUpdated,
   onTaskUpdated,
+
   onProjectTypeCreated,
   onConfirmDelete,
   onCloseNewProjectModal,
@@ -185,6 +186,7 @@ const Modals: React.FC<ModalsProps> = ({
     <>
       {selectedTask && (
         <TaskNotesModal
+          onTaskUpdated={onTaskUpdated}
           task={selectedTask}
           isOpen={!!selectedTask}
           onClose={onCloseModal}

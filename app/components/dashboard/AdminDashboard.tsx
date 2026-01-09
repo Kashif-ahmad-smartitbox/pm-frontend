@@ -616,13 +616,33 @@ export default function AdminDashboard() {
     }
   }, [deleteConfirm, fetchProjects, selectedProject, handleProjectClick]);
 
-  const handleTaskUpdated = useCallback(() => {
-    if (selectedProject && editingTask) {
-      handleProjectClick(selectedProject.project._id);
-    }
-    setShowUpdateTaskModal(false);
-    setEditingTask(null);
-  }, [selectedProject, editingTask, handleProjectClick]);
+  const handleTaskUpdated = useCallback(
+    async (taskId?: string, updatedTaskData?: Task) => {
+      console.log("Refreshing after task update...");
+
+      try {
+        if (updatedTaskData && selectedTask?._id === updatedTaskData._id) {
+          setSelectedTask(updatedTaskData);
+        }
+
+        if (selectedProject) {
+          await handleProjectClick(selectedProject.project._id);
+        }
+
+        if (taskId && !updatedTaskData && selectedTask?._id === taskId) {
+          const refreshedTask = await getTask(taskId);
+          setSelectedTask(refreshedTask);
+        }
+
+        setShowUpdateTaskModal(false);
+        setEditingTask(null);
+      } catch (err) {
+        console.error("Failed to refresh after task update:", err);
+        setError("Failed to refresh data. Please try again.");
+      }
+    },
+    [selectedProject, selectedTask, handleProjectClick]
+  );
 
   const handleNoteAdded = useCallback(
     (newNote: Note) => {
@@ -643,7 +663,7 @@ export default function AdminDashboard() {
 
   const handleBackToProjects = useCallback(() => {
     setSelectedProject(null);
-    setTaskViewMode("grid"); // Reset task view mode when going back to projects
+    setTaskViewMode("grid");
   }, []);
 
   const handleNewProjectCreated = useCallback(() => {

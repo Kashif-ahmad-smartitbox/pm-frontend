@@ -83,9 +83,7 @@ const MobileHeader = ({
               <span className="text-gray-700">{task?.createdBy?.name}</span>
             </div>
             <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded border border-gray-300">
-              <span className="text-gray-700">
-                {task?.assignees?.length} members
-              </span>
+              <span className="text-gray-700">{assigneesCount} members</span>
             </div>
             <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded border border-gray-300">
               <div

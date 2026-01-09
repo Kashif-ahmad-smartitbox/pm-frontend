@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   X,
@@ -11,6 +13,9 @@ import {
   CheckCircle,
   XCircle,
   UserMinus,
+  AlertCircle,
+  Plus,
+  ArrowLeft,
 } from "lucide-react";
 import { User as UserType } from "./TaskNotesModal";
 import { getTeam } from "@/lib/api/users";
@@ -20,6 +25,7 @@ interface AddUsersModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUsersAdded: (users: UserType[], removedUsers?: UserType[]) => void;
+  onTaskUpdated?: () => void;
   taskId: string;
   currentAssignees: UserType[];
   currentUser: UserType;
@@ -29,6 +35,7 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({
   isOpen,
   onClose,
   onUsersAdded,
+  onTaskUpdated,
   taskId,
   currentAssignees,
   currentUser,
@@ -176,7 +183,6 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({
     return wasAssigned && !isRemoved;
   };
 
-  // Handle adding/updating users to task
   const handleUpdateTaskUsers = async () => {
     setAddingUsers(true);
     setError(null);
@@ -186,13 +192,25 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({
       const selectedUserIds = selectedUsers.map((user) => user._id);
       const removedUserIds = removedUsers.map((user) => user._id);
 
+      // Make API call to update task
       const response = await updateTask(taskId, {
         assigneeIds: selectedUserIds,
         removedAssigneeIds: removedUserIds,
       });
 
-      if (response.success) {
+      if (response) {
         onUsersAdded(selectedUsers, removedUsers);
+
+        if (response.task && onTaskUpdated) {
+          onTaskUpdated();
+        } else if (onTaskUpdated) {
+          try {
+            onTaskUpdated();
+          } catch (fetchError) {
+            console.error("Failed to fetch updated task:", fetchError);
+          }
+        }
+
         onClose();
       } else {
         throw new Error(response.message || "Failed to update task users");
@@ -223,28 +241,60 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({
   const getUserRoleBadge = (role?: string) => {
     if (!role) return null;
 
-    const roleConfig: Record<string, { color: string; label: string }> = {
+    const roleConfig: Record<
+      string,
+      { color: string; label: string; icon: any }
+    > = {
       admin: {
-        color: "bg-red-100 text-red-800 border-red-200",
+        color: "bg-red-50 text-red-700 border-red-200",
         label: "Admin",
+        icon: User,
       },
       project_manager: {
-        color: "bg-purple-100 text-purple-800 border-purple-200",
+        color: "bg-[#E0FFFA] text-[#0E3554] border-[#D9F3EE]",
         label: "Project Manager",
+        icon: User,
+      },
+      purchase_office: {
+        color: "bg-purple-50 text-purple-700 border-purple-200",
+        label: "Purchase Office",
+        icon: User,
+      },
+      site_store_incharge: {
+        color: "bg-orange-50 text-orange-700 border-orange-200",
+        label: "Site Store Incharge",
+        icon: User,
+      },
+      field_team_executive: {
+        color: "bg-blue-50 text-blue-700 border-blue-200",
+        label: "Field Executive",
+        icon: User,
+      },
+      accounts_officer: {
+        color: "bg-green-50 text-green-700 border-green-200",
+        label: "Accounts Officer",
+        icon: User,
       },
       team_member: {
-        color: "bg-blue-100 text-blue-800 border-blue-200",
+        color: "bg-[#E1F3F0] text-[#1CC2B1] border-[#D9F3EE]",
         label: "Team Member",
+        icon: Users,
       },
     };
 
     const config = roleConfig[role] || {
-      color: "bg-gray-100 text-gray-800 border-gray-200",
+      color: "bg-slate-50 text-slate-700 border-slate-200",
       label: role,
+      icon: User,
     };
 
+    const IconComponent = config.icon;
+
     return (
-      <span className={`text-xs px-2 py-1 rounded-full border ${config.color}`}>
+      <span
+        className={`px-2 py-1 rounded text-xs font-medium ${config.color} border flex items-center gap-1`}
+      >
+        <IconComponent className="w-3 h-3" />
         {config.label}
       </span>
     );
@@ -268,116 +318,128 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({
       currentAssignees.some((u) => u._id === user._id)
     ).length;
 
-    return { addedCount, removedCount, keptCount };
+    return { addedCount, removedCount, keptCount, total: selectedUsers.length };
+  };
+
+  const handleClose = () => {
+    setSearchQuery("");
+    setError(null);
+    onClose();
   };
 
   if (!isOpen) return null;
 
-  const { addedCount, removedCount, keptCount } = getSelectionSummary();
+  const { addedCount, removedCount, keptCount, total } = getSelectionSummary();
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fadeIn">
-      <div className="bg-white rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl transform transition-all duration-300 scale-100">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-[70]">
+      <div className="bg-white rounded-xl shadow-sm border border-[#D9F3EE] w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-              <Users className="w-6 h-6 text-blue-600" />
+        <div className="bg-white border-b border-[#D9F3EE] p-4 shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-[#EFFFFA] rounded-lg flex items-center justify-center">
+                <Users className="w-4 h-4 text-[#0E3554]" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-[#0E3554]">
+                  Manage Assignees
+                </h2>
+                <p className="text-slate-600 text-xs mt-0.5">
+                  Add or remove users from this task
+                </p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold text-gray-900">
-                Manage Task Assignees
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Add or remove users from this task
-              </p>
-            </div>
+            <button
+              onClick={handleClose}
+              className="w-6 h-6 flex items-center justify-center text-slate-600 hover:text-[#0E3554] hover:bg-slate-100 rounded transition-colors disabled:opacity-50"
+              disabled={addingUsers}
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-50 rounded-xl transition-all hover:rotate-90 duration-300"
-            aria-label="Close modal"
-          >
-            <X className="w-6 h-6 text-gray-400 hover:text-gray-600" />
-          </button>
         </div>
 
         {/* Selection Summary */}
-        <div className="px-6 py-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 border-y border-blue-100">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-semibold text-blue-800">
-                Current Selection
-              </span>
+        <div className="bg-linear-to-r from-[#EFFFFA] to-[#E1F3F0] border-b border-[#D9F3EE] p-4 shrink-0">
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="bg-white rounded-lg p-2 border border-[#D9F3EE] text-center">
+              <div className="text-lg font-bold text-[#0E3554]">
+                {keptCount}
+              </div>
+              <div className="text-xs text-slate-600">Kept</div>
+            </div>
+            <div className="bg-white rounded-lg p-2 border border-[#D9F3EE] text-center">
+              <div className="text-lg font-bold text-blue-600">
+                {addedCount}
+              </div>
+              <div className="text-xs text-slate-600">Added</div>
+            </div>
+            <div className="bg-white rounded-lg p-2 border border-[#D9F3EE] text-center">
+              <div className="text-lg font-bold text-red-600">
+                {removedCount}
+              </div>
+              <div className="text-xs text-slate-600">Removed</div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-[#0E3554] font-medium flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5" />
+              {total} total assignees
+              {addedCount > 0 && (
+                <span className="text-blue-600 ml-2">+{addedCount}</span>
+              )}
+              {removedCount > 0 && (
+                <span className="text-red-600 ml-1">-{removedCount}</span>
+              )}
             </div>
             <button
               onClick={handleClearSelection}
-              className="text-xs text-red-600 hover:text-red-800 font-medium flex items-center gap-1"
+              className="text-xs text-red-600 hover:text-red-800 font-medium flex items-center gap-1 hover:bg-red-50 px-2 py-1 rounded transition-colors"
             >
               <XCircle className="w-3 h-3" />
               Reset Changes
             </button>
           </div>
-
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="bg-white p-2 rounded-lg border border-green-200">
-              <div className="text-lg font-bold text-green-600">
-                {keptCount}
-              </div>
-              <div className="text-xs text-gray-600">Kept</div>
-            </div>
-            <div className="bg-white p-2 rounded-lg border border-blue-200">
-              <div className="text-lg font-bold text-blue-600">
-                {addedCount}
-              </div>
-              <div className="text-xs text-gray-600">Added</div>
-            </div>
-            <div className="bg-white p-2 rounded-lg border border-red-200">
-              <div className="text-lg font-bold text-red-600">
-                {removedCount}
-              </div>
-              <div className="text-xs text-gray-600">Removed</div>
-            </div>
-          </div>
         </div>
 
-        {/* Search and Filter Bar */}
-        <div className="p-6 border-b border-gray-100 space-y-4">
+        {/* Search and Filter */}
+        <div className="border-b border-[#D9F3EE] p-4 shrink-0 space-y-3">
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search users by name or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-3 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-gray-50/50"
+              className="w-full pl-10 pr-3 py-2 text-sm border border-[#D9F3EE] rounded-lg 
+                placeholder-slate-400 transition-all duration-200
+                focus:outline-none focus:ring-1 focus:ring-[#1CC2B1] focus:border-[#1CC2B1]
+                hover:border-[#0E3554] bg-white text-[#0E3554]"
             />
           </div>
 
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-400" />
-              <span className="text-sm text-gray-600">View:</span>
-            </div>
-            <div className="flex bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center gap-2">
+            <Filter className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-xs font-medium text-[#0E3554]">View:</span>
+            <div className="flex bg-slate-100 rounded-lg p-1 flex-1">
               <button
                 onClick={() => setViewMode("all")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                className={`flex-1 px-2 py-1 text-xs font-medium rounded transition-all ${
                   viewMode === "all"
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "bg-white text-[#0E3554] shadow-sm"
+                    : "text-slate-600 hover:text-[#0E3554]"
                 }`}
               >
                 All Users
               </button>
               <button
                 onClick={() => setViewMode("selected")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                className={`flex-1 px-2 py-1 text-xs font-medium rounded transition-all ${
                   viewMode === "selected"
                     ? "bg-white text-blue-600 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
+                    : "text-slate-600 hover:text-blue-600"
                 }`}
                 disabled={selectedUsers.length === 0}
               >
@@ -385,10 +447,10 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({
               </button>
               <button
                 onClick={() => setViewMode("removed")}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${
+                className={`flex-1 px-2 py-1 text-xs font-medium rounded transition-all ${
                   viewMode === "removed"
                     ? "bg-white text-red-600 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
+                    : "text-slate-600 hover:text-red-600"
                 }`}
                 disabled={removedUsers.length === 0}
               >
@@ -399,48 +461,58 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="relative">
-                <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
+        <div className="flex-1 overflow-y-auto min-h-0 p-4">
+          {error && (
+            <div className="p-3 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2 text-sm mb-4">
+              <div className="p-1 bg-red-100 rounded">
+                <AlertCircle className="w-3.5 h-3.5 text-red-600" />
               </div>
-              <p className="text-gray-600 font-medium">
-                Loading team members...
-              </p>
-              <p className="text-sm text-gray-400 mt-1">Please wait</p>
+              <p className="text-red-700 flex-1 font-medium">{error}</p>
             </div>
-          ) : error ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <XCircle className="w-8 h-8 text-red-500" />
+          )}
+
+          {loading ? (
+            <div className="text-center py-8 space-y-3">
+              <div className="w-8 h-8 border-2 border-[#D9F3EE] border-t-[#1CC2B1] rounded-full animate-spin mx-auto"></div>
+              <div className="space-y-1">
+                <p className="text-[#0E3554] font-medium text-sm">
+                  Loading team members
+                </p>
+                <p className="text-slate-500 text-xs">
+                  Getting everything ready...
+                </p>
               </div>
-              <p className="text-red-600 font-medium mb-3">{error}</p>
-              <button
-                onClick={fetchAllUsers}
-                className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm hover:shadow"
-              >
-                Retry Loading
-              </button>
             </div>
           ) : filteredUsers.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <User className="w-8 h-8 text-gray-400" />
+            <div className="text-center py-8 space-y-3">
+              <div className="w-12 h-12 bg-[#EFFFFA] rounded-lg flex items-center justify-center mx-auto">
+                <User className="w-6 h-6 text-slate-400" />
               </div>
-              <p className="text-gray-900 font-medium mb-1">
-                {searchQuery ? "No matching users found" : "No users available"}
-              </p>
-              <p className="text-sm text-gray-500">
-                {searchQuery
-                  ? "Try a different search term"
-                  : viewMode === "removed"
-                  ? "No users removed yet"
-                  : viewMode === "selected"
-                  ? "No users selected"
-                  : "No users available"}
-              </p>
+              <div className="space-y-1">
+                <h3 className="text-base font-semibold text-[#0E3554]">
+                  {searchQuery
+                    ? "No matching users found"
+                    : "No users available"}
+                </h3>
+                <p className="text-slate-600 text-sm">
+                  {searchQuery
+                    ? "Try a different search term"
+                    : viewMode === "removed"
+                    ? "No users removed yet"
+                    : viewMode === "selected"
+                    ? "No users selected"
+                    : "No users available"}
+                </p>
+              </div>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="px-3 py-1.5 text-sm text-[#0E3554] hover:text-[#1CC2B1] font-medium hover:bg-[#EFFFFA] rounded transition-colors flex items-center gap-1 mx-auto"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Clear Search
+                </button>
+              )}
             </div>
           ) : (
             <div className="space-y-2">
@@ -456,140 +528,105 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({
                 return (
                   <div
                     key={user._id}
-                    className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200 hover:shadow-sm group ${
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
                       isSelected && !isRemoved
-                        ? "bg-blue-50 border-blue-200 shadow-sm"
+                        ? "bg-blue-50 border-blue-200"
                         : isRemoved
-                        ? "bg-red-50/70 border-red-200"
+                        ? "bg-red-50 border-red-200"
                         : isCurrentlyAssigned
-                        ? "bg-green-50/70 border-green-200"
-                        : "bg-white border-gray-200 hover:border-blue-200"
+                        ? "bg-[#E1F3F0] border-[#D9F3EE]"
+                        : "bg-white border-[#D9F3EE] hover:border-[#1CC2B1]"
                     }`}
                     onClick={() => toggleUserSelection(user)}
                   >
-                    {/* Avatar with Status Indicator */}
-                    <div className="relative flex-shrink-0">
+                    {/* Avatar */}
+                    <div className="relative shrink-0">
                       <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white shadow-sm transition-transform group-hover:scale-105 ${
+                        className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm ${
                           isRemoved ? "opacity-60" : ""
                         }`}
                         style={{
-                          backgroundColor: user.color || "#6366f1",
-                          backgroundImage: user.color
-                            ? `linear-gradient(135deg, ${user.color}99, ${user.color})`
-                            : "linear-gradient(135deg, #818cf8, #4f46e5)",
+                          backgroundColor: user.color || "#1CC2B1",
                         }}
                       >
                         {getInitials(user.name)}
                       </div>
-
-                      {/* Status Indicators */}
-                      {isRemoved ? (
-                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-100 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
-                          <UserMinus className="w-3 h-3 text-red-600" />
-                        </div>
-                      ) : isCurrentlyAssigned ? (
-                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-100 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
-                          <CheckCircle className="w-3 h-3 text-green-600" />
-                        </div>
-                      ) : isSelected ? (
-                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white shadow-sm animate-pulse-subtle">
-                          <Check className="w-3 h-3 text-white" />
-                        </div>
-                      ) : (
-                        <div className="absolute inset-0 rounded-full border-2 border-transparent group-hover:border-blue-300 transition-colors"></div>
-                      )}
                     </div>
 
                     {/* User Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <p
-                          className={`font-semibold truncate ${
+                          className={`font-semibold text-sm truncate ${
                             isRemoved
                               ? "text-gray-500 line-through"
-                              : "text-gray-900"
+                              : "text-[#0E3554]"
                           }`}
                         >
                           {user.name}
                           {isCurrentUser && (
-                            <span className="ml-2 text-xs font-normal text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                            <span className="ml-1 text-xs font-normal text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
                               You
                             </span>
                           )}
                         </p>
-                        {getUserRoleBadge(user.role)}
                       </div>
                       <p
-                        className={`text-sm truncate mb-1 ${
-                          isRemoved ? "text-gray-400" : "text-gray-500"
+                        className={`text-xs truncate mb-1 ${
+                          isRemoved ? "text-gray-400" : "text-slate-600"
                         }`}
                       >
                         {user.email}
                       </p>
 
-                      {/* Status Description */}
                       <div className="flex items-center gap-2">
-                        {isRemoved ? (
-                          <p className="text-xs font-medium text-red-600 flex items-center gap-1">
-                            <UserMinus className="w-3 h-3" />
-                            Will be removed from task
-                          </p>
-                        ) : isCurrentlyAssigned ? (
-                          <p className="text-xs font-medium text-green-600 flex items-center gap-1">
-                            <CheckCircle className="w-3 h-3" />
-                            Currently assigned to task
-                          </p>
-                        ) : isSelected ? (
-                          <p className="text-xs font-medium text-blue-600 flex items-center gap-1">
-                            <UserPlus className="w-3 h-3" />
-                            Will be added to task
-                          </p>
-                        ) : isOriginallyAssigned ? (
-                          <p className="text-xs font-medium text-amber-600 flex items-center gap-1">
-                            <User className="w-3 h-3" />
-                            Click to remove from task
-                          </p>
-                        ) : (
-                          <p className="text-xs font-medium text-gray-500 flex items-center gap-1">
-                            <UserPlus className="w-3 h-3" />
-                            Click to add to task
-                          </p>
-                        )}
+                        {getUserRoleBadge(user.role)}
+
+                        {/* Status Badge */}
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded border ${
+                            isRemoved
+                              ? "bg-red-100 text-red-700 border-red-200"
+                              : isCurrentlyAssigned
+                              ? "bg-[#E1F3F0] text-[#1CC2B1] border-[#D9F3EE]"
+                              : isSelected
+                              ? "bg-blue-100 text-blue-700 border-blue-200"
+                              : "bg-gray-100 text-gray-600 border-gray-200"
+                          }`}
+                        >
+                          {isRemoved
+                            ? "Will be removed"
+                            : isCurrentlyAssigned
+                            ? "Currently assigned"
+                            : isSelected
+                            ? "Will be added"
+                            : isOriginallyAssigned
+                            ? "Click to remove"
+                            : "Click to add"}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Action Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleUserSelection(user);
-                      }}
-                      className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-                        isRemoved
-                          ? "bg-red-100 text-red-600 hover:bg-red-200"
-                          : isSelected
-                          ? "bg-blue-600 text-white hover:bg-blue-700"
-                          : isOriginallyAssigned
-                          ? "bg-amber-100 text-amber-600 hover:bg-amber-200"
-                          : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
-                      }`}
-                      aria-label={
-                        isRemoved
-                          ? "Restore user"
-                          : isSelected
-                          ? "Remove user"
-                          : "Add user"
-                      }
-                    >
-                      {isRemoved ? (
-                        <UserPlus className="w-4 h-4" />
-                      ) : isSelected ? (
-                        <UserMinus className="w-4 h-4" />
-                      ) : (
-                        <UserPlus className="w-4 h-4" />
-                      )}
-                    </button>
+                    {/* Selection Indicator */}
+                    <div className="shrink-0">
+                      <div
+                        className={`w-6 h-6 rounded border flex items-center justify-center ${
+                          isRemoved
+                            ? "bg-red-100 border-red-300"
+                            : isSelected
+                            ? "bg-blue-600 border-blue-700"
+                            : "bg-white border-[#D9F3EE]"
+                        }`}
+                      >
+                        {isRemoved ? (
+                          <UserMinus className="w-3.5 h-3.5 text-red-600" />
+                        ) : isSelected ? (
+                          <Check className="w-3.5 h-3.5 text-white" />
+                        ) : (
+                          <div className="w-2 h-2 rounded bg-gray-300" />
+                        )}
+                      </div>
+                    </div>
                   </div>
                 );
               })}
@@ -598,48 +635,40 @@ const AddUsersModal: React.FC<AddUsersModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-100 bg-gradient-to-r from-gray-50/50 to-white/50">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              <span className="font-medium">
-                {selectedUsers.length} total assignees
-              </span>
-              {addedCount > 0 && (
-                <span className="ml-3 text-blue-600">+{addedCount} added</span>
+        <div className="border-t border-[#D9F3EE] p-4 bg-white shrink-0">
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={handleClose}
+              disabled={addingUsers}
+              className="px-4 py-2 text-sm text-[#0E3554] hover:text-[#1CC2B1] font-medium disabled:opacity-50 transition-colors hover:bg-[#EFFFFA] rounded"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleUpdateTaskUsers}
+              disabled={
+                (addedCount === 0 && removedCount === 0) ||
+                addingUsers ||
+                loading
+              }
+              className="px-4 py-2 text-sm rounded font-medium
+                bg-[#0E3554] hover:bg-[#0A2A42]
+                transition-all duration-200
+                disabled:opacity-70 disabled:cursor-not-allowed
+                flex items-center justify-center gap-1.5 text-white"
+            >
+              {addingUsers ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Updating...</span>
+                </>
+              ) : (
+                <>
+                  <Users className="w-3.5 h-3.5" />
+                  <span>Update Assignees</span>
+                </>
               )}
-              {removedCount > 0 && (
-                <span className="ml-3 text-red-600">
-                  -{removedCount} removed
-                </span>
-              )}
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={onClose}
-                className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-medium hover:border-gray-400"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdateTaskUsers}
-                disabled={
-                  (addedCount === 0 && removedCount === 0) || addingUsers
-                }
-                className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all font-medium shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-sm flex items-center gap-2"
-              >
-                {addingUsers ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <Users className="w-4 h-4" />
-                    Update Assignees
-                  </>
-                )}
-              </button>
-            </div>
+            </button>
           </div>
         </div>
       </div>

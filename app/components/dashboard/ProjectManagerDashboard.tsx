@@ -460,98 +460,111 @@ export default function ProjectManagerDashboard() {
   }, []);
 
   // Handle notification task click - navigate to project and then show task
-  const handleNotificationTaskClick = useCallback(async (taskId: string, projectId?: string) => {
-    try {
-      setLoadingProject(true);
-      
-      // If no projectId provided (old notifications), fetch task to get project ID
-      if (!projectId) {
-        const taskData = await getTask(taskId);
-        if (taskData && taskData.project) {
-          // Extract project ID from task data
-          projectId = typeof taskData.project === 'string' 
-            ? taskData.project 
-            : taskData.project._id;
-        }
-      }
-      
-      // Validate projectId format before using it
-      if (projectId && projectId.trim() && projectId !== "[object Object]") {
-        // Check if it's a valid ObjectId format (24 hex characters)
-        const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(projectId);
-        
-        if (isValidObjectId) {
-          try {
-            const projectData = await getProjectData(projectId);
-            setSelectedProject(projectData);
-            setTaskFilters(DEFAULT_TASK_FILTERS);
-            setTaskViewMode("grid");
-            setLoadingProject(false);
-            
-            // Find and select the task from the project's tasks
-            const task = projectData.tasks?.find((t: Task) => t._id === taskId);
-            if (task) {
-              setSelectedTask(task);
-            } else {
-              // Task not found in project - might have been deleted
-              setError("This task may have been deleted or is no longer available.");
-            }
-          } catch (projectError: any) {
-            console.error('Error loading project:', projectError);
-            setLoadingProject(false);
-            // If project load fails, try to show task directly
-            const taskData = await getTask(taskId);
-            if (taskData) {
-              setSelectedTask(taskData);
-            } else {
-              setError("Failed to load project or task. Please try again.");
-            }
-          }
-        } else {
-          // Invalid projectId format, fetch task to get correct projectId
+  const handleNotificationTaskClick = useCallback(
+    async (taskId: string, projectId?: string) => {
+      try {
+        setLoadingProject(true);
+
+        // If no projectId provided (old notifications), fetch task to get project ID
+        if (!projectId) {
           const taskData = await getTask(taskId);
           if (taskData && taskData.project) {
-            const validProjectId = typeof taskData.project === 'string' 
-              ? taskData.project 
-              : taskData.project._id;
-            if (validProjectId) {
-              const projectData = await getProjectData(validProjectId);
+            // Extract project ID from task data
+            projectId =
+              typeof taskData.project === "string"
+                ? taskData.project
+                : taskData.project._id;
+          }
+        }
+
+        // Validate projectId format before using it
+        if (projectId && projectId.trim() && projectId !== "[object Object]") {
+          // Check if it's a valid ObjectId format (24 hex characters)
+          const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(projectId);
+
+          if (isValidObjectId) {
+            try {
+              const projectData = await getProjectData(projectId);
               setSelectedProject(projectData);
               setTaskFilters(DEFAULT_TASK_FILTERS);
               setTaskViewMode("grid");
-              const task = projectData.tasks?.find((t: Task) => t._id === taskId);
+              setLoadingProject(false);
+
+              // Find and select the task from the project's tasks
+              const task = projectData.tasks?.find(
+                (t: Task) => t._id === taskId
+              );
               if (task) {
                 setSelectedTask(task);
+              } else {
+                // Task not found in project - might have been deleted
+                setError(
+                  "This task may have been deleted or is no longer available."
+                );
+              }
+            } catch (projectError: any) {
+              console.error("Error loading project:", projectError);
+              setLoadingProject(false);
+              // If project load fails, try to show task directly
+              const taskData = await getTask(taskId);
+              if (taskData) {
+                setSelectedTask(taskData);
+              } else {
+                setError("Failed to load project or task. Please try again.");
+              }
+            }
+          } else {
+            // Invalid projectId format, fetch task to get correct projectId
+            const taskData = await getTask(taskId);
+            if (taskData && taskData.project) {
+              const validProjectId =
+                typeof taskData.project === "string"
+                  ? taskData.project
+                  : taskData.project._id;
+              if (validProjectId) {
+                const projectData = await getProjectData(validProjectId);
+                setSelectedProject(projectData);
+                setTaskFilters(DEFAULT_TASK_FILTERS);
+                setTaskViewMode("grid");
+                const task = projectData.tasks?.find(
+                  (t: Task) => t._id === taskId
+                );
+                if (task) {
+                  setSelectedTask(task);
+                } else {
+                  setSelectedTask(taskData);
+                }
               } else {
                 setSelectedTask(taskData);
               }
             } else {
               setSelectedTask(taskData);
             }
-          } else {
+            setLoadingProject(false);
+          }
+        } else {
+          // Last resort: show task modal without project context
+          const taskData = await getTask(taskId);
+          setLoadingProject(false);
+          if (taskData) {
             setSelectedTask(taskData);
           }
-          setLoadingProject(false);
         }
-      } else {
-        // Last resort: show task modal without project context
-        const taskData = await getTask(taskId);
+      } catch (err: any) {
+        console.error("Failed to fetch task from notification:", err);
         setLoadingProject(false);
-        if (taskData) {
-          setSelectedTask(taskData);
+        // Show user-friendly error
+        if (err?.message?.includes("not found")) {
+          setError(
+            "This task may have been deleted or is no longer available."
+          );
+        } else {
+          setError("Failed to load task. Please try again.");
         }
       }
-    } catch (err: any) {
-      console.error("Failed to fetch task from notification:", err);
-      setLoadingProject(false);
-      // Show user-friendly error
-      if (err?.message?.includes("not found")) {
-        setError("This task may have been deleted or is no longer available.");
-      } else {
-        setError("Failed to load task. Please try again.");
-      }
-    }
-  }, []);
+    },
+    []
+  );
 
   // Handle approve task click - show confirmation
   const handleApproveTaskClick = useCallback((task: Task) => {
@@ -581,11 +594,14 @@ export default function ProjectManagerDashboard() {
         taskTitle: "",
       });
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to approve task"
-      );
+      setError(err instanceof Error ? err.message : "Failed to approve task");
     }
-  }, [approvalConfirm.taskId, selectedProject, handleProjectClick, fetchAllTasks]);
+  }, [
+    approvalConfirm.taskId,
+    selectedProject,
+    handleProjectClick,
+    fetchAllTasks,
+  ]);
 
   // Handle cancel approval
   const handleCancelApproval = useCallback(() => {
@@ -617,13 +633,33 @@ export default function ProjectManagerDashboard() {
     }
   }, [deleteConfirm, selectedProject, handleProjectClick]);
 
-  const handleTaskUpdated = useCallback(() => {
-    if (selectedProject && editingTask) {
-      handleProjectClick(selectedProject.project._id);
-    }
-    setShowUpdateTaskModal(false);
-    setEditingTask(null);
-  }, [selectedProject, editingTask, handleProjectClick]);
+  const handleTaskUpdated = useCallback(
+    async (taskId?: string, updatedTaskData?: Task) => {
+      console.log("Refreshing after task update...");
+
+      try {
+        if (updatedTaskData && selectedTask?._id === updatedTaskData._id) {
+          setSelectedTask(updatedTaskData);
+        }
+
+        if (selectedProject) {
+          await handleProjectClick(selectedProject.project._id);
+        }
+
+        if (taskId && !updatedTaskData && selectedTask?._id === taskId) {
+          const refreshedTask = await getTask(taskId);
+          setSelectedTask(refreshedTask);
+        }
+
+        setShowUpdateTaskModal(false);
+        setEditingTask(null);
+      } catch (err) {
+        console.error("Failed to refresh after task update:", err);
+        setError("Failed to refresh data. Please try again.");
+      }
+    },
+    [selectedProject, selectedTask, handleProjectClick]
+  );
 
   const handleTaskClickFromAllTasks = useCallback((task: Task) => {
     setSelectedTask(task);
@@ -790,13 +826,13 @@ export default function ProjectManagerDashboard() {
         // Date range filter
         if (taskFilters.dateFrom || taskFilters.dateTo) {
           const taskDueDate = new Date(task.dueDate);
-          
+
           if (taskFilters.dateFrom) {
             const fromDate = new Date(taskFilters.dateFrom);
             fromDate.setHours(0, 0, 0, 0);
             if (taskDueDate < fromDate) return false;
           }
-          
+
           if (taskFilters.dateTo) {
             const toDate = new Date(taskFilters.dateTo);
             toDate.setHours(23, 59, 59, 999);
@@ -853,7 +889,7 @@ export default function ProjectManagerDashboard() {
 
   // Project actions for Project Manager - main view
   const handleEditProject = useCallback((project: Project) => {
-    // Project managers can view project details  
+    // Project managers can view project details
     console.log("View project details:", project);
     // You can add navigation or open a view/edit modal here
   }, []);
@@ -939,8 +975,9 @@ export default function ProjectManagerDashboard() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <div
-                    className={`p-1.5 rounded-lg ${selectedProject ? "bg-[#E0FFFA]" : "bg-[#F0F7FF]"
-                      }`}
+                    className={`p-1.5 rounded-lg ${
+                      selectedProject ? "bg-[#E0FFFA]" : "bg-[#F0F7FF]"
+                    }`}
                   >
                     {selectedProject ? (
                       <FolderOpen className="w-4 h-4 text-[#1CC2B1]" />
@@ -969,19 +1006,21 @@ export default function ProjectManagerDashboard() {
                     <div className="flex items-center gap-0.5 bg-[#F8FDFC] rounded-lg p-0.5 border border-[#E1F3F0]">
                       <button
                         onClick={() => setTaskViewMode("grid")}
-                        className={`p-1.5 rounded-md transition-all duration-200 ${taskViewMode === "grid"
+                        className={`p-1.5 rounded-md transition-all duration-200 ${
+                          taskViewMode === "grid"
                             ? "bg-white text-[#0E3554] shadow-sm"
                             : "text-slate-400 hover:text-[#0E3554] hover:bg-white"
-                          }`}
+                        }`}
                       >
                         <Grid3X3 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => setTaskViewMode("list")}
-                        className={`p-1.5 rounded-md transition-all duration-200 ${taskViewMode === "list"
+                        className={`p-1.5 rounded-md transition-all duration-200 ${
+                          taskViewMode === "list"
                             ? "bg-white text-[#0E3554] shadow-sm"
                             : "text-slate-400 hover:text-[#0E3554] hover:bg-white"
-                          }`}
+                        }`}
                       >
                         <List className="w-3.5 h-3.5" />
                       </button>
@@ -1011,19 +1050,21 @@ export default function ProjectManagerDashboard() {
                     <div className="flex items-center gap-0.5 bg-[#F8FDFC] rounded-lg p-0.5 border border-[#E1F3F0]">
                       <button
                         onClick={() => setProjectViewMode("grid")}
-                        className={`p-1.5 rounded-md transition-all duration-200 ${projectViewMode === "grid"
+                        className={`p-1.5 rounded-md transition-all duration-200 ${
+                          projectViewMode === "grid"
                             ? "bg-white text-[#0E3554] shadow-sm"
                             : "text-slate-400 hover:text-[#0E3554] hover:bg-white"
-                          }`}
+                        }`}
                       >
                         <Grid3X3 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => setProjectViewMode("list")}
-                        className={`p-1.5 rounded-md transition-all duration-200 ${projectViewMode === "list"
+                        className={`p-1.5 rounded-md transition-all duration-200 ${
+                          projectViewMode === "list"
                             ? "bg-white text-[#0E3554] shadow-sm"
                             : "text-slate-400 hover:text-[#0E3554] hover:bg-white"
-                          }`}
+                        }`}
                       >
                         <List className="w-3.5 h-3.5" />
                       </button>
@@ -1263,10 +1304,11 @@ const Pagination: React.FC<PaginationProps> = ({
           <button
             key={page}
             onClick={() => onPageChange(page)}
-            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${pagination.currentPage === page
+            className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+              pagination.currentPage === page
                 ? "bg-[#0E3554] text-white"
                 : "text-slate-600 hover:bg-[#EFFFFA] border border-[#D9F3EE]"
-              }`}
+            }`}
           >
             {page}
           </button>
@@ -1370,6 +1412,7 @@ const Modals: React.FC<ModalsProps> = ({
           isOpen={!!selectedTask}
           onClose={onCloseModal}
           onNoteAdded={onNoteAdded}
+          onTaskUpdated={onTaskUpdated}
           onTaskCreated={onNewTaskCreated}
           currentUser={currentUser}
         />
@@ -1392,7 +1435,7 @@ const Modals: React.FC<ModalsProps> = ({
       <TeamManagementModal
         isOpen={showTeamManagementModal}
         onClose={onCloseTeamManagementModal}
-        onUserCreated={() => { }}
+        onUserCreated={() => {}}
       />
 
       <AllTasksModal
@@ -1417,8 +1460,9 @@ const Modals: React.FC<ModalsProps> = ({
         isOpen={deleteConfirm.type !== null}
         onClose={onCloseDeleteConfirm}
         onConfirm={onConfirmDelete}
-        title={`Delete ${deleteConfirm.type === "project" ? "Project" : "Task"
-          }`}
+        title={`Delete ${
+          deleteConfirm.type === "project" ? "Project" : "Task"
+        }`}
         message={`Are you sure you want to delete "${deleteConfirm.name}"? This action cannot be undone.`}
         confirmText="Delete"
         variant="danger"

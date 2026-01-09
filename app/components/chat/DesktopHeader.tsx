@@ -76,9 +76,7 @@ const DesktopHeader = ({
       </div>
       <div className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg border border-gray-300">
         <User className="w-4 h-4 text-[#1CC2B1]" />
-        <span className="text-gray-700">
-          {task?.assignees?.length} team members
-        </span>
+        <span className="text-gray-700">{assigneesCount} team members</span>
       </div>
       <div className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg border border-gray-300">
         <div
