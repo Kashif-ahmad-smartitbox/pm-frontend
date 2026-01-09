@@ -223,7 +223,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
               }`}
             >
               <MapPin className="w-3 h-3" />
-              <span className="truncate">{project.location}</span>
+              <span className="truncate text-blue-600">{project.location}</span>
             </div>
           </div>
         </div>

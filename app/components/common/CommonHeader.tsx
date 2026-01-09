@@ -147,8 +147,9 @@ const IconButton = React.memo(
       <button
         onClick={onClick}
         className={`
-          relative p-2 text-[#0E3554] hover:text-[#1CC2B1] 
-          hover:bg-[#EFFFFA] rounded-lg transition-all duration-200
+          relative p-2 
+          text-gray-700 hover:text-[#1CC2B1] 
+          hover:bg-[#EFFFFA] bg-white rounded-lg transition-all duration-200
           active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:ring-opacity-50
           ${className}
         `}
@@ -404,10 +405,11 @@ const DesktopTextButton = React.memo(
       <button
         onClick={onClick}
         className={`
-          flex items-center gap-2 px-3 py-1.5 text-[#0E3554] hover:text-[#1CC2B1] 
-          hover:bg-[#EFFFFA] rounded-lg transition-all duration-200 font-medium text-sm
+          flex items-center gap-2 px-3 py-1.5 
+          text-gray-900 hover:text-[#1CC2B1] 
+          hover:bg-[#EFFFFA] bg-white rounded-lg transition-all duration-200 font-medium text-sm
           active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#1CC2B1] focus:ring-opacity-50
-          border border-[#E1F3F0] hover:border-[#1CC2B1]
+          border border-gray-100 hover:border-[#1CC2B1]
           ${className}
         `}
         title={title}
@@ -473,7 +475,7 @@ export default function CommonHeader({
 
   return (
     <>
-      <header className="bg-white rounded-xl p-4 mb-4 border border-[#E1F3F0] shadow-sm">
+      <header className="bg-gray-300 rounded-xl p-4 mb-4 border border-[#E1F3F0] shadow-sm">
         {/* Main Header Row */}
         <div className="flex items-center justify-between">
           {/* Logo and Title Section - Left aligned */}

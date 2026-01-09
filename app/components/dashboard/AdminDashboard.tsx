@@ -958,7 +958,7 @@ export default function AdminDashboard() {
         {/* Projects/Tasks Section */}
         <section>
           {/* Section Header */}
-          <div className="bg-white rounded-xl border border-[#E1F3F0] overflow-hidden p-4">
+          <div className="bg-yellow-100 rounded-xl border border-[#E1F3F0] overflow-hidden p-1">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               {/* Title Section */}
               <div className="flex-1 min-w-0">
@@ -1097,9 +1097,9 @@ export default function AdminDashboard() {
 
             {/* Project Details Bar */}
             {selectedProject && (
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#E1F3F0]">
+              <div className="flex items-center justify-between mt-1 pt-1 border-t border-[#E1F3F0]">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-700 bg-[#F8FDFC] px-2 py-1 rounded-lg border border-[#E1F3F0]">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-700 bg-[#F8FDFC] px-1 py-1 rounded-lg border border-[#E1F3F0]">
                     <MapPin className="w-3.5 h-3.5 text-[#1CC2B1]" />
                     <span className="font-medium truncate max-w-40">
                       {selectedProject.project.location}
