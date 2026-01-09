@@ -250,7 +250,7 @@ export default function AdminDashboard() {
     id: null,
     name: "",
   });
-  
+
   // Approval confirmation state
   const [approvalConfirm, setApprovalConfirm] = useState<{
     isOpen: boolean;
@@ -407,105 +407,142 @@ export default function AdminDashboard() {
   }, []);
 
   // Handle notification task click - navigate to project and then show task
-  const handleNotificationTaskClick = useCallback(async (taskId: string, projectId?: string) => {
-    console.log('[handleNotificationTaskClick] taskId:', taskId, 'projectId:', projectId);
-    try {
-      setLoadingProject(true);
-      
-      // If no projectId provided (old notifications), fetch task to get project ID
-      if (!projectId) {
-        console.log('[handleNotificationTaskClick] No projectId, fetching task to get project');
-        const taskData = await getTask(taskId);
-        if (taskData && taskData.project) {
-          // Extract project ID from task data
-          projectId = typeof taskData.project === 'string' 
-            ? taskData.project 
-            : taskData.project._id;
-          console.log('[handleNotificationTaskClick] Got projectId from task:', projectId);
-        }
-      }
-      
-      // Validate projectId format before using it
-      if (projectId && projectId.trim() && projectId !== "[object Object]") {
-        // Check if it's a valid ObjectId format (24 hex characters)
-        const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(projectId);
-        
-        if (isValidObjectId) {
-          console.log('[handleNotificationTaskClick] Navigating to project:', projectId);
-          try {
-            const projectData = await getProjectData(projectId);
-            setSelectedProject(projectData);
-            setTaskFilters(DEFAULT_TASK_FILTERS);
-            setTaskViewMode("grid");
-            setLoadingProject(false);
-            
-            // Find and select the task from the project's tasks
-            const task = projectData.tasks?.find((t: Task) => t._id === taskId);
-            console.log('[handleNotificationTaskClick] Task found in project:', !!task);
-            if (task) {
-              setSelectedTask(task);
-            } else {
-              // Task not found in project - might have been deleted
-              setError("This task may have been deleted or is no longer available.");
-            }
-          } catch (projectError: any) {
-            console.error('[handleNotificationTaskClick] Error loading project:', projectError);
-            setLoadingProject(false);
-            // If project load fails, try to show task directly
-            const taskData = await getTask(taskId);
-            if (taskData) {
-              setSelectedTask(taskData);
-            } else {
-              setError("Failed to load project or task. Please try again.");
-            }
-          }
-        } else {
-          // Invalid projectId format, fetch task to get correct projectId
-          console.log('[handleNotificationTaskClick] Invalid projectId format, fetching task:', projectId);
+  const handleNotificationTaskClick = useCallback(
+    async (taskId: string, projectId?: string) => {
+      console.log(
+        "[handleNotificationTaskClick] taskId:",
+        taskId,
+        "projectId:",
+        projectId
+      );
+      try {
+        setLoadingProject(true);
+
+        // If no projectId provided (old notifications), fetch task to get project ID
+        if (!projectId) {
+          console.log(
+            "[handleNotificationTaskClick] No projectId, fetching task to get project"
+          );
           const taskData = await getTask(taskId);
           if (taskData && taskData.project) {
-            const validProjectId = typeof taskData.project === 'string' 
-              ? taskData.project 
-              : taskData.project._id;
-            if (validProjectId) {
-              const projectData = await getProjectData(validProjectId);
+            // Extract project ID from task data
+            projectId =
+              typeof taskData.project === "string"
+                ? taskData.project
+                : taskData.project._id;
+            console.log(
+              "[handleNotificationTaskClick] Got projectId from task:",
+              projectId
+            );
+          }
+        }
+
+        // Validate projectId format before using it
+        if (projectId && projectId.trim() && projectId !== "[object Object]") {
+          // Check if it's a valid ObjectId format (24 hex characters)
+          const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(projectId);
+
+          if (isValidObjectId) {
+            console.log(
+              "[handleNotificationTaskClick] Navigating to project:",
+              projectId
+            );
+            try {
+              const projectData = await getProjectData(projectId);
               setSelectedProject(projectData);
               setTaskFilters(DEFAULT_TASK_FILTERS);
               setTaskViewMode("grid");
-              const task = projectData.tasks?.find((t: Task) => t._id === taskId);
+              setLoadingProject(false);
+
+              // Find and select the task from the project's tasks
+              const task = projectData.tasks?.find(
+                (t: Task) => t._id === taskId
+              );
+              console.log(
+                "[handleNotificationTaskClick] Task found in project:",
+                !!task
+              );
               if (task) {
                 setSelectedTask(task);
+              } else {
+                // Task not found in project - might have been deleted
+                setError(
+                  "This task may have been deleted or is no longer available."
+                );
+              }
+            } catch (projectError: any) {
+              console.error(
+                "[handleNotificationTaskClick] Error loading project:",
+                projectError
+              );
+              setLoadingProject(false);
+              // If project load fails, try to show task directly
+              const taskData = await getTask(taskId);
+              if (taskData) {
+                setSelectedTask(taskData);
+              } else {
+                setError("Failed to load project or task. Please try again.");
+              }
+            }
+          } else {
+            // Invalid projectId format, fetch task to get correct projectId
+            console.log(
+              "[handleNotificationTaskClick] Invalid projectId format, fetching task:",
+              projectId
+            );
+            const taskData = await getTask(taskId);
+            if (taskData && taskData.project) {
+              const validProjectId =
+                typeof taskData.project === "string"
+                  ? taskData.project
+                  : taskData.project._id;
+              if (validProjectId) {
+                const projectData = await getProjectData(validProjectId);
+                setSelectedProject(projectData);
+                setTaskFilters(DEFAULT_TASK_FILTERS);
+                setTaskViewMode("grid");
+                const task = projectData.tasks?.find(
+                  (t: Task) => t._id === taskId
+                );
+                if (task) {
+                  setSelectedTask(task);
+                } else {
+                  setSelectedTask(taskData);
+                }
               } else {
                 setSelectedTask(taskData);
               }
             } else {
               setSelectedTask(taskData);
             }
-          } else {
+            setLoadingProject(false);
+          }
+        } else {
+          // Last resort: show task modal without project context
+          console.log(
+            "[handleNotificationTaskClick] Could not get projectId, fetching task only"
+          );
+          const taskData = await getTask(taskId);
+          setLoadingProject(false);
+          if (taskData) {
             setSelectedTask(taskData);
           }
-          setLoadingProject(false);
         }
-      } else {
-        // Last resort: show task modal without project context
-        console.log('[handleNotificationTaskClick] Could not get projectId, fetching task only');
-        const taskData = await getTask(taskId);
+      } catch (err: any) {
+        console.error("Failed to fetch task from notification:", err);
         setLoadingProject(false);
-        if (taskData) {
-          setSelectedTask(taskData);
+        // Show user-friendly error
+        if (err?.message?.includes("not found")) {
+          setError(
+            "This task may have been deleted or is no longer available."
+          );
+        } else {
+          setError("Failed to load task. Please try again.");
         }
       }
-    } catch (err: any) {
-      console.error("Failed to fetch task from notification:", err);
-      setLoadingProject(false);
-      // Show user-friendly error
-      if (err?.message?.includes("not found")) {
-        setError("This task may have been deleted or is no longer available.");
-      } else {
-        setError("Failed to load task. Please try again.");
-      }
-    }
-  }, []);
+    },
+    []
+  );
 
   const handleDeleteTask = useCallback((task: Task) => {
     setDeleteConfirm({ type: "task", id: task._id, name: task.title });
@@ -526,22 +563,20 @@ export default function AdminDashboard() {
 
     try {
       await approveTask(approvalConfirm.taskId);
-      
+
       // Refresh data
       if (selectedProject) {
         handleProjectClick(selectedProject.project._id);
       }
       fetchAllTasks();
-      
+
       setApprovalConfirm({
         isOpen: false,
         taskId: "",
         taskTitle: "",
       });
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to approve task"
-      );
+      setError(err instanceof Error ? err.message : "Failed to approve task");
     }
   }, [approvalConfirm.taskId, selectedProject, fetchAllTasks]);
 
@@ -711,7 +746,6 @@ export default function AdminDashboard() {
     [projects]
   );
 
-  // Fixed filteredProjects logic to handle overdue projects
   const filteredProjects = useMemo(() => {
     if (activeStatus === "all") return projects;
 
@@ -719,9 +753,6 @@ export default function AdminDashboard() {
       const today = new Date();
       const overdueProjects = projects.filter((project) => {
         const endDate = new Date(project.endDate);
-        // A project is overdue if:
-        // 1. The end date has passed
-        // 2. It's not completed
         return endDate < today && project.status !== "completed";
       });
 
@@ -784,13 +815,13 @@ export default function AdminDashboard() {
         // Date range filter (dateFrom and dateTo)
         if (taskFilters.dateFrom || taskFilters.dateTo) {
           const taskDueDate = new Date(task.dueDate);
-          
+
           if (taskFilters.dateFrom) {
             const fromDate = new Date(taskFilters.dateFrom);
             fromDate.setHours(0, 0, 0, 0);
             if (taskDueDate < fromDate) return false;
           }
-          
+
           if (taskFilters.dateTo) {
             const toDate = new Date(taskFilters.dateTo);
             toDate.setHours(23, 59, 59, 999);

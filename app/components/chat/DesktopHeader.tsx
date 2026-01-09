@@ -1,4 +1,11 @@
-import { MessageSquare, RefreshCw, User, X, Plus } from "lucide-react";
+import {
+  MessageSquare,
+  RefreshCw,
+  User,
+  X,
+  Plus,
+  UserPlus,
+} from "lucide-react";
 import { Task } from "../TaskNotesModal";
 
 const DesktopHeader = ({
@@ -9,6 +16,8 @@ const DesktopHeader = ({
   notesCount,
   userRole,
   onCreateTask,
+  onAddUsers,
+  assigneesCount,
 }: {
   task: Task;
   onClose: () => void;
@@ -17,6 +26,8 @@ const DesktopHeader = ({
   notesCount: number;
   userRole?: string;
   onCreateTask?: () => void;
+  onAddUsers?: () => void;
+  assigneesCount?: number;
 }) => (
   <div className="bg-white border-b border-gray-200 p-6">
     <div className="flex items-center justify-between">
@@ -101,20 +112,43 @@ const DesktopHeader = ({
           </span>
         </div>
       )}
+
+      {/* Add Users Button - Only for admin and project_manager */}
+      {(userRole === "admin" || userRole === "project_manager") &&
+        onAddUsers && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddUsers();
+            }}
+            className="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg border border-emerald-200 hover:border-emerald-300 transition-all duration-200 font-medium"
+            title="Add users to this task"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>Add Users</span>
+            {assigneesCount !== undefined && assigneesCount > 0 && (
+              <span className="bg-emerald-100 text-emerald-800 text-xs px-1.5 py-0.5 rounded-full">
+                {assigneesCount}
+              </span>
+            )}
+          </button>
+        )}
+
       {/* Add Task Button - Only for admin and project_manager */}
-      {(userRole === "admin" || userRole === "project_manager") && onCreateTask && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onCreateTask();
-          }}
-          className="flex items-center gap-2 bg-[#1CC2B1] hover:bg-[#0E3554] text-white px-3 py-2 rounded-lg border border-transparent hover:border-[#1CC2B1] transition-all duration-200 font-medium"
-          title="Create new task for this project"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Task</span>
-        </button>
-      )}
+      {(userRole === "admin" || userRole === "project_manager") &&
+        onCreateTask && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onCreateTask();
+            }}
+            className="flex items-center gap-2 bg-[#1CC2B1] hover:bg-[#0E3554] text-white px-3 py-2 rounded-lg border border-transparent hover:border-[#1CC2B1] transition-all duration-200 font-medium"
+            title="Create new task for this project"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Task</span>
+          </button>
+        )}
     </div>
   </div>
 );

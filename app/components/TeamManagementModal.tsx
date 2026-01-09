@@ -796,7 +796,9 @@ const TeamManagementModal: React.FC<TeamManagementModalProps> = ({
                                   <input
                                     type="tel"
                                     name="phoneNumber"
-                                    value={editFormData[user._id]?.phoneNumber || ""}
+                                    value={
+                                      editFormData[user._id]?.phoneNumber || ""
+                                    }
                                     onChange={(e) =>
                                       handleEditInputChange(user._id, e)
                                     }

@@ -19,6 +19,8 @@ import {
   Check,
   X as XIcon,
   Shield,
+  UserPlus,
+  Users,
 } from "lucide-react";
 import {
   DesktopHeader,
@@ -29,6 +31,7 @@ import {
   VoiceRecordingControls,
 } from "./chat";
 import NewTaskModal from "./NewTaskModal";
+import AddUsersModal from "./AddUsersModal";
 
 // Types
 export type TaskStatus = "todo" | "in_progress" | "done";
@@ -540,10 +543,10 @@ const MessageActions: React.FC<MessageActionsProps> = ({
   // Check if note can be edited (2-minute restriction for team members)
   const canEditNote = () => {
     if (!isCurrentUserMessage) return false;
-    
+
     // Admins and project managers can always edit
     if (isAdmin || currentUserRole === "project_manager") return true;
-    
+
     // Team members can only edit within 2 minutes
     if (currentUserRole === "team_member") {
       const createdAt = new Date(note.createdAt);
@@ -552,7 +555,7 @@ const MessageActions: React.FC<MessageActionsProps> = ({
       const twoMinutes = 2 * 60 * 1000;
       return timeDiff <= twoMinutes;
     }
-    
+
     return true; // Default: allow editing
   };
 
@@ -835,6 +838,7 @@ interface TaskNotesModalProps {
   onNoteUpdated?: (updatedNote: Note) => void;
   onNoteDeleted?: (deletedNoteId: string) => void;
   onTaskCreated?: () => void;
+  onUsersAdded?: () => void;
   currentUser: User;
   isAdmin?: boolean;
 }
@@ -847,6 +851,7 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   onNoteUpdated,
   onNoteDeleted,
   onTaskCreated,
+  onUsersAdded,
   currentUser,
   isAdmin = false,
 }) => {
@@ -875,6 +880,10 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   const [editingText, setEditingText] = useState("");
   const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
+  const [showAddUsersModal, setShowAddUsersModal] = useState(false); // New state for user management modal
+  const [taskAssignees, setTaskAssignees] = useState<User[]>(
+    task.assignees || []
+  ); // Track current assignees
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -906,6 +915,13 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   } = useMediaRecorder();
 
   useModal(isOpen, onClose);
+
+  // Update task assignees when task changes
+  useEffect(() => {
+    if (task.assignees) {
+      setTaskAssignees(task.assignees);
+    }
+  }, [task.assignees]);
 
   // Helper functions
   const isCurrentUser = (author?: User) => author?._id === currentUser?._id;
@@ -1360,7 +1376,12 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
       e.preventDefault();
     }
     const projectIdValue = getProjectId();
-    console.log("handleCreateTask called, projectId:", projectIdValue, "task:", task);
+    console.log(
+      "handleCreateTask called, projectId:",
+      projectIdValue,
+      "task:",
+      task
+    );
     if (!projectIdValue) {
       console.error("Cannot create task: Project ID is missing", task);
       alert("Cannot create task: Project information is missing");
@@ -1370,6 +1391,31 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
     console.log("Setting showNewTaskModal to true");
     setShowNewTaskModal(true);
     console.log("showNewTaskModal state should be true now");
+  };
+
+  // Handle add users
+  const handleAddUsers = (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    console.log("Opening add users modal for task:", task._id);
+    setShowAddUsersModal(true);
+  };
+
+  // Handle users added callback
+  const handleUsersAdded = (newAssignees: User[]) => {
+    console.log("Users added to task:", newAssignees);
+    setTaskAssignees(newAssignees);
+    setShowAddUsersModal(false);
+
+    // Call parent callback if provided
+    if (onUsersAdded) {
+      onUsersAdded();
+    }
+
+    // Show success message
+    alert(`Successfully added ${newAssignees.length} user(s) to the task!`);
   };
 
   // Handle task created callback
@@ -1383,8 +1429,10 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
   };
 
   // Ensure userRole is available - use useEffect to update when currentUser changes
-  const [userRole, setUserRole] = useState<string | undefined>(currentUser?.role);
-  
+  const [userRole, setUserRole] = useState<string | undefined>(
+    currentUser?.role
+  );
+
   useEffect(() => {
     console.log("TaskNotesModal - currentUser changed:", currentUser);
     if (currentUser?.role) {
@@ -1402,14 +1450,21 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
 
   const notesCount = notes?.length ?? 0;
   const projectId = getProjectId();
-  
-  console.log("TaskNotesModal render - effectiveUserRole:", effectiveUserRole, "userRole:", userRole, "currentUser:", currentUser, "projectId:", projectId);
+
+  console.log(
+    "TaskNotesModal render - effectiveUserRole:",
+    effectiveUserRole,
+    "userRole:",
+    userRole,
+    "currentUser:",
+    currentUser,
+    "projectId:",
+    projectId
+  );
 
   return (
     <>
-      {/* Main Modal - Full Screen */}
       <div className="fixed inset-0 bg-white flex flex-col z-60 safe-area">
-        {/* Responsive Header */}
         <div className="md:hidden">
           <MobileHeader
             task={task}
@@ -1419,6 +1474,8 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
             notesCount={notesCount}
             userRole={effectiveUserRole}
             onCreateTask={handleCreateTask}
+            onAddUsers={handleAddUsers}
+            assigneesCount={taskAssignees.length}
           />
         </div>
         <div className="hidden md:block">
@@ -1430,12 +1487,12 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
             notesCount={notesCount}
             userRole={effectiveUserRole}
             onCreateTask={handleCreateTask}
+            onAddUsers={handleAddUsers}
+            assigneesCount={taskAssignees.length}
           />
         </div>
 
-        {/* Chat Area */}
         <div className="flex-1 flex flex-col min-h-0 bg-gray-50/50">
-          {/* Error Display */}
           {error && (
             <div className="flex items-center justify-between p-3 bg-red-50 border-b border-red-200 text-red-700 text-sm">
               <span className="text-xs md:text-sm">{error}</span>
@@ -1448,7 +1505,6 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
             </div>
           )}
 
-          {/* Initial Loading State */}
           {loading && !refreshing && notes.length === 0 && (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
@@ -1458,7 +1514,6 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
             </div>
           )}
 
-          {/* Messages Container */}
           {(!loading || notes.length > 0) && (
             <div
               ref={messagesContainerRef}
@@ -1942,6 +1997,16 @@ const TaskNotesModal: React.FC<TaskNotesModalProps> = ({
         }}
         onTaskCreated={handleTaskCreated}
         projectId={projectId || ""}
+      />
+
+      {/* Add Users Modal */}
+      <AddUsersModal
+        isOpen={showAddUsersModal}
+        onClose={() => setShowAddUsersModal(false)}
+        onUsersAdded={handleUsersAdded}
+        taskId={task._id}
+        currentAssignees={taskAssignees}
+        currentUser={currentUser}
       />
     </>
   );
