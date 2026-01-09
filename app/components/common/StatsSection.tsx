@@ -71,7 +71,7 @@ const PROJECTS_STATS_CONFIG = [
     icon: CheckCircle,
     color: "text-[#1CC2B1]",
     bgColor: "bg-[#E1F3F0]",
-    mainBgColor: "bg-[#8BAE66]",
+    mainBgColor: "bg-[#b0d6ba]",
     filterValue: "completed",
   },
   {
@@ -80,7 +80,7 @@ const PROJECTS_STATS_CONFIG = [
     icon: AlertTriangle,
     color: "text-[#DC2626]",
     bgColor: "bg-[#FEE2E2]",
-    mainBgColor: "bg-[#EF4444]",
+    mainBgColor: "bg-[#f29b72]",
     filterValue: "overdue",
   },
 ] as const;
@@ -186,7 +186,7 @@ export default function StatsSection({
             key={stat.id}
             className={`${
               stat.mainBgColor
-            } rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4 border border-white/30 hover:shadow-lg sm:hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden cursor-pointer ${
+            } rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-1 border border-white/30 hover:shadow-lg sm:hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden cursor-pointer ${
               isActive
                 ? "ring-1 sm:ring-2 ring-[#0E3554] ring-offset-1 sm:ring-offset-2"
                 : ""

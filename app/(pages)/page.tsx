@@ -79,7 +79,7 @@ export default function Login() {
   return (
     <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-2 bg-gray-200">
       {/* LEFT SIDE - Desktop Only */}
-      <section className="hidden lg:flex flex-col justify-between p-12 text-white relative overflow-hidden bg-gradient-to-br from-[#0E3554] to-[#1CC2B1]">
+      <section className="hidden lg:flex flex-col justify-between p-12 text-white relative overflow-hidden bg-linear-to-br from-[#0E3554] to-[#1CC2B1]">
         <div className="absolute inset-0">
           <div className="absolute top-20 -left-20 w-64 h-64 bg-white/10 rounded-full blur-3xl opacity-60" />
           <div className="absolute bottom-20 -right-20 w-80 h-80 bg-black/10 rounded-full blur-3xl opacity-60" />
