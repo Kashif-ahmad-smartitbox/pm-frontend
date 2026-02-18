@@ -1,5 +1,5 @@
 {
-  "name": "pm-frontend", 
+  "name": "pm-frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "lucide-react": "^0.553.0",
-    "next": "^16.0.7",
+    "next": "16.0.10",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "swr": "^2.3.6"
